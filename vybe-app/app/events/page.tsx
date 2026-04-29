@@ -4,7 +4,8 @@ import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Search, SlidersHorizontal, ChevronDown, X } from 'lucide-react';
 import EventCard from '@/components/events/EventCard';
-import EventsMap from '@/components/events/EventsMap';
+import dynamic from 'next/dynamic';
+const EventsMap = dynamic(() => import('@/components/events/EventsMap'), { ssr: false });
 import SkeletonCard from '@/components/ui/SkeletonCard';
 import { MOCK_EVENTS } from '@/lib/mockData';
 
