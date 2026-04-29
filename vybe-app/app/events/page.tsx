@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Search, SlidersHorizontal, ChevronDown, X } from 'lucide-react';
@@ -26,7 +26,7 @@ const fadeUp = (delay = 0) => ({
   transition: { duration: 0.45, delay, ease: 'easeOut' as const },
 });
 
-export default function EventsPage() {
+function EventsContent() {
   const searchParams = useSearchParams();
   const [cat,         setCat]         = useState(() => searchParams.get('cat') || 'all');
   const [sort,        setSort]        = useState('Date');
@@ -189,5 +189,13 @@ export default function EventsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function EventsPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading events...</div>}>
+      <EventsContent />
+    </Suspense>
   );
 }
