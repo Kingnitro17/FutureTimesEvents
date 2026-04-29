@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Explore events on the map – VYBE" />
+  <title>Map View – VYBE</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/styles.css" />
+  <style>
+    .map-page { display: flex; height: calc(100vh - var(--nav-height)); margin-top: var(--nav-height); }
+    .map-sidebar {
+      width: 380px; flex-shrink: 0; overflow-y: auto;
+      padding: 24px; border-right: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .map-sidebar h2 { font-family: var(--font-display); font-size: 1.3rem; margin-bottom: 16px; }
+    .map-search {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 16px; border-radius: 50px;
+      background: var(--bg-card); border: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+    .map-search input {
+      flex: 1; background: none; border: none; outline: none;
+      color: var(--text); font-size: 0.9rem;
+    }
+    .map-search input::placeholder { color: var(--text-secondary); }
+    .map-event-list { display: flex; flex-direction: column; gap: 12px; }
+    .map-event-item {
+      display: flex; gap: 12px; padding: 14px;
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      cursor: pointer; transition: var(--transition);
+    }
+    .map-event-item:hover, .map-event-item.active {
+      border-color: var(--accent); background: rgba(93,63,211,0.08);
+    }
+    .map-event-item img {
+      width: 64px; height: 64px; border-radius: var(--radius-xs);
+      object-fit: cover; flex-shrink: 0;
+    }
+    .map-event-info h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 4px; }
+    .map-event-info p { font-size: 0.78rem; color: var(--text-secondary); }
+    .map-event-info .distance { color: var(--accent-light); font-weight: 600; font-size: 0.78rem; margin-top: 4px; }
+
+    .map-container {
+      flex: 1; position: relative;
+      background: var(--bg-card);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .map-placeholder {
+      text-align: center; max-width: 400px; padding: 40px;
+    }
+    .map-placeholder .map-icon { font-size: 4rem; margin-bottom: 16px; }
+    .map-placeholder h3 { font-size: 1.3rem; margin-bottom: 8px; }
+    .map-placeholder p { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 20px; }
+    .map-placeholder code {
+      display: block; padding: 12px 16px;
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: var(--radius-xs);
+      font-size: 0.8rem; color: var(--accent-light);
+      text-align: left; margin-bottom: 20px; word-break: break-all;
+    }
+
+    /* Mock map markers */
+    .mock-map {
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(circle at 30% 40%, rgba(93,63,211,0.15) 0%, transparent 40%),
+        radial-gradient(circle at 70% 60%, rgba(123,97,255,0.1) 0%, transparent 35%),
+        radial-gradient(circle at 50% 50%, rgba(93,63,211,0.05) 0%, transparent 60%);
+    }
+    .map-pin {
+      position: absolute;
+      width: 40px; height: 40px;
+      border-radius: 50% 50% 50% 0;
+      background: var(--gradient);
+      transform: rotate(-45deg);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: var(--transition);
+      box-shadow: 0 4px 16px var(--accent-glow);
+      z-index: 2;
+    }
+    .map-pin:hover { transform: rotate(-45deg) scale(1.2); }
+    .map-pin span { transform: rotate(45deg); font-size: 1rem; }
+    .map-pin-pulse {
+      position: absolute; inset: -8px;
+      border-radius: 50%; border: 2px solid var(--accent-light);
+      animation: pinPulse 2s infinite;
+    }
+    @keyframes pinPulse {
+      0% { transform: scale(0.8); opacity: 1; }
+      100% { transform: scale(1.6); opacity: 0; }
+    }
+
+    .pin-tooltip {
+      position: absolute; bottom: calc(100% + 12px); left: 50%;
+      transform: translateX(-50%) rotate(45deg);
+      display: none;
+    }
+    .pin-tooltip-inner {
+      transform: rotate(-45deg);
+      background: var(--bg-glass); backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--border); border-radius: var(--radius-xs);
+      padding: 10px 14px; white-space: nowrap;
+      box-shadow: var(--shadow);
+    }
+    .pin-tooltip-inner strong { display: block; font-size: 0.85rem; }
+    .pin-tooltip-inner span { font-size: 0.75rem; color: var(--text-secondary); }
+    .map-pin:hover .pin-tooltip { display: block; }
+
+    .nearby-badge {
+      position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%);
+      padding: 10px 24px;
+      background: var(--bg-glass); backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--border); border-radius: 50px;
+      font-size: 0.85rem; font-weight: 500; z-index: 5;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .nearby-badge .badge-dot { width: 8px; height: 8px; border-radius: 50%; background: #4ade80; }
+
+    @media (max-width: 768px) {
+      .map-page { flex-direction: column; }
+      .map-sidebar { width: 100%; max-height: 40vh; border-right: none; border-bottom: 1px solid var(--border); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-container">
+      <a href="../index.html" class="nav-logo">
+        <span class="logo-icon">◈</span>
+        <span class="logo-text">VYBE</span>
+      </a>
+
+      <!-- Mimicking Ticketbay Layout -->
+      <div class="nav-actions">
+        <!-- Search Pill -->
+        <button class="nav-search-pill" id="navSearchTrigger">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+          <span>Search</span>
+        </button>
+
+        <!-- Heart Icon -->
+        <button class="btn-icon" aria-label="Saved Events">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+          </svg>
+        </button>
+
+        <!-- Dropdown Menu -->
+        <div class="nav-dropdown-wrapper">
+          <button class="btn-icon" id="hamburger" aria-label="User Menu">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+          </button>
+          
+          <div class="nav-dropdown" id="mobileMenu">
+            <a href="../index.html" class="dropdown-item">Home</a>
+            <a href="map.html" class="dropdown-item">Map View</a>
+            <button id="themeToggle" class="dropdown-item">Toggle Theme</button>
+            <div class="dropdown-divider"></div>
+            <button id="signInBtn" class="dropdown-item">Sign In</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="map-page">
+    <!-- Sidebar -->
+    <div class="map-sidebar">
+      <h2>📍 Events Near You</h2>
+      <div class="map-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" placeholder="Search locations…" id="mapSearchInput" />
+      </div>
+      <div class="map-event-list" id="mapEventList"></div>
+    </div>
+
+    <!-- Map Area -->
+    <div class="map-container">
+      <div class="mock-map">
+        <!-- Pins placed visually -->
+        <div class="map-pin" style="top:25%;left:35%"><span>🎵</span><div class="map-pin-pulse"></div>
+          <div class="pin-tooltip"><div class="pin-tooltip-inner"><strong>Neon Dreams Festival</strong><span>Brooklyn Mirage · $45</span></div></div>
+        </div>
+        <div class="map-pin" style="top:40%;left:55%"><span>💻</span>
+          <div class="pin-tooltip"><div class="pin-tooltip-inner"><strong>AI & Future Summit</strong><span>Javits Center · $120</span></div></div>
+        </div>
+        <div class="map-pin" style="top:60%;left:30%"><span>🍽️</span>
+          <div class="pin-tooltip"><div class="pin-tooltip-inner"><strong>Harvest & Vine</strong><span>Hudson Valley · $35</span></div></div>
+        </div>
+        <div class="map-pin" style="top:35%;left:70%"><span>🎨</span>
+          <div class="pin-tooltip"><div class="pin-tooltip-inner"><strong>Contemporary Art Walk</strong><span>Chelsea · Free</span></div></div>
+        </div>
+        <div class="map-pin" style="top:55%;left:50%"><span>🎷</span><div class="map-pin-pulse"></div>
+          <div class="pin-tooltip"><div class="pin-tooltip-inner"><strong>Jazz Under The Stars</strong><span>Lincoln Center · $55</span></div></div>
+        </div>
+      </div>
+
+      <div class="nearby-badge">
+        <span class="badge-dot" style="animation:pulse 2s infinite"></span>
+        5 events within 25 km
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="../js/animations.js"></script>
+  <script src="../js/components.js"></script>
+  <script>
+    // Theme
+    const saved = localStorage.getItem('vybe-theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', saved);
+    document.getElementById('themeToggle').addEventListener('click', () => {
+      const c = document.documentElement.getAttribute('data-theme');
+      const n = c === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', n);
+      localStorage.setItem('vybe-theme', n);
+    });
+
+    // Map sidebar events
+    const events = [
+      { title:'Neon Dreams Festival', venue:'Brooklyn Mirage, NY', date:'May 10 · 8PM', distance:'2.4 km', img:'../assets/images/event4.png' },
+      { title:'AI & Future Summit', venue:'Javits Center, NY', date:'May 12 · 9AM', distance:'5.1 km', img:'../assets/images/event2.png' },
+      { title:'Harvest & Vine', venue:'Hudson Valley, NY', date:'May 18 · 12PM', distance:'12 km', img:'../assets/images/event3.png' },
+      { title:'Contemporary Art Walk', venue:'Chelsea, NY', date:'May 24 · 2PM', distance:'3.8 km', img:'../assets/images/event1.png' },
+      { title:'Jazz Under The Stars', venue:'Lincoln Center, NY', date:'Jun 20 · 7PM', distance:'4.2 km', img:'../assets/images/event1.png' },
+    ];
+    const list = document.getElementById('mapEventList');
+    events.forEach(ev => {
+      list.innerHTML += `
+        <div class="map-event-item" onclick="window.location.href='event.html'">
+          <img src="${ev.img}" alt="${ev.title}" />
+          <div class="map-event-info">
+            <h4>${ev.title}</h4>
+            <p>${ev.date}</p>
+            <p>${ev.venue}</p>
+            <div class="distance">📍 ${ev.distance} away</div>
+          </div>
+        </div>
+      `;
+    });
+
+    // Search filter
+    document.getElementById('mapSearchInput').addEventListener('input', function() {
+      const q = this.value.toLowerCase();
+      document.querySelectorAll('.map-event-item').forEach(item => {
+        const text = item.textContent.toLowerCase();
+        item.style.display = text.includes(q) ? 'flex' : 'none';
+      });
+    });
+  </script>
+</body>
+</html>

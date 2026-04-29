@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Event details – VYBE Events Discovery" />
+  <title>Neon Dreams Festival 2026 – VYBE</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Syne:wght@700;800&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="../css/styles.css" />
+  <style>
+    /* === Event Detail Page Styles === */
+    .event-hero {
+      position: relative;
+      height: 55vh;
+      min-height: 380px;
+      overflow: hidden;
+    }
+
+    .event-hero img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .event-hero-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(10, 10, 15, 0.3) 0%, var(--bg) 95%);
+    }
+
+    .event-hero-content {
+      position: absolute;
+      bottom: 40px;
+      left: 0;
+      right: 0;
+      padding: 0 24px;
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    .event-hero-content .event-category-tag {
+      margin-bottom: 12px;
+    }
+
+    .event-hero-content h1 {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 800;
+      margin-bottom: 16px;
+    }
+
+    .event-hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .event-hero-meta .meta-item {
+      font-size: 1rem;
+    }
+
+    .event-layout {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr;
+      gap: 40px;
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+    }
+
+    .event-description h2 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+
+    .event-description p {
+      color: var(--text-secondary);
+      line-height: 1.8;
+      margin-bottom: 24px;
+    }
+
+    .whos-going {
+      margin-top: 32px;
+    }
+
+    .whos-going h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .going-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .going-user {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      font-size: 0.85rem;
+      transition: var(--transition);
+      cursor: pointer;
+    }
+
+    .going-user:hover {
+      border-color: var(--accent);
+    }
+
+    .going-user .avatar {
+      width: 28px;
+      height: 28px;
+      font-size: 0.65rem;
+      margin-left: 0;
+    }
+
+    .going-user .user-badge {
+      font-size: 0.65rem;
+      padding: 2px 6px;
+      background: rgba(93, 63, 211, 0.2);
+      color: var(--accent-light);
+      border-radius: 50px;
+    }
+
+    /* Comment section */
+    .comments-section {
+      margin-top: 40px;
+    }
+
+    .comments-section h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .comment-input-wrapper {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .comment-input-wrapper input {
+      flex: 1;
+      padding: 12px 18px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      color: var(--text);
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    .comment-input-wrapper input:focus {
+      border-color: var(--accent);
+    }
+
+    .comment {
+      display: flex;
+      gap: 12px;
+      padding: 16px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .comment .avatar {
+      width: 36px;
+      height: 36px;
+      flex-shrink: 0;
+      font-size: 0.7rem;
+      margin-left: 0;
+    }
+
+    .comment-body {
+      flex: 1;
+    }
+
+    .comment-body .comment-author {
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-bottom: 4px;
+    }
+
+    .comment-body .comment-text {
+      color: var(--text-secondary);
+      font-size: 0.88rem;
+    }
+
+    .comment-body .comment-time {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-top: 6px;
+    }
+
+    /* Sidebar */
+    .event-sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .sidebar-card {
+      padding: 24px;
+      background: var(--bg-glass);
+      backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+
+    .sidebar-card h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .price-display {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--accent-light);
+      margin-bottom: 4px;
+    }
+
+    .price-note {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      margin-bottom: 20px;
+    }
+
+    .sidebar-card .btn-primary {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .sidebar-detail {
+      display: flex;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-detail svg {
+      flex-shrink: 0;
+      color: var(--accent-light);
+    }
+
+    .sidebar-detail-text {
+      font-size: 0.88rem;
+    }
+
+    .sidebar-detail-text span {
+      display: block;
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+    }
+
+    .map-preview {
+      width: 100%;
+      height: 200px;
+      border-radius: var(--radius-sm);
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: var(--transition);
+      margin-top: 12px;
+    }
+
+    .map-preview:hover {
+      border-color: var(--accent);
+    }
+
+    @media (max-width: 900px) {
+      .event-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-container">
+      <a href="../index.html" class="nav-logo">
+        <span class="logo-icon">◈</span>
+        <span class="logo-text">VYBE</span>
+      </a>
+
+      <!-- Mimicking Ticketbay Layout -->
+      <div class="nav-actions">
+        <!-- Search Pill -->
+        <button class="nav-search-pill" id="navSearchTrigger">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+          <span>Search</span>
+        </button>
+
+        <!-- Heart Icon -->
+        <button class="btn-icon" aria-label="Saved Events">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+          </svg>
+        </button>
+
+        <!-- Dropdown Menu -->
+        <div class="nav-dropdown-wrapper">
+          <button class="btn-icon" id="hamburger" aria-label="User Menu">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+          </button>
+          
+          <div class="nav-dropdown" id="mobileMenu">
+            <a href="../index.html" class="dropdown-item">Home</a>
+            <a href="map.html" class="dropdown-item">Map View</a>
+            <button id="themeToggle" class="dropdown-item">Toggle Theme</button>
+            <div class="dropdown-divider"></div>
+            <button id="signInBtn" class="dropdown-item">Sign In</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Event Hero -->
+  <section class="event-hero">
+    <img src="../assets/images/event4.png" alt="Neon Dreams Festival" />
+    <div class="event-hero-overlay"></div>
+    <div class="event-hero-content">
+      <span class="event-category-tag music">Music</span>
+      <h1>Neon Dreams Festival 2026</h1>
+      <div class="event-hero-meta">
+        <span class="meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18"
+            height="18">
+            <rect x="3" y="4" width="18" height="18" rx="2" />
+            <line x1="16" y1="2" x2="16" y2="6" />
+            <line x1="8" y1="2" x2="8" y2="6" />
+            <line x1="3" y1="10" x2="21" y2="10" />
+          </svg> Saturday, May 10, 2026 · 8:00 PM</span>
+        <span class="meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18"
+            height="18">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+            <circle cx="12" cy="10" r="3" />
+          </svg> Brooklyn Mirage, Brooklyn NY</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Event Content -->
+  <div class="event-layout">
+    <div class="event-main">
+      <div class="event-description">
+        <h2>About This Event</h2>
+        <p>Neon Dreams Festival is a one-of-a-kind immersive electronic music experience that transforms the iconic
+          Brooklyn Mirage into a pulsating wonderland of sound, light, and art.</p>
+        <p>Featuring world-class DJs including Amelie Lens, RÜFÜS DU SOL, and Fred Again.., along with mind-bending
+          laser shows, immersive art installations, and interactive LED gardens. This is not just a festival — it's a
+          journey through sound.</p>
+        <p>The venue features multiple stages, premium VIP areas with bottle service, and a curated food village with
+          NYC's top vendors.</p>
+      </div>
+
+      <!-- Who's Going -->
+      <div class="whos-going">
+        <h3>👥 Who's Going (2,400+)</h3>
+        <div class="going-grid" id="goingGrid"></div>
+      </div>
+
+      <!-- Comments -->
+      <div class="comments-section">
+        <h3>💬 Discussion (42)</h3>
+        <div class="comment-input-wrapper">
+          <input type="text" placeholder="Add a comment…" id="commentInput" />
+          <button class="btn-primary" id="postCommentBtn">Post</button>
+        </div>
+        <div id="commentsContainer">
+          <div class="comment">
+            <div class="avatar" style="background:#7B61FF">AJ</div>
+            <div class="comment-body">
+              <div class="comment-author">Alex Johnson</div>
+              <div class="comment-text">Can't wait for this! Last year's edition was insane 🔥</div>
+              <div class="comment-time">2 hours ago</div>
+            </div>
+          </div>
+          <div class="comment">
+            <div class="avatar" style="background:#F472B6">KL</div>
+            <div class="comment-body">
+              <div class="comment-author">Kim Lee</div>
+              <div class="comment-text">Anyone know if they'll have the silent disco stage again?</div>
+              <div class="comment-time">5 hours ago</div>
+            </div>
+          </div>
+          <div class="comment">
+            <div class="avatar" style="background:#4ADE80">MR</div>
+            <div class="comment-body">
+              <div class="comment-author">Marcus Rivera</div>
+              <div class="comment-text">VIP section is so worth it. The views from up top are unreal.</div>
+              <div class="comment-time">1 day ago</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <aside class="event-sidebar">
+      <div class="sidebar-card">
+        <div class="price-display">$45</div>
+        <div class="price-note">General Admission · Standing</div>
+        <button class="btn-primary" id="getTicketsBtn">Get Tickets</button>
+        <p style="text-align:center;font-size:0.78rem;color:var(--text-secondary);margin-top:10px;">Secure checkout ·
+          Instant confirmation</p>
+      </div>
+
+      <div class="sidebar-card">
+        <h3>Event Details</h3>
+        <div class="sidebar-detail">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+            <rect x="3" y="4" width="18" height="18" rx="2" />
+            <line x1="16" y1="2" x2="16" y2="6" />
+            <line x1="8" y1="2" x2="8" y2="6" />
+            <line x1="3" y1="10" x2="21" y2="10" />
+          </svg>
+          <div class="sidebar-detail-text">Saturday, May 10, 2026<span>8:00 PM – 4:00 AM EDT</span></div>
+        </div>
+        <div class="sidebar-detail">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+            <circle cx="12" cy="10" r="3" />
+          </svg>
+          <div class="sidebar-detail-text">Brooklyn Mirage<span>140 Stewart Ave, Brooklyn, NY 11237</span></div>
+        </div>
+        <div class="sidebar-detail" style="border:none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          </svg>
+          <div class="sidebar-detail-text">2,400+ Attending<span>18+ event · ID required</span></div>
+        </div>
+      </div>
+
+      <div class="sidebar-card">
+        <h3>📍 Location</h3>
+        <a href="map.html" class="map-preview" id="mapPreview">
+          <span>🗺️ View on Interactive Map →</span>
+        </a>
+      </div>
+    </aside>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-bottom">
+        <p>© 2026 VYBE Inc. All rights reserved.</p>
+        <p><a href="../index.html" style="color:var(--accent-light)">← Back to Events</a></p>
+      </div>
+    </div>
+  </footer>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="../js/animations.js"></script>
+  <script src="../js/components.js"></script>
+  <script>
+    // Theme toggle
+    const saved = localStorage.getItem('vybe-theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', saved);
+    document.getElementById('themeToggle').addEventListener('click', () => {
+      const c = document.documentElement.getAttribute('data-theme');
+      const n = c === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', n);
+      localStorage.setItem('vybe-theme', n);
+    });
+
+    // Who's Going
+    const USERS = [
+      { name: 'Alex J.', badge: 'Top Explorer', color: '#7B61FF' },
+      { name: 'Kim L.', badge: 'Early Bird', color: '#F472B6' },
+      { name: 'Marcus R.', badge: '', color: '#4ADE80' },
+      { name: 'Taylor S.', badge: 'Culture Seeker', color: '#FB923C' },
+      { name: 'Dana P.', badge: '', color: '#60A5FA' },
+      { name: 'Jordan W.', badge: 'Globe Trotter', color: '#FACC15' },
+    ];
+    const grid = document.getElementById('goingGrid');
+    USERS.forEach(u => {
+      const initials = u.name.split(' ').map(w => w[0]).join('');
+      const badgeHtml = u.badge ? `<span class="user-badge">${u.badge}</span>` : '';
+      grid.innerHTML += `<div class="going-user"><div class="avatar" style="background:${u.color}">${initials}</div>${u.name}${badgeHtml}</div>`;
+    });
+
+    // Post comment
+    document.getElementById('postCommentBtn').addEventListener('click', () => {
+      const input = document.getElementById('commentInput');
+      if (!input.value.trim()) return;
+      const c = document.createElement('div');
+      c.className = 'comment';
+      c.innerHTML = `<div class="avatar" style="background:#7B61FF">YU</div><div class="comment-body"><div class="comment-author">You</div><div class="comment-text">${input.value}</div><div class="comment-time">Just now</div></div>`;
+      document.getElementById('commentsContainer').prepend(c);
+      input.value = '';
+      VybeComponents.showToast('Comment posted!');
+    });
+
+    // Tickets button
+    document.getElementById('getTicketsBtn').addEventListener('click', () => {
+      VybeComponents.showToast('Ticketing coming soon — connect Supabase!');
+    });
+
+    VybeAnimations.init();
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="VYBE – Discover world-class events near you. Music, Tech, Arts, Food and more." />
+  <title>VYBE – Discover Events That Move You</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+  <!-- ===== NAVBAR ===== -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="nav-logo">
+        <span class="logo-icon">◈</span>
+        <span class="logo-text">VYBE</span>
+      </a>
+
+      <!-- Mimicking Ticketbay Layout -->
+      <div class="nav-actions">
+        <!-- Search Pill -->
+        <button class="nav-search-pill" id="navSearchTrigger">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+          <span>Search</span>
+        </button>
+
+        <!-- Heart Icon -->
+        <button class="btn-icon" aria-label="Saved Events">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+          </svg>
+        </button>
+
+        <!-- Dropdown Menu -->
+        <div class="nav-dropdown-wrapper">
+          <button class="btn-icon" id="hamburger" aria-label="User Menu">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+          </button>
+          
+          <div class="nav-dropdown" id="mobileMenu">
+            <a href="index.html" class="dropdown-item">Home</a>
+            <a href="pages/map.html" class="dropdown-item">Map View</a>
+            <button id="themeToggle" class="dropdown-item">Toggle Theme</button>
+            <div class="dropdown-divider"></div>
+            <button id="signInBtn" class="dropdown-item">Sign In</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ===== HERO SECTION ===== -->
+  <section class="hero" id="hero">
+    <div class="hero-bg">
+      <img src="assets/images/hero_banner.png" alt="Events Hero" class="hero-img" />
+      <div class="hero-overlay"></div>
+      <div class="hero-particles" id="heroParticles"></div>
+    </div>
+
+    <div class="hero-content">
+      <div class="hero-badge">
+        <span class="badge-dot"></span>
+        <span>2,400+ Events Happening Near You</span>
+      </div>
+      <h1 class="hero-title">
+        Discover Events<br/>
+        <span class="gradient-text">That Move You</span>
+      </h1>
+      <p class="hero-subtitle">Music, Tech, Art, Food & more — curated for the moments that matter.</p>
+
+      <div class="hero-search-bar">
+        <div class="hero-search-field">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" id="heroSearchInput" placeholder="What are you looking for?" />
+        </div>
+        <div class="hero-location-field">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <input type="text" id="heroLocationInput" placeholder="Location" value="New York, NY" />
+        </div>
+        <button class="btn-primary hero-search-btn" id="heroSearchBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          Explore
+        </button>
+      </div>
+
+      <div class="hero-stats">
+        <div class="hero-stat"><span class="stat-num">12K+</span><span class="stat-label">Events</span></div>
+        <div class="hero-stat-divider"></div>
+        <div class="hero-stat"><span class="stat-num">340+</span><span class="stat-label">Cities</span></div>
+        <div class="hero-stat-divider"></div>
+        <div class="hero-stat"><span class="stat-num">2M+</span><span class="stat-label">Explorers</span></div>
+      </div>
+    </div>
+
+    <div class="hero-scroll-indicator">
+      <div class="scroll-dot"></div>
+    </div>
+  </section>
+
+  <!-- ===== CATEGORY FILTERS ===== -->
+  <section class="categories-section" id="categories">
+    <div class="container">
+      <div class="category-filters" id="categoryFilters">
+        <button class="cat-btn active" data-category="all">
+          <span class="cat-icon">✦</span> All Events
+        </button>
+        <button class="cat-btn" data-category="music">
+          <span class="cat-icon">🎵</span> Music
+        </button>
+        <button class="cat-btn" data-category="tech">
+          <span class="cat-icon">💻</span> Tech
+        </button>
+        <button class="cat-btn" data-category="art">
+          <span class="cat-icon">🎨</span> Art & Culture
+        </button>
+        <button class="cat-btn" data-category="food">
+          <span class="cat-icon">🍽️</span> Food & Drink
+        </button>
+        <button class="cat-btn" data-category="sports">
+          <span class="cat-icon">⚽</span> Sports
+        </button>
+        <button class="cat-btn" data-category="family">
+          <span class="cat-icon">👨‍👩‍👧</span> Family
+        </button>
+        <button class="cat-btn" data-category="wellness">
+          <span class="cat-icon">🧘</span> Wellness
+        </button>
+      </div>
+
+      <!-- Advanced Filters Toggle -->
+      <div class="filter-bar">
+        <button class="filter-toggle-btn" id="filterToggleBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="10" y1="18" x2="14" y2="18"/></svg>
+          Filters
+        </button>
+        <div class="mood-filters">
+          <button class="mood-btn" data-mood="chill">😌 Chill</button>
+          <button class="mood-btn" data-mood="energetic">⚡ Energetic</button>
+          <button class="mood-btn" data-mood="romantic">💜 Romantic</button>
+          <button class="mood-btn" data-mood="social">🎉 Social</button>
+        </div>
+        <div class="view-toggle">
+          <button class="view-btn active" id="gridViewBtn" aria-label="Grid view">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          </button>
+          <button class="view-btn" id="listViewBtn" aria-label="List view">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><rect x="3" y="4" width="18" height="3"/><rect x="3" y="11" width="18" height="3"/><rect x="3" y="18" width="18" height="3"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Advanced Filter Panel -->
+      <div class="advanced-filters" id="advancedFilters">
+        <div class="filter-panel glass-card">
+          <div class="filter-group">
+            <label class="filter-label">Date Range</label>
+            <div class="date-inputs">
+              <input type="date" class="filter-input" id="dateFrom" />
+              <span>to</span>
+              <input type="date" class="filter-input" id="dateTo" />
+            </div>
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">Price Range: <span id="priceDisplay">$0 – $500</span></label>
+            <div class="price-slider-wrapper">
+              <input type="range" id="priceMin" min="0" max="500" value="0" class="range-slider" />
+              <input type="range" id="priceMax" min="0" max="500" value="500" class="range-slider" />
+            </div>
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">Distance: <span id="distanceDisplay">25 km</span></label>
+            <input type="range" id="distanceSlider" min="1" max="100" value="25" class="range-slider single" />
+          </div>
+          <div class="filter-actions">
+            <button class="btn-ghost" id="clearFiltersBtn">Clear All</button>
+            <button class="btn-primary" id="saveFilterBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              Save Filters
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FEATURED EVENT (SPOTLIGHT) ===== -->
+  <section class="spotlight-section" id="spotlight">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">🔥 Tonight's Spotlight</h2>
+        <a href="#" class="see-all">See all →</a>
+      </div>
+      <div class="spotlight-card glass-card" id="spotlightCard">
+        <div class="spotlight-image">
+          <img src="assets/images/event4.png" alt="Featured Event" />
+          <div class="spotlight-overlay"></div>
+          <div class="spotlight-badge">FEATURED</div>
+        </div>
+        <div class="spotlight-info">
+          <div class="event-category-tag music">Music</div>
+          <h2 class="spotlight-title">Neon Dreams Festival 2026</h2>
+          <p class="spotlight-desc">An immersive electronic music experience with world-class DJs, laser shows, and art installations.</p>
+          <div class="spotlight-meta">
+            <span class="meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Sat, May 10 · 8PM</span>
+            <span class="meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> Brooklyn Mirage, NY</span>
+            <span class="meta-item price">From $45</span>
+          </div>
+          <div class="spotlight-attendees">
+            <div class="avatar-stack" id="spotlightAvatars"></div>
+            <span class="attendee-count">+2,400 going</span>
+          </div>
+          <div class="spotlight-actions">
+            <a href="pages/event.html" class="btn-primary">View Event</a>
+            <button class="btn-ghost btn-icon" id="spotlightSaveBtn" aria-label="Save event">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            </button>
+            <button class="btn-ghost btn-icon" aria-label="Share event">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== RECOMMENDED FOR YOU ===== -->
+  <section class="recommended-section" id="recommended">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">✨ Recommended For You</h2>
+        <a href="#" class="see-all">See all →</a>
+      </div>
+      <div class="recommended-scroll" id="recommendedScroll"></div>
+    </div>
+  </section>
+
+  <!-- ===== MAIN EVENT GRID ===== -->
+  <section class="events-section" id="eventsSection">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title" id="eventsTitle">All Events</h2>
+        <span class="event-count" id="eventCount"></span>
+      </div>
+
+      <!-- Skeleton Grid (shown during loading) -->
+      <div class="event-grid skeleton-grid" id="skeletonGrid">
+        <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-line w70"></div><div class="skeleton-line w50"></div><div class="skeleton-line w40"></div></div>
+        <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-line w70"></div><div class="skeleton-line w50"></div><div class="skeleton-line w40"></div></div>
+        <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-line w70"></div><div class="skeleton-line w50"></div><div class="skeleton-line w40"></div></div>
+        <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-line w70"></div><div class="skeleton-line w50"></div><div class="skeleton-line w40"></div></div>
+        <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-line w70"></div><div class="skeleton-line w50"></div><div class="skeleton-line w40"></div></div>
+        <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-line w70"></div><div class="skeleton-line w50"></div><div class="skeleton-line w40"></div></div>
+      </div>
+
+      <!-- Actual Event Grid -->
+      <div class="event-grid" id="eventGrid"></div>
+
+      <!-- Infinite Scroll Trigger -->
+      <div class="load-more-sentinel" id="loadMoreSentinel">
+        <div class="load-spinner" id="loadSpinner">
+          <div class="spinner-ring"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== BADGES / SOCIAL PROOF ===== -->
+  <section class="badges-section">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">🏅 Explorer Badges</h2>
+      </div>
+      <div class="badges-grid">
+        <div class="badge-card glass-card">
+          <div class="badge-icon">🦅</div>
+          <h3>Top Explorer</h3>
+          <p>Attended 10+ events this month</p>
+        </div>
+        <div class="badge-card glass-card">
+          <div class="badge-icon">⚡</div>
+          <h3>Early Bird</h3>
+          <p>First 100 to book 5 events</p>
+        </div>
+        <div class="badge-card glass-card">
+          <div class="badge-icon">🎭</div>
+          <h3>Culture Seeker</h3>
+          <p>Explored 5 different categories</p>
+        </div>
+        <div class="badge-card glass-card">
+          <div class="badge-icon">🌍</div>
+          <h3>Globe Trotter</h3>
+          <p>Attended events in 3+ cities</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== NEWSLETTER CTA ===== -->
+  <section class="cta-section">
+    <div class="container">
+      <div class="cta-card glass-card">
+        <div class="cta-glow"></div>
+        <h2 class="cta-title">Never Miss a Moment</h2>
+        <p class="cta-subtitle">Get personalized event recommendations delivered to your inbox every week.</p>
+        <div class="cta-form">
+          <input type="email" class="cta-input" id="ctaEmail" placeholder="your@email.com" />
+          <button class="btn-primary" id="ctaSubscribeBtn">Subscribe Free</button>
+        </div>
+        <p class="cta-note">No spam. Unsubscribe anytime.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <div class="nav-logo">
+            <span class="logo-icon">◈</span>
+            <span class="logo-text">VYBE</span>
+          </div>
+          <p>Discover the world's most exciting events, curated for you.</p>
+          <div class="social-links">
+            <a href="#" class="social-link" aria-label="Twitter">𝕏</a>
+            <a href="#" class="social-link" aria-label="Instagram">📸</a>
+            <a href="#" class="social-link" aria-label="TikTok">🎵</a>
+          </div>
+        </div>
+        <div class="footer-col">
+          <h4>Discover</h4>
+          <a href="#">Browse Events</a>
+          <a href="pages/map.html">Map View</a>
+          <a href="#">Trending</a>
+          <a href="#">Categories</a>
+        </div>
+        <div class="footer-col">
+          <h4>Community</h4>
+          <a href="#">For Organizers</a>
+          <a href="#">Create Event</a>
+          <a href="#">Partner Program</a>
+          <a href="#">Blog</a>
+        </div>
+        <div class="footer-col">
+          <h4>Company</h4>
+          <a href="#">About</a>
+          <a href="#">Careers</a>
+          <a href="#">Privacy Policy</a>
+          <a href="#">Terms of Service</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>© 2026 VYBE Inc. All rights reserved.</p>
+        <p>Built for explorers, dreamers & night owls.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ===== AUTH MODAL ===== -->
+  <div class="modal-overlay" id="authModal">
+    <div class="modal glass-card" id="authModalContent">
+      <button class="modal-close" id="modalClose">✕</button>
+      <div class="modal-logo"><span class="logo-icon">◈</span> VYBE</div>
+      <h2 class="modal-title">Welcome Back</h2>
+      <p class="modal-subtitle">Sign in to discover and save your favourite events.</p>
+      <div class="social-auth">
+        <button class="social-auth-btn" id="googleAuthBtn">
+          <svg viewBox="0 0 24 24" width="20" height="20"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+          Continue with Google
+        </button>
+        <button class="social-auth-btn" id="appleAuthBtn">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.7 9.05 7.44c1.3.07 2.22.74 2.98.8 1.14-.23 2.22-.91 3.46-.77 1.47.17 2.57.74 3.28 1.86-3.01 1.85-2.29 5.76.38 6.9-.57 1.56-1.3 3.09-2.1 4.05zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
+          Continue with Apple
+        </button>
+      </div>
+      <div class="auth-divider"><span>or</span></div>
+      <input type="email" class="filter-input" id="authEmail" placeholder="Email address" />
+      <input type="password" class="filter-input" id="authPassword" placeholder="Password" />
+      <button class="btn-primary" style="width:100%; margin-top:12px;" id="authSubmitBtn">Sign In</button>
+      <p class="modal-switch">Don't have an account? <a href="#" id="switchToSignup">Sign Up</a></p>
+    </div>
+  </div>
+
+  <!-- ===== TOAST NOTIFICATION ===== -->
+  <div class="toast" id="toast"></div>
+
+  <!-- ===== SCRIPTS ===== -->
+  <script src="js/animations.js"></script>
+  <script src="js/components.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
