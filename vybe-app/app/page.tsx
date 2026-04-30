@@ -6,6 +6,7 @@ import { ArrowRight, ChevronDown } from 'lucide-react';
 import UpcomingHero from '@/components/home/UpcomingHero';
 import { EventbriteCardList } from '@/components/home/EventbriteCardList';
 import { MOCK_EVENTS } from '@/lib/mockData';
+import EventsInCitySection from '@/components/home/EventsInCitySection';
 import {
   Music, Palette, Heart,
   Sparkles, Plane, Gamepad2, Briefcase, UtensilsCrossed,
@@ -25,7 +26,7 @@ const CATEGORY_ICONS = [
 
 export default function HomePage() {
   const router = useRouter();
-  const [location] = useState('Zimbabwe');
+  const [location] = useState('Harare, Zimbabwe');
   const [page, setPage] = useState(1);
 
   const visible = MOCK_EVENTS.slice(0, Math.min(5, page * 5));
@@ -35,6 +36,8 @@ export default function HomePage() {
 
       <UpcomingHero events={MOCK_EVENTS} locationLabel={location.split(',')[0] || 'Zimbabwe'} />
 
+      {/* Intentional breathing room after hero (noticeably larger than header) */}
+      <div aria-hidden className="h-[calc(var(--nav-h)+16px)] sm:h-24" />
 
       {/* ── EVENT CATEGORIES MARQUEE ── */}
       <section className="relative z-10 pt-12 pb-12 overflow-hidden" style={{ background: 'var(--bg)' }}>
@@ -91,56 +94,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── TRENDING CATEGORIES ── */}
-      <section className="section-pad-sm relative z-10" style={{ background: 'var(--bg)' }}>
-        <div className="container">
-          {/* Section header — Ticketbay: 18px bold, left-aligned, no heavy subtitle */}
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-[var(--text)] tracking-tight">What&apos;s Hot Right Now</h2>
-            <Link
-              href="/events"
-              className="self-start md:self-auto flex items-center gap-2 px-6 py-4 rounded-full bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 transition-colors text-[var(--text)] text-sm font-medium shrink-0 min-h-12"
-            >
-              View all <ArrowRight size={16} />
-            </Link>
-          </div>
-
-          {/* Category card grid */}
-          <div className="bg-gray-50 dark:bg-[#12121c] border border-gray-200 dark:border-white/5 rounded-2xl md:rounded-3xl p-6 md:p-8">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-[var(--text-muted)]">Browse by Category</h3>
-              <Link
-                href="/events"
-                className="hidden sm:flex items-center gap-1 text-blue-500 text-xs font-semibold"
-              >
-                See all <ArrowRight size={12} />
-              </Link>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-              <CategoryCard
-                title="Live Music" desc="Concerts, festivals, and late-night sets."
-                img="https://images.unsplash.com/photo-1459749411175-04bf5292ceea?q=80&w=600&auto=format&fit=crop"
-              />
-              <CategoryCard
-                title="Art & Culture" desc="Galleries, theater, and creative showcases."
-                img="https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?q=80&w=600&auto=format&fit=crop"
-              />
-              <CategoryCard
-                title="Arena Action" desc="Big games, live matches, and fan zones."
-                img="https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?q=80&w=600&auto=format&fit=crop"
-              />
-              <CategoryCard
-                title="Taste Tours" desc="Pop-ups, tastings, and culinary experiences."
-                img="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?q=80&w=600&auto=format&fit=crop"
-              />
-            </div>
-            <Link href="/events" className="sm:hidden flex items-center gap-2 mt-4 text-blue-500 text-xs font-semibold">
-              See all events <ArrowRight size={12} />
-            </Link>
-          </div>
-        </div>
-      </section>
+      {/* ── EVENTS IN CITY (replaces "What's Hot Right Now") ── */}
+      <EventsInCitySection events={MOCK_EVENTS} city="Harare" country="Zimbabwe" />
 
       {/* ── UPCOMING EVENTS LIST ── */}
       <section className="section-pad-sm relative z-10 border-t border-gray-200 dark:border-white/5" style={{ background: 'var(--bg)' }}>
@@ -219,23 +174,5 @@ export default function HomePage() {
       </section>
 
     </div>
-  );
-}
-
-function CategoryCard({ title, desc, img }: { title: string, desc: string, img: string }) {
-  return (
-    <Link href="/events" className="group relative rounded-2xl overflow-hidden block" style={{ height: 'clamp(160px, 28vw, 280px)' }}>
-      <img src={img} alt={title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-      {/* Stronger gradient for better text contrast */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/50 to-black/10" />
-      <div className="absolute inset-0 p-4 sm:p-6 flex flex-col justify-end">
-        <span className="text-[10px] font-bold text-white/70 tracking-[0.12em] mb-1 uppercase">{title.split(' ')[0]}</span>
-        <h4 className="text-white font-black text-lg sm:text-xl leading-tight mb-1">{title}</h4>
-        <p className="text-white/75 text-xs sm:text-sm leading-snug mb-4 line-clamp-1">{desc}</p>
-        <span className="inline-flex items-center gap-2 text-white text-sm font-bold group-hover:gap-4 transition-all duration-300">
-          Explore <ArrowRight size={13} />
-        </span>
-      </div>
-    </Link>
   );
 }

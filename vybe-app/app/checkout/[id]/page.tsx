@@ -7,6 +7,7 @@ import { ShieldCheck, MapPin, Calendar, ArrowLeft, Check, Loader2 } from 'lucide
 import { MOCK_EVENTS } from '@/lib/mockData';
 import { generateTicket, getLoyaltyPoints } from '@/lib/ticketGenerator';
 import { Ticket } from '@/types';
+import EventDateBadge from '@/components/events/EventDateBadge';
 
 const stepVariants = {
   enter:  { opacity: 0, x: 20, scale: 0.98 },
@@ -234,11 +235,16 @@ export default function CheckoutPage() {
                   <div className="relative h-28 rounded-xl overflow-hidden mb-5">
                     <img src={event.image} alt={event.title} className="w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-black/40" />
-                    <div className="absolute bottom-3 left-3 right-3">
-                      <p className="text-white text-sm font-bold line-clamp-1">{event.title}</p>
-                      <p className="text-white/80 type-caption">{event.date}</p>
+                    <div className="absolute top-3 left-3">
+                      <EventDateBadge date={event.date} size="sm" />
                     </div>
                   </div>
+                  <p className="text-base font-black text-[var(--text)] leading-tight line-clamp-2">
+                    {event.title}
+                  </p>
+                  <p className="mt-1 text-sm text-[var(--text-muted)] line-clamp-1">
+                    {event.venue}
+                  </p>
 
                   <div className="space-y-3 type-sm text-[var(--text-muted)] mb-5">
                     <div className="flex justify-between"><span>{tier.name}</span><span>${tier.price}</span></div>

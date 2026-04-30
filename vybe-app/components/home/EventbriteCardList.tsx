@@ -3,22 +3,10 @@
 import Link from 'next/link';
 import { Event } from '@/types';
 import { MapPin, Clock } from 'lucide-react';
+import EventDateBadge from '@/components/events/EventDateBadge';
 
 export function EventbriteCardList({ event }: { event: Event }) {
   const priceLabel = event.price === 0 ? 'Free' : `$${event.price.toFixed(2)}`;
-
-  let month = 'MAY';
-  let day = '01';
-  if (event.date) {
-    const parts = event.date.split(',');
-    if (parts.length > 1) {
-      const monthDay = parts[1].trim().split(' ');
-      if (monthDay.length >= 2) {
-        month = monthDay[0].substring(0, 3).toUpperCase();
-        day = monthDay[1].padStart(2, '0');
-      }
-    }
-  }
 
   return (
     <Link
@@ -34,23 +22,22 @@ export function EventbriteCardList({ event }: { event: Event }) {
         />
       </div>
 
-      {/* Date badge */}
-      <div className="flex flex-col items-center justify-center text-center w-9 shrink-0">
-        <span className="text-[9px] font-bold text-blue-500 uppercase tracking-widest leading-none">{month}</span>
-        <span className="text-2xl font-black text-[var(--text)] leading-tight">{day}</span>
+      {/* Hero-style glass date badge */}
+      <div className="shrink-0">
+        <EventDateBadge date={event.date} size="sm" />
       </div>
 
       {/* Info — takes all remaining space, truncates properly */}
       <div className="flex-1 min-w-0 overflow-hidden">
-        <h3 className="text-sm font-bold text-[var(--text)] leading-tight mb-2 group-hover:text-blue-500 transition-colors line-clamp-2 capitalize">
+        <h3 className="text-base sm:text-lg font-black text-[var(--text)] leading-tight mb-2 group-hover:text-blue-500 transition-colors line-clamp-2 capitalize">
           {event.title.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())}
         </h3>
         <div className="flex flex-col gap-1">
-          <span className="flex items-center gap-2 text-[11px] text-[var(--text-muted)] font-medium truncate">
+          <span className="flex items-center gap-2 text-sm text-[var(--text-muted)] font-medium truncate">
             <MapPin size={10} className="shrink-0 text-blue-400" />
             <span className="truncate">{event.venue}</span>
           </span>
-          <span className="flex items-center gap-2 text-[11px] text-[var(--text-muted)] font-medium">
+          <span className="flex items-center gap-2 text-sm text-[var(--text-muted)] font-medium">
             <Clock size={10} className="shrink-0 text-pink-400" />
             <span>{event.time || event.date}</span>
           </span>

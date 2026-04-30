@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { MOCK_USER, MOCK_EVENTS, MOCK_TICKETS } from '@/lib/mockData';
 import { MapPin, Calendar, Star, User } from 'lucide-react';
+import EventDateBadge from '@/components/events/EventDateBadge';
 
 const fadeUp = (delay = 0) => ({
   initial: { opacity: 0, y: 16 },
@@ -121,9 +122,12 @@ export default function ProfilePage() {
               <motion.div key={t.id} {...fadeUp(i * 0.06)}
                 className="card rounded-xl p-4 flex items-center gap-4">
                 <img src={t.event.image} alt={t.event.title} className="w-14 h-14 rounded-xl object-cover shrink-0" />
+                <div className="shrink-0 hidden sm:block">
+                  <EventDateBadge date={t.event.date} size="sm" />
+                </div>
                 <div className="flex-1 min-w-0">
-                  <p className="type-sm font-semibold text-[var(--text)] line-clamp-1">{t.event.title}</p>
-                  <p className="type-caption text-[var(--text-muted)] mt-0.5">{t.event.date} · {t.tier.name}</p>
+                  <p className="text-base font-black text-[var(--text)] line-clamp-2 leading-snug">{t.event.title}</p>
+                  <p className="type-caption text-[var(--text-muted)] mt-1">{t.tier.name}</p>
                 </div>
                 <span className={`badge ${t.status === 'upcoming' ? 'badge-success' : ''}`}>
                   {t.status}
@@ -140,10 +144,15 @@ export default function ProfilePage() {
                 <Link href={`/events/${ev.id}`}
                   className="card rounded-xl overflow-hidden flex gap-3 p-3 hover:border-[var(--border-hover)] transition-all group">
                   <img src={ev.image} alt={ev.title} className="w-16 h-16 rounded-xl object-cover shrink-0" />
+                  <div className="shrink-0 hidden sm:block">
+                    <EventDateBadge date={ev.date} size="sm" />
+                  </div>
                   <div className="min-w-0 py-0.5">
-                    <p className="type-sm font-semibold text-[var(--text)] line-clamp-1 group-hover:text-[var(--accent)] transition-colors">{ev.title}</p>
-                    <p className="type-caption text-[var(--text-muted)] mt-1">{ev.date}</p>
-                    <p className="type-caption font-bold grad-text mt-1">{ev.priceLabel}</p>
+                    <p className="text-base font-black text-[var(--text)] line-clamp-2 leading-snug group-hover:text-[var(--accent)] transition-colors">
+                      {ev.title}
+                    </p>
+                    <p className="text-sm text-[var(--text-muted)] mt-1 line-clamp-1">{ev.venue}</p>
+                    <p className="text-sm font-black grad-text mt-2">{ev.priceLabel}</p>
                   </div>
                 </Link>
               </motion.div>

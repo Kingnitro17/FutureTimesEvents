@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { MOCK_TICKETS } from '@/lib/mockData';
 import { Ticket } from '@/types';
 import { Calendar, MapPin, Share2, Download, ChevronDown, ChevronUp, Ticket as TicketIcon, Plus } from 'lucide-react';
+import EventDateBadge from '@/components/events/EventDateBadge';
 
 const STATUS = {
   upcoming:   { label: 'Upcoming',   cls: 'badge-success' },
@@ -107,9 +108,12 @@ export default function TicketsPage() {
                     {/* Info block */}
                     <div className="p-5">
                       <div className="flex items-start justify-between gap-3 mb-3">
-                        <div>
+                        <div className="min-w-0">
                           <span className={`badge ${s.cls} mb-2`}>{s.label}</span>
                           <h3 className="type-h3 text-[var(--text)] leading-tight">{ticket.event.title}</h3>
+                        </div>
+                        <div className="shrink-0 hidden sm:block">
+                          <EventDateBadge date={ticket.event.date} size="sm" />
                         </div>
                         <button
                           onClick={() => setExpanded(isOpen ? null : ticket.id)}

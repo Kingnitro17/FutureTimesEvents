@@ -5,16 +5,9 @@ import { motion } from 'framer-motion';
 import { Calendar, MapPin, ChevronRight } from 'lucide-react';
 import type { Event } from '@/types';
 import Card from '@/components/ui/Card';
-
-function dateParts(date: string) {
-  // Expected like "Sat, May 9" → ("MAY", "09") fallback.
-  const m = date.match(/,\s*([A-Za-z]{3})\s+(\d{1,2})/);
-  if (!m) return { mon: 'DATE', day: '--' };
-  return { mon: m[1].toUpperCase(), day: m[2].padStart(2, '0') };
-}
+import EventDateBadge from '@/components/events/EventDateBadge';
 
 export default function EventbriteCard({ event, index = 0 }: { event: Event; index?: number }) {
-  const { mon, day } = dateParts(event.date);
   const price = event.price === 0 ? 'Free' : event.priceLabel || `$${event.price}`;
 
   return (
@@ -41,20 +34,9 @@ export default function EventbriteCard({ event, index = 0 }: { event: Event; ind
             />
           </div>
 
-          {/* Date badge (Eventbrite-style) */}
+          {/* Hero-style glass date badge */}
           <div className="absolute left-4 top-4">
-            <div className="glass-strong rounded-2xl overflow-hidden border border-white/10">
-              <div className="px-3 py-1.5 text-[10px] font-black tracking-[0.14em] text-white/90 text-center"
-                style={{ background: 'rgba(0,0,0,0.35)' }}
-              >
-                {mon}
-              </div>
-              <div className="px-3 py-2 text-center bg-white/10">
-                <div className="text-[18px] leading-none font-black text-white" style={{ textShadow: '0 8px 30px rgba(0,0,0,0.5)' }}>
-                  {day}
-                </div>
-              </div>
-            </div>
+            <EventDateBadge date={event.date} size="sm" />
           </div>
 
           {/* Category pill */}
@@ -66,16 +48,16 @@ export default function EventbriteCard({ event, index = 0 }: { event: Event; ind
         </div>
 
         <div className="p-6">
-          <h3 className="text-base font-bold text-[var(--text)] tracking-[-0.02em] leading-snug line-clamp-2">
+          <h3 className="text-base sm:text-lg font-black text-[var(--text)] tracking-[-0.02em] leading-snug line-clamp-2">
             {event.title}
           </h3>
 
           <div className="mt-3 space-y-2">
-            <div className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
+            <div className="flex items-center gap-2 text-sm text-[var(--text-muted)] min-w-0">
               <Calendar size={14} className="shrink-0" />
               <span className="line-clamp-1">{event.date} · {event.time}</span>
             </div>
-            <div className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
+            <div className="flex items-center gap-2 text-sm text-[var(--text-muted)] min-w-0">
               <MapPin size={14} className="shrink-0" />
               <span className="line-clamp-1">{event.venue}</span>
             </div>

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Calendar, MapPin, Heart, Share2, Star, ChevronRight, Users } from 'lucide-react';
 import { Event } from '@/types';
 import Card from '@/components/ui/Card';
+import EventDateBadge from '@/components/events/EventDateBadge';
 
 function RadialCapacity({ pct, color }: { pct: number; color: string }) {
   const r = 13;
@@ -78,8 +79,10 @@ export default function EventCard({ event, index = 0, variant = 'default' }: Eve
         transition={{ duration: 0.42, delay: index * 0.06, ease: 'easeOut' }}
         whileHover={{ y: -3 }}
       >
-        <Link href={`/events/${event.id}`}
-          className="flex gap-4 p-4 rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] hover:border-[var(--border-hover)] hover:shadow-[var(--shadow)] transition-all group">
+        <Link
+          href={`/events/${event.id}`}
+          className="flex gap-4 p-5 rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] hover:border-[var(--border-hover)] hover:shadow-[var(--shadow)] transition-all group"
+        >
           <div className="relative w-16 h-16 rounded-xl overflow-hidden shrink-0">
             {!imgLoaded && <div className="absolute inset-0 skeleton" />}
             <img src={event.image} alt={event.title}
@@ -88,9 +91,14 @@ export default function EventCard({ event, index = 0, variant = 'default' }: Eve
             />
           </div>
           <div className="flex-1 min-w-0 py-1">
-            <p className="text-sm font-semibold text-[var(--text)] line-clamp-1 group-hover:text-[var(--accent)] transition-colors">{event.title}</p>
-            <p className="text-xs text-[var(--text-muted)] mt-1 line-clamp-1 flex items-center gap-1"><Calendar size={10} />{event.date}</p>
-            <p className="text-xs font-bold mt-1 grad-text">{isFree ? 'Free' : event.priceLabel}</p>
+            <p className="text-base font-black text-[var(--text)] line-clamp-2 group-hover:text-[var(--accent)] transition-colors leading-snug">
+              {event.title}
+            </p>
+            <p className="text-sm text-[var(--text-muted)] mt-2 line-clamp-1 flex items-center gap-2 min-w-0">
+              <Calendar size={12} className="shrink-0" />
+              <span className="truncate">{event.date}</span>
+            </p>
+            <p className="text-sm font-black mt-2 grad-text">{isFree ? 'Free' : event.priceLabel}</p>
           </div>
         </Link>
       </motion.div>
@@ -120,15 +128,23 @@ export default function EventCard({ event, index = 0, variant = 'default' }: Eve
         {/* Gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
-        {/* Top badges */}
-        <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
-          <span className="badge text-white text-[10px] px-4 py-1 rounded-full font-bold"
-            style={{ background: catGrad }}>
+        {/* Hero-style date badge */}
+        <div className="absolute top-4 left-4">
+          <EventDateBadge date={event.date} size="sm" />
+        </div>
+
+        {/* Top-right badges */}
+        <div className="absolute top-4 right-4 flex flex-col items-end gap-2">
+          <span
+            className="badge text-white text-[10px] px-4 py-1 rounded-full font-bold"
+            style={{ background: catGrad }}
+          >
             {event.categoryLabel}
           </span>
           {event.featured && (
             <span className="badge badge-grad text-[10px] px-4 py-1 rounded-full flex items-center gap-2">
-              <Star size={8} fill="currentColor" />FEATURED
+              <Star size={8} fill="currentColor" />
+              FEATURED
             </span>
           )}
         </div>
@@ -154,19 +170,18 @@ export default function EventCard({ event, index = 0, variant = 'default' }: Eve
       {/* ── BODY ── */}
       <Link href={`/events/${event.id}`} className="block">
         <div className="p-6">
-          {/* Title: Ticketbay uses font-bold uppercase ~14px */}
-          <h3 className="text-[13px] font-bold text-[var(--text)] leading-snug mb-2 line-clamp-2 uppercase tracking-wide group-hover:text-[var(--accent)] transition-colors duration-200">
+          <h3 className="text-base sm:text-lg font-black text-[var(--text)] leading-snug mb-3 line-clamp-2 tracking-tight group-hover:text-[var(--accent)] transition-colors duration-200">
             {event.title}
           </h3>
 
           <div className="space-y-1 mb-4">
-            <div className="flex items-center gap-2 text-[11px] text-[var(--text-muted)]">
-              <Calendar size={10} className="shrink-0" />
-              <span>{event.date} · {event.time}</span>
+            <div className="flex items-center gap-2 text-sm text-[var(--text-muted)] min-w-0">
+              <Calendar size={12} className="shrink-0" />
+              <span className="truncate">{event.date} · {event.time}</span>
             </div>
-            <div className="flex items-center gap-2 text-[11px] text-[var(--text-muted)]">
-              <MapPin size={10} className="shrink-0" />
-              <span className="line-clamp-1 uppercase">{event.venue}</span>
+            <div className="flex items-center gap-2 text-sm text-[var(--text-muted)] min-w-0">
+              <MapPin size={12} className="shrink-0" />
+              <span className="truncate">{event.venue}</span>
             </div>
           </div>
 

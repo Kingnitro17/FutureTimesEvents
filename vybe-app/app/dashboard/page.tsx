@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MOCK_EVENTS, MOCK_TICKETS } from '@/lib/mockData';
 import { TrendingUp, Ticket, Users, DollarSign, Eye, Pencil, Copy, Download, Plus, QrCode } from 'lucide-react';
+import EventDateBadge from '@/components/events/EventDateBadge';
 
 const fadeUp = (delay = 0) => ({
   initial: { opacity: 0, y: 16 },
@@ -136,9 +137,16 @@ export default function DashboardPage() {
                       {MOCK_EVENTS.slice(0, 3).map((ev) => (
                         <div key={ev.id} className="flex flex-col sm:flex-row gap-4 p-4 rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] hover:border-[var(--border-hover)] transition-colors group">
                           <img src={ev.image} alt={ev.title} className="w-full sm:w-24 h-32 sm:h-24 rounded-lg object-cover shrink-0" />
+                          <div className="shrink-0 hidden sm:block">
+                            <EventDateBadge date={ev.date} size="sm" />
+                          </div>
                           <div className="flex-1 min-w-0 flex flex-col justify-center">
-                            <h3 className="font-semibold text-[var(--text)] line-clamp-1 group-hover:text-[var(--accent)] transition-colors">{ev.title}</h3>
-                            <p className="type-caption text-[var(--text-muted)] mt-1">{ev.date} · {ev.attendees} Attendees</p>
+                            <h3 className="text-base sm:text-lg font-black text-[var(--text)] line-clamp-2 leading-snug group-hover:text-[var(--accent)] transition-colors">
+                              {ev.title}
+                            </h3>
+                            <p className="text-sm text-[var(--text-muted)] mt-1 line-clamp-1">
+                              {ev.venue} · {ev.attendees} Attendees
+                            </p>
                             <div className="flex flex-wrap gap-2 mt-3">
                               <button className="btn btn-sm btn-primary py-1.5 px-3 text-xs"><Eye size={12}/> View</button>
                               <button className="btn btn-sm btn-ghost py-1.5 px-3 text-xs"><Pencil size={12}/> Edit</button>

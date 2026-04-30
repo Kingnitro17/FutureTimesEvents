@@ -1,11 +1,11 @@
 'use client';
-import { useState, useEffect, useRef, type ComponentType } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Bell, User, Settings, Ticket, Shield, Sun, Moon,
-  Search, Menu, X, ChevronRight, LogOut, Plus, Zap, Map, Heart, Home
+  Search, Heart, Home
 } from 'lucide-react';
 
 const DROPDOWN_ITEMS = [
@@ -164,124 +164,6 @@ export default function Navbar() {
           </div>
         </div>
       </motion.nav>
-
-      {/* ── MOBILE BOTTOM NAV ── */}
-      <motion.div
-        initial={{ y: 120, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ type: 'spring', stiffness: 320, damping: 32, delay: 0.15 }}
-        className="fixed bottom-0 left-0 right-0 z-50 sm:hidden flex justify-center"
-        style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 16px)', paddingInline: '16px' }}
-      >
-        {/* Floating pill container */}
-        <div
-          className="w-full max-w-sm flex items-center justify-around px-2 py-2 rounded-[2rem]"
-          style={{
-            background: dark
-              ? 'rgba(10,10,20,0.72)'
-              : 'rgba(255,255,255,0.82)',
-            backdropFilter: 'blur(40px) saturate(200%)',
-            WebkitBackdropFilter: 'blur(40px) saturate(200%)',
-            border: dark ? '1px solid rgba(255,255,255,0.09)' : '1px solid rgba(0,0,0,0.08)',
-            boxShadow: dark
-              ? '0 8px 40px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06)'
-              : '0 8px 40px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.9)',
-          }}
-        >
-          <MobileNavItem href="/"        icon={Home}   label="Home"    active={pathname === '/'}        dark={dark} index={0} />
-          <MobileNavItem href="/events"  icon={Search} label="Explore" active={pathname === '/events'}  dark={dark} index={1} />
-          <MobileNavItem href="/tickets" icon={Ticket} label="Tickets" active={pathname === '/tickets'} dark={dark} index={2} />
-          <MobileNavItem href="/map"     icon={Map}    label="Map"     active={pathname === '/map'}     dark={dark} index={3} />
-          <MobileNavItem href="/profile" icon={User}   label="Profile" active={pathname === '/profile'} dark={dark} index={4} />
-        </div>
-      </motion.div>
     </>
   );
 }
-
-function MobileNavItem({
-  href, icon: Icon, label, active, dark, index,
-}: {
-  href: string; icon: ComponentType<{ size?: number; strokeWidth?: number; className?: string }>; label: string; active: boolean; dark: boolean; index: number;
-}) {
-  return (
-    <Link href={href} className="relative flex flex-col items-center justify-center w-14 py-2 group">
-
-      {/* Active background pill — shared layoutId for smooth sliding */}
-      <AnimatePresence>
-        {active && (
-          <motion.div
-            layoutId="mob-nav-pill"
-            className="absolute inset-0 rounded-[1.25rem]"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            transition={{ type: 'spring', stiffness: 420, damping: 30 }}
-            style={{
-              background: 'linear-gradient(135deg, rgba(114,34,227,0.22), rgba(79,70,229,0.18))',
-              boxShadow: '0 2px 16px rgba(114,34,227,0.25)',
-            }}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Icon + label */}
-      <motion.div
-        animate={{
-          scale: active ? 1.12 : 1,
-          y: active ? -1 : 0,
-        }}
-        transition={{ type: 'spring', stiffness: 500, damping: 28 }}
-        className="relative z-10 flex flex-col items-center gap-0.5"
-      >
-        {/* Icon glow on active */}
-        {active && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.5 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute -inset-2 rounded-full blur-md"
-            style={{ background: 'rgba(114,34,227,0.18)', zIndex: -1 }}
-          />
-        )}
-
-        <motion.div
-          animate={{ color: active ? '#9B5EFF' : dark ? '#86869e' : '#78788c' }}
-          transition={{ duration: 0.2 }}
-        >
-          <Icon
-            size={22}
-            strokeWidth={active ? 2.5 : 1.8}
-          />
-        </motion.div>
-
-        <motion.span
-          animate={{
-            color: active ? '#9B5EFF' : dark ? '#86869e' : '#78788c',
-            fontWeight: active ? 700 : 500,
-          }}
-          transition={{ duration: 0.2 }}
-          className="text-[9px] leading-none"
-        >
-          {label}
-        </motion.span>
-      </motion.div>
-
-      {/* Active dot */}
-      <AnimatePresence>
-        {active && (
-          <motion.div
-            layoutId="mob-nav-dot"
-            initial={{ opacity: 0, scaleX: 0 }}
-            animate={{ opacity: 1, scaleX: 1 }}
-            exit={{ opacity: 0, scaleX: 0 }}
-            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-            className="absolute -bottom-0.5 h-[3px] w-5 rounded-full"
-            style={{ background: 'linear-gradient(90deg, #7222E3, #9B5EFF)' }}
-          />
-        )}
-      </AnimatePresence>
-    </Link>
-  );
-}
-
