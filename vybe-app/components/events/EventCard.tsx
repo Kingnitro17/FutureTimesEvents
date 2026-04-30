@@ -79,7 +79,7 @@ export default function EventCard({ event, index = 0, variant = 'default' }: Eve
         whileHover={{ y: -3 }}
       >
         <Link href={`/events/${event.id}`}
-          className="flex gap-3 p-3 rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] hover:border-[var(--border-hover)] hover:shadow-[var(--shadow)] transition-all group">
+          className="flex gap-4 p-4 rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] hover:border-[var(--border-hover)] hover:shadow-[var(--shadow)] transition-all group">
           <div className="relative w-16 h-16 rounded-xl overflow-hidden shrink-0">
             {!imgLoaded && <div className="absolute inset-0 skeleton" />}
             <img src={event.image} alt={event.title}
@@ -87,7 +87,7 @@ export default function EventCard({ event, index = 0, variant = 'default' }: Eve
               className={`w-full h-full object-cover transition-opacity duration-300 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
             />
           </div>
-          <div className="flex-1 min-w-0 py-0.5">
+          <div className="flex-1 min-w-0 py-1">
             <p className="text-sm font-semibold text-[var(--text)] line-clamp-1 group-hover:text-[var(--accent)] transition-colors">{event.title}</p>
             <p className="text-xs text-[var(--text-muted)] mt-1 line-clamp-1 flex items-center gap-1"><Calendar size={10} />{event.date}</p>
             <p className="text-xs font-bold mt-1 grad-text">{isFree ? 'Free' : event.priceLabel}</p>
@@ -121,20 +121,20 @@ export default function EventCard({ event, index = 0, variant = 'default' }: Eve
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
         {/* Top badges */}
-        <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
-          <span className="badge text-white text-[10px] px-2.5 py-1 rounded-full font-bold"
+        <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
+          <span className="badge text-white text-[10px] px-4 py-1 rounded-full font-bold"
             style={{ background: catGrad }}>
             {event.categoryLabel}
           </span>
           {event.featured && (
-            <span className="badge badge-grad text-[10px] px-2.5 py-1 rounded-full flex items-center gap-1">
+            <span className="badge badge-grad text-[10px] px-4 py-1 rounded-full flex items-center gap-2">
               <Star size={8} fill="currentColor" />FEATURED
             </span>
           )}
         </div>
 
         {/* Price — bottom left, Ticketbay style: text-base font-black */}
-        <div className="absolute bottom-3 left-3">
+        <div className="absolute bottom-4 left-4">
           <span className="text-base font-black text-white"
             style={{ textShadow: '0 1px 8px rgba(0,0,0,0.8)' }}>
             {isFree ? 'Free' : event.priceLabel}
@@ -145,7 +145,7 @@ export default function EventCard({ event, index = 0, variant = 'default' }: Eve
         <motion.button
           whileHover={{ scale: 1.15 }} whileTap={{ scale: 0.88 }}
           onClick={e => { e.preventDefault(); setLiked(v => !v); }}
-          className="absolute bottom-3 right-3 w-8 h-8 rounded-full flex items-center justify-center bg-white/20 backdrop-blur-md text-white hover:bg-white/30 transition-colors"
+          className="absolute bottom-4 right-4 w-8 h-8 rounded-full flex items-center justify-center bg-white/20 backdrop-blur-md text-white hover:bg-white/30 transition-colors"
         >
           <Heart size={14} fill={liked ? 'currentColor' : 'none'} className={liked ? 'text-red-400' : ''} />
         </motion.button>
@@ -153,18 +153,18 @@ export default function EventCard({ event, index = 0, variant = 'default' }: Eve
 
       {/* ── BODY ── */}
       <Link href={`/events/${event.id}`} className="block">
-        <div className="p-4">
+        <div className="p-6">
           {/* Title: Ticketbay uses font-bold uppercase ~14px */}
           <h3 className="text-[13px] font-bold text-[var(--text)] leading-snug mb-2 line-clamp-2 uppercase tracking-wide group-hover:text-[var(--accent)] transition-colors duration-200">
             {event.title}
           </h3>
 
-          <div className="space-y-1 mb-3">
-            <div className="flex items-center gap-1.5 text-[11px] text-[var(--text-muted)]">
+          <div className="space-y-1 mb-4">
+            <div className="flex items-center gap-2 text-[11px] text-[var(--text-muted)]">
               <Calendar size={10} className="shrink-0" />
               <span>{event.date} · {event.time}</span>
             </div>
-            <div className="flex items-center gap-1.5 text-[11px] text-[var(--text-muted)]">
+            <div className="flex items-center gap-2 text-[11px] text-[var(--text-muted)]">
               <MapPin size={10} className="shrink-0" />
               <span className="line-clamp-1 uppercase">{event.venue}</span>
             </div>
@@ -183,10 +183,10 @@ export default function EventCard({ event, index = 0, variant = 'default' }: Eve
       </Link>
 
       {/* ── FOOTER ── */}
-      <div className="px-4 pb-4 flex items-center justify-between">
+      <div className="px-6 pb-6 flex items-center justify-between">
         <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
           <Link href={`/events/${event.id}`}
-            className="flex items-center gap-1 text-xs font-bold text-white px-3 py-2 rounded-xl"
+            className="min-h-12 flex items-center gap-2 text-xs font-bold text-white px-6 py-2 rounded-xl"
             style={{ background: catGrad }}>
             {isFree ? 'Register' : 'Get Tickets'} <ChevronRight size={12} />
           </Link>

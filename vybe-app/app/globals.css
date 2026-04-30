@@ -225,6 +225,9 @@ body {
   box-shadow: var(--shadow-hover);
   transform: translateY(-4px) scale(1.02);
 }
+
+/* Card padding helper (use instead of ad-hoc p-*) */
+.card-pad { padding: var(--sp-4); } /* 24px */
 /* Gradient glow border on hover */
 .card-glow::before {
   content: '';
@@ -265,15 +268,17 @@ body {
   -webkit-user-select: none;
   user-select: none;
   white-space: nowrap;
+  min-height: 48px;
+  padding-inline: var(--sp-4); /* 24px */
 }
 .btn:hover  { transform: scale(1.02); }
 .btn:active { transform: scale(0.97); }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
 /* Sizes */
-.btn-sm  { padding: 8px 16px;  font-size: 0.8125rem; border-radius: var(--r-lg); }
-.btn-md  { padding: 12px 24px; font-size: 0.875rem;  border-radius: var(--r-lg); }
-.btn-lg  { padding: 16px 32px; font-size: 1rem;      border-radius: var(--r-xl); }
+.btn-sm  { padding-block: var(--sp-2); font-size: 0.8125rem; border-radius: var(--r-lg); } /* 8px */
+.btn-md  { padding-block: var(--sp-3); font-size: 0.875rem;  border-radius: var(--r-lg); } /* 16px */
+.btn-lg  { padding-block: var(--sp-3); font-size: 1rem;      border-radius: var(--r-xl); } /* 16px */
 
 /* Variants */
 .btn-primary  { background: var(--bg-card); border: 1px solid var(--border); color: var(--text); }
@@ -408,6 +413,18 @@ body {
 .animate-spin      { animation: spin 0.7s linear infinite; }
 .animate-spin-slow { animation: spin 6s linear infinite; }
 
+/* Marquee */
+@keyframes marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee 35s linear infinite;
+}
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
 /* ═══════════════════════════════════════════════
    ORB / BACKGROUND BLOBS
 ═══════════════════════════════════════════════ */
@@ -459,13 +476,19 @@ body {
   width: 100%;
   max-width: 1280px;
   margin-inline: auto;
-  /* Responsive padding via clamp — no media queries needed */
-  padding-inline: clamp(16px, 4vw, 32px);
+  padding-inline: var(--sp-3); /* 16px */
 }
 
 /* Section vertical rhythm — use these, not ad-hoc py-* */
-.section-pad    { padding-block: clamp(40px, 5vw, 80px); }
-.section-pad-sm { padding-block: clamp(24px, 3.5vw, 56px); }
+.section-pad    { padding-block: var(--sp-6); } /* 48px */
+.section-pad-sm { padding-block: var(--sp-5); } /* 32px */
+
+@media (min-width: 640px) {
+  .container { padding-inline: var(--sp-4); } /* 24px */
+}
+@media (min-width: 1024px) {
+  .container { padding-inline: var(--sp-5); } /* 32px */
+}
 
 /* ───────────────────────────────────────────────
    MOBILE OVERRIDES (≤480px)
@@ -473,11 +496,10 @@ body {
 ─────────────────────────────────────────────── */
 @media (max-width: 480px) {
   /* Container: always exactly 16px each side on mobile */
-  .container { padding-inline: 16px; }
+  .container { padding-inline: var(--sp-3); }
 
-  /* Section vertical spacing: 20px top+bottom on mobile (= 5 units of 4px) */
-  .section-pad    { padding-block: 20px; }
-  .section-pad-sm { padding-block: 20px; }
+  .section-pad    { padding-block: var(--sp-5); } /* 32px */
+  .section-pad-sm { padding-block: var(--sp-5); } /* 32px */
 }
 
 /* Bottom nav clearance — add to page wrapper when bottom nav is present */

@@ -112,7 +112,7 @@ export default function CheckoutPage() {
               
               <motion.div animate={{ y: [0, -12, 0] }} transition={{ duration: 1.2, repeat: 3, ease: 'easeInOut' }}
                 className="text-7xl mb-6 drop-shadow-xl">🎉</motion.div>
-              <h1 className="type-h1 text-[var(--text)] mb-3">You're going to {event.title}!</h1>
+              <h1 className="type-h1 text-[var(--text)] mb-3">You&apos;re going to {event.title}!</h1>
               <p className="type-body text-[var(--text-muted)] mb-10">Your ticket has been secured and sent to <span className="font-bold">{email}</span>.</p>
 
               <div className="max-w-sm mx-auto card p-6 rounded-3xl mb-8 border-t-4" style={{ borderTopColor: 'var(--accent)' }}>

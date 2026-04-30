@@ -6,12 +6,15 @@ import { ANALYTICS_DATA, HIGH_SPENDERS } from '@/lib/mockData';
 const PIE_DATA = [{ name:'General', value:650 },{ name:'VIP', value:250 },{ name:'Early Bird', value:100 }];
 const PIE_COLORS = ['#FF55C2','#7222E3','#2CC4EA'];
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+type TooltipEntry = { name: string; value: number; color?: string };
+type CustomTooltipProps = { active?: boolean; payload?: TooltipEntry[]; label?: string };
+
+const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
   if (!active || !payload?.length) return null;
   return (
     <div className="glass rounded-xl p-3 border border-[var(--border)] text-sm">
       <p className="font-semibold text-[var(--text)] mb-1">{label}</p>
-      {payload.map((p: any) => (
+      {payload.map((p) => (
         <p key={p.name} style={{ color: p.color }}>{p.name}: {p.name==='revenue'?'$':''}{p.value.toLocaleString()}</p>
       ))}
     </div>

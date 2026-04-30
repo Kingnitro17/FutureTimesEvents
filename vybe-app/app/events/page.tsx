@@ -1,12 +1,11 @@
 'use client';
-import { useState, useEffect, Suspense } from 'react';
+import { useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Search, SlidersHorizontal, ChevronDown, X } from 'lucide-react';
 import EventCard from '@/components/events/EventCard';
 import dynamic from 'next/dynamic';
 const EventsMap = dynamic(() => import('@/components/events/EventsMap'), { ssr: false });
-import SkeletonCard from '@/components/ui/SkeletonCard';
 import { MOCK_EVENTS } from '@/lib/mockData';
 
 const CATEGORIES = [
@@ -33,14 +32,6 @@ function EventsContent() {
   const [search,      setSearch]      = useState(() => searchParams.get('q') || '');
   const [priceMax,    setPriceMax]    = useState(500);
   const [showFilters, setShowFilters] = useState(false);
-
-  // Sync URL params if they change (e.g. back-navigation)
-  useEffect(() => {
-    const q   = searchParams.get('q')   || '';
-    const cat = searchParams.get('cat') || 'all';
-    setSearch(q);
-    setCat(cat);
-  }, [searchParams]);
 
   let events = MOCK_EVENTS.filter(e => {
     if (cat !== 'all' && e.category !== cat) return false;
@@ -72,9 +63,9 @@ function EventsContent() {
       <div className="container py-6 sm:py-10">
 
         {/* Search + Controls */}
-        <motion.div {...fadeUp(0.1)} className="flex flex-col gap-3 mb-6">
+        <motion.div {...fadeUp(0.1)} className="flex flex-col gap-4 mb-6">
           
-          <div className="flex items-center gap-3 px-4 py-3 rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] focus-within:border-[var(--accent)] focus-within:shadow-[0_0_0_3px_rgba(114,34,227,0.1)] transition-all">
+          <div className="flex items-center gap-4 px-4 py-4 rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] focus-within:border-[var(--accent)] focus-within:shadow-[0_0_0_3px_rgba(114,34,227,0.1)] transition-all">
             <Search size={18} className="text-[var(--text-muted)] shrink-0" />
             <input value={search} onChange={e => setSearch(e.target.value)}
               placeholder="Search events, venues, artists…"
@@ -86,7 +77,7 @@ function EventsContent() {
             )}
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <button onClick={() => setShowFilters(v => !v)}
               className={`btn btn-md flex-1 sm:flex-none transition-colors ${showFilters ? 'btn-primary border-[var(--border-hover)]' : 'btn-ghost bg-[var(--bg-card)]'}`}>
               <SlidersHorizontal size={16} /> Filters
@@ -99,7 +90,7 @@ function EventsContent() {
               <div className="absolute right-0 top-full mt-2 w-48 rounded-xl border border-[var(--border)] glass-strong shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20 overflow-hidden">
                 {SORTS.map(s => (
                   <button key={s} onClick={() => setSort(s)}
-                    className={`w-full text-left px-4 py-3 text-sm hover:bg-[var(--bg-secondary)] transition-colors ${sort === s ? 'font-bold text-[var(--accent)] bg-[var(--bg-secondary)]' : 'text-[var(--text)]'}`}>
+                    className={`w-full text-left px-4 py-4 text-sm hover:bg-[var(--bg-secondary)] transition-colors ${sort === s ? 'font-bold text-[var(--accent)] bg-[var(--bg-secondary)]' : 'text-[var(--text)]'}`}>
                     {s}
                   </button>
                 ))}
@@ -117,10 +108,10 @@ function EventsContent() {
                   {/* Category */}
                   <div className="mb-8">
                     <h3 className="text-sm font-bold text-[var(--text)] mb-4">Category</h3>
-                    <div className="flex flex-col gap-1.5">
+                    <div className="flex flex-col gap-2">
                       {CATEGORIES.map(c => (
                         <button key={c.id} onClick={() => setCat(c.id)}
-                          className={`text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          className={`text-left px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                             cat === c.id ? 'bg-[var(--bg-secondary)] text-[var(--text)] shadow-sm' : 'text-[var(--text-muted)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text)]'
                           }`}>
                           {c.label}
@@ -147,7 +138,7 @@ function EventsContent() {
                     <h3 className="text-sm font-bold text-[var(--text)] mb-4">Date</h3>
                     <div className="space-y-2">
                       {['Anytime', 'Today', 'This Weekend', 'Next Week'].map((d, i) => (
-                        <label key={d} className="flex items-center gap-3 cursor-pointer group">
+                        <label key={d} className="flex items-center gap-4 cursor-pointer group">
                           <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${i === 0 ? 'bg-[var(--accent)] border-[var(--accent)]' : 'border-[var(--border)] group-hover:border-[var(--text-muted)]'}`}>
                             {i === 0 && <div className="w-2 h-2 bg-white rounded-sm" />}
                           </div>

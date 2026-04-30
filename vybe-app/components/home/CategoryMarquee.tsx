@@ -38,7 +38,7 @@ export default function CategoryMarquee() {
   return (
     <section className="relative">
       <div
-        className="px-4 sm:px-6 lg:px-12 py-8 sm:py-12 rounded-[2rem]"
+        className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8 rounded-[2rem]"
         style={{
           background:
             'radial-gradient(1200px 520px at 15% 20%, rgba(255,85,194,0.10), transparent 60%), radial-gradient(1200px 520px at 85% 80%, rgba(44,196,234,0.10), transparent 60%)',
@@ -54,7 +54,7 @@ export default function CategoryMarquee() {
             </div>
           </div>
 
-          <div className="relative pb-10 sm:pb-16">
+          <div className="relative pb-8 sm:pb-12">
             <div className="absolute inset-y-0 left-0 w-10 sm:w-16 pointer-events-none z-10" style={{ background: 'linear-gradient(90deg, var(--bg) 0%, transparent 100%)' }} />
             <div className="absolute inset-y-0 right-0 w-10 sm:w-16 pointer-events-none z-10" style={{ background: 'linear-gradient(270deg, var(--bg) 0%, transparent 100%)' }} />
 
@@ -73,9 +73,9 @@ export default function CategoryMarquee() {
                   href={c.href}
                   className="shrink-0"
                 >
-                  <div className="card rounded-3xl px-5 py-4 sm:px-6 sm:py-5 min-w-[210px] sm:min-w-[240px] overflow-hidden">
+                  <div className="card rounded-3xl p-4 sm:p-6 min-w-[210px] sm:min-w-[240px] overflow-hidden">
                     <div className="absolute inset-0 opacity-[0.55]" style={{ background: 'radial-gradient(900px 300px at 50% -20%, rgba(255,255,255,0.10), transparent 60%)' }} />
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                       <div
                         className="w-11 h-11 rounded-2xl flex items-center justify-center border border-white/10"
                         style={{ background: c.gradient, boxShadow: '0 10px 30px rgba(0,0,0,0.12)' }}

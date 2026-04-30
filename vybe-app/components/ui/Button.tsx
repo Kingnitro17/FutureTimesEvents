@@ -25,9 +25,9 @@ interface ButtonProps extends Omit<HTMLMotionProps<'button'>, 'children'> {
 }
 
 const SIZE_CLASSES: Record<Size, string> = {
-  sm: 'px-4 py-2 text-xs gap-1.5 rounded-xl',
-  md: 'px-6 py-3 text-sm gap-2   rounded-2xl',
-  lg: 'px-8 py-4 text-base gap-2  rounded-2xl',
+  sm: 'min-h-12 px-6 py-2 text-xs gap-2 rounded-xl',
+  md: 'min-h-12 px-6 py-4 text-sm gap-2 rounded-2xl',
+  lg: 'min-h-12 px-6 py-4 text-base gap-2 rounded-2xl',
 };
 
 const VARIANT_STYLES: Record<Variant, string> = {

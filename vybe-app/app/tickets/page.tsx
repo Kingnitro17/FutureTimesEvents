@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MOCK_TICKETS } from '@/lib/mockData';
@@ -14,14 +14,17 @@ const STATUS = {
 };
 
 export default function TicketsPage() {
-  const [tickets, setTickets] = useState<Ticket[]>(MOCK_TICKETS);
+  const [tickets, setTickets] = useState<Ticket[]>(() => {
+    if (typeof window === 'undefined') return MOCK_TICKETS;
+    try {
+      const stored = JSON.parse(localStorage.getItem('ed-tickets') || '[]');
+      return Array.isArray(stored) && stored.length > 0 ? [...stored, ...MOCK_TICKETS] : MOCK_TICKETS;
+    } catch {
+      return MOCK_TICKETS;
+    }
+  });
   const [filter, setFilter] = useState<'all'|'upcoming'|'past'>('all');
   const [expanded, setExpanded] = useState<string|null>(null);
-
-  useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem('ed-tickets') || '[]');
-    if (stored.length > 0) setTickets([...stored, ...MOCK_TICKETS]);
-  }, []);
 
   const filtered = tickets.filter(t => {
     if (filter === 'upcoming') return t.status === 'upcoming';

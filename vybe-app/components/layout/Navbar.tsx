@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, type ComponentType } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -25,20 +25,16 @@ const dropVariants = {
 export default function Navbar() {
   const [scrolled,     setScrolled]     = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [dark,         setDark]         = useState(false);
+  const [dark,         setDark]         = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const saved = localStorage.getItem('ed-theme');
+    if (saved === 'dark') return true;
+    if (saved === 'light') return false;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
   const dropRef  = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
   const router = useRouter();
-
-  /* ── Theme management ── */
-  useEffect(() => {
-    const saved = localStorage.getItem('ed-theme');
-    if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-      setDark(true);
-      document.documentElement.classList.add('dark');
-      document.documentElement.setAttribute('data-theme', 'dark');
-    }
-  }, []);
 
   useEffect(() => {
     if (dark) {
@@ -206,7 +202,7 @@ export default function Navbar() {
 function MobileNavItem({
   href, icon: Icon, label, active, dark, index,
 }: {
-  href: string; icon: any; label: string; active: boolean; dark: boolean; index: number;
+  href: string; icon: ComponentType<{ size?: number; strokeWidth?: number; className?: string }>; label: string; active: boolean; dark: boolean; index: number;
 }) {
   return (
     <Link href={href} className="relative flex flex-col items-center justify-center w-14 py-2 group">

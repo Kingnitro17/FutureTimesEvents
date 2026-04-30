@@ -111,10 +111,10 @@ export default function UpcomingHero({
       />
 
       {/* Thin gap strip */}
-      <div className="relative z-10 w-full h-3" />
+      <div className="relative z-10 w-full h-4" />
 
       {/* Hero content */}
-      <div className="relative z-10 w-full pb-48 sm:pb-60">
+      <div className="relative z-10 w-full pb-16 sm:pb-24">
         <div className="container">
           <div className="relative">
 
@@ -140,7 +140,7 @@ export default function UpcomingHero({
                *
                * On mobile we cap the title at 2 lines to prevent vertical overflow.
                */}
-              <div className="relative" style={{ minHeight: 'clamp(420px, 68vh, 760px)' }}>
+              <div className="relative flex flex-col justify-end" style={{ minHeight: 'clamp(420px, 68vh, 760px)' }}>
 
                 {/* Image layer — overflow-hidden lives HERE so the bg image clips to rounded corners */}
                 {/* This does NOT clip the bottom bar because the bar is rendered OUTSIDE this div */}
@@ -183,12 +183,12 @@ export default function UpcomingHero({
                 {/* ── TOP BADGES (absolute, won't push layout) ── */}
                 {/* Date + Price badge — top left */}
                 <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-20">
-                  <div className="bg-black/60 backdrop-blur-xl border border-white/15 rounded-2xl px-5 py-4 shadow-xl min-w-[120px]">
+                  <div className="bg-black/60 backdrop-blur-xl border border-white/15 rounded-2xl px-6 py-4 shadow-xl min-w-[120px]">
                     <p className="type-overline text-white/60 text-[10px] tracking-widest mb-1 text-center">DATE</p>
                     <p className="text-white font-black leading-tight text-base sm:text-lg text-center whitespace-nowrap">
                       {ev.date}
                     </p>
-                    <div className="my-2.5 w-full h-px bg-gradient-to-r from-white/20 to-transparent" />
+                    <div className="my-2 w-full h-px bg-gradient-to-r from-white/20 to-transparent" />
                     <p className="type-overline text-white/60 text-[10px] tracking-widest mb-1 text-center">FROM</p>
                     <p className="text-white font-black leading-tight text-2xl sm:text-3xl text-center">
                       {formatPrice(ev)}
@@ -198,7 +198,7 @@ export default function UpcomingHero({
 
                 {/* Category badge — top right */}
                 <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-20">
-                  <div className="bg-black/50 backdrop-blur-md border border-white/15 rounded-2xl px-5 py-2.5 min-w-[80px]">
+                  <div className="bg-black/50 backdrop-blur-md border border-white/15 rounded-2xl px-6 py-2 min-w-[80px]">
                     <p className="type-overline text-white font-bold text-[10px] tracking-widest text-center whitespace-nowrap">{ev.categoryLabel}</p>
                   </div>
                 </div>
@@ -225,21 +225,20 @@ export default function UpcomingHero({
 
                 {/*
                  * ── BOTTOM CONTENT STACK ──
-                 * FIX 2: Reserved top padding (pt-28 sm:pt-36) ensures the title
-                 * never overlaps the top badges. The content sits in a flex-col
-                 * justify-end layout so title + info panel always anchor to the bottom.
+                 * Fixed: This is now a relative block so it expands the card height naturally
+                 * if the text + buttons are taller than the minHeight.
                  */}
-                <div className="absolute inset-0 flex flex-col justify-end z-20">
+                <div className="relative z-20 flex flex-col justify-end mt-auto px-6 pb-6 sm:px-8 sm:pb-8">
 
-                  {/* Text block — mx-6 keeps text clear of the 2rem rounded corners */}
-                  <div className="mx-6 sm:mx-8 mb-4 pt-28 sm:pt-36">
+                  {/* Text block — padded container keeps text clear of rounded corners */}
+                  <div className="mb-4 pt-48 sm:pt-48">
 
                     {/* Big UPPERCASE title — wraps freely, centered */}
                     <motion.h2
                       initial={{ opacity: 0, y: 12 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.45, ease: 'easeOut' }}
-                      className="font-black text-white leading-[1.08] mb-3 uppercase tracking-wide text-center"
+                      className="font-black text-white leading-[1.08] mb-4 uppercase tracking-wide text-center"
                       style={{
                         fontSize: 'clamp(1.7rem, 7.5vw, 3.8rem)',
                         textShadow: '0 4px 28px rgba(0,0,0,0.95), 0 1px 4px rgba(0,0,0,0.8)',
@@ -253,7 +252,7 @@ export default function UpcomingHero({
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3, ease: 'easeOut', delay: 0.05 }}
-                      className="flex flex-col items-center gap-1.5 mb-5"
+                      className="flex flex-col items-center gap-2 mb-4"
                     >
                       <div className="flex items-center gap-2 text-white/90">
                         <MapPin size={15} className="shrink-0" />
@@ -271,7 +270,7 @@ export default function UpcomingHero({
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, ease: 'easeOut', delay: 0.1 }}
-                    className="mx-6 mb-6 flex items-center justify-between gap-4 px-6 py-5 rounded-2xl bg-black/60 backdrop-blur-2xl border border-white/15"
+                    className="flex items-center justify-between gap-4 p-6 rounded-2xl bg-black/60 backdrop-blur-2xl border border-white/15"
                   >
                     {/* Price block — text-center aligns $? under "Starting from", pl-4 clears the corner */}
                     <div className="min-w-0 pl-4 text-center">
@@ -284,7 +283,7 @@ export default function UpcomingHero({
                     {/* Get Tickets — large prominent button */}
                     <Link
                       href={`/events/${ev.id}`}
-                      className="flex items-center gap-3 font-extrabold text-white rounded-2xl transition-all hover:scale-[1.04] active:scale-[0.97] whitespace-nowrap shrink-0 px-10 py-6 text-xl"
+                      className="min-h-12 flex items-center gap-4 font-extrabold text-white rounded-2xl transition-all hover:scale-[1.04] active:scale-[0.97] whitespace-nowrap shrink-0 px-6 py-4 text-xl"
                       style={{
                         background: 'linear-gradient(135deg, #7222E3, #4F46E5)',
                         boxShadow: '0 10px 36px rgba(114,34,227,0.70)',
