@@ -149,10 +149,12 @@ export default function EventCard({ event, index = 0, variant = 'default' }: Eve
           )}
         </div>
 
-        {/* Price — bottom left, Ticketbay style: text-base font-black */}
-        <div className="absolute bottom-4 left-4">
-          <span className="text-base font-black text-white"
-            style={{ textShadow: '0 1px 8px rgba(0,0,0,0.8)' }}>
+        {/* Price — bottom left: label stacked above price, matching hero */}
+        <div className="absolute bottom-4 left-4 flex flex-col items-start gap-0.5">
+          <span className="text-[9px] font-bold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.65)', textShadow: '0 1px 6px rgba(0,0,0,0.7)' }}>
+            {isFree ? '' : 'Starting from'}
+          </span>
+          <span className="text-base font-black" style={{ color: '#ffffff', textShadow: '0 1px 8px rgba(0,0,0,0.8)' }}>
             {isFree ? 'Free' : event.priceLabel}
           </span>
         </div>
@@ -170,18 +172,21 @@ export default function EventCard({ event, index = 0, variant = 'default' }: Eve
       {/* ── BODY ── */}
       <Link href={`/events/${event.id}`} className="block">
         <div className="p-6">
-          <h3 className="text-base sm:text-lg font-black text-[var(--text)] leading-snug mb-3 line-clamp-2 tracking-tight group-hover:text-[var(--accent)] transition-colors duration-200">
+          <h3
+            className="leading-snug mb-3 line-clamp-2 group-hover:text-[var(--accent)] transition-colors duration-200"
+            style={{ fontSize: 'clamp(1rem,1.5vw+0.75rem,1.125rem)', letterSpacing: '-0.01em' }}
+          >
             {event.title}
           </h3>
 
-          <div className="space-y-1 mb-4">
-            <div className="flex items-center gap-2 text-sm text-[var(--text-muted)] min-w-0">
-              <Calendar size={12} className="shrink-0" />
-              <span className="truncate">{event.date} · {event.time}</span>
+          <div className="space-y-1.5 mb-4">
+            <div className="flex items-center gap-2 min-w-0">
+              <Calendar size={12} className="shrink-0 text-[var(--text-muted)]" />
+              <span className="caption text-[var(--text-muted)] truncate">{event.date} · {event.time}</span>
             </div>
-            <div className="flex items-center gap-2 text-sm text-[var(--text-muted)] min-w-0">
-              <MapPin size={12} className="shrink-0" />
-              <span className="truncate">{event.venue}</span>
+            <div className="flex items-center gap-2 min-w-0">
+              <MapPin size={12} className="shrink-0 text-[var(--text-muted)]" />
+              <span className="caption text-[var(--text-muted)] truncate">{event.venue}</span>
             </div>
           </div>
 

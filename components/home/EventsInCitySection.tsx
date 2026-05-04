@@ -49,29 +49,27 @@ export default function EventsInCitySection({
 
   return (
     <section
-      className="relative z-10"
-      style={{ background: 'var(--bg)', paddingBlock: 'var(--sp-8)' }}
+      className="relative z-10 section-pad"
+      style={{ background: 'var(--bg)' }}
     >
       <div className="container">
-        <div className="flex flex-col gap-5 sm:gap-6">
+        <div className="flex flex-col gap-6 sm:gap-8">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0 text-center sm:text-left">
-              <p className="text-sm font-semibold text-[var(--text-muted)] tracking-tight">
-                Browsing events in
-              </p>
-              <Link
-                href={`/events?city=${encodeURIComponent(city)}`}
-                className="mt-2 inline-flex items-center justify-center sm:justify-start gap-2 text-2xl sm:text-3xl font-black tracking-tight text-[var(--text)] max-w-full"
-              >
-                <span className="inline-flex items-center gap-2 min-w-0">
-                  <MapPin size={18} className="shrink-0 text-[var(--text-muted)]" />
-                  <span className="truncate">{city}</span>
-                </span>
-                <ChevronDown size={18} className="shrink-0 text-[var(--text-muted)]" />
-              </Link>
-              <p className="mt-1 text-sm text-[var(--text-muted)]">
-                {country}
-              </p>
+              <div className="section-title">
+                <span className="overline">Browsing events in</span>
+                <Link
+                  href={`/events?city=${encodeURIComponent(city)}`}
+                  className="mt-0 inline-flex items-center justify-center sm:justify-start gap-2 max-w-full"
+                >
+                  <span className="inline-flex items-center gap-2 min-w-0">
+                    <MapPin size={18} className="shrink-0 text-[var(--text-muted)]" />
+                    <span className="truncate">{city}</span>
+                  </span>
+                  <ChevronDown size={18} className="shrink-0 text-[var(--text-muted)]" />
+                </Link>
+                <p className="caption text-[var(--text-muted)] mt-1">{country}</p>
+              </div>
             </div>
           </div>
 

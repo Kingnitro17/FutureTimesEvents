@@ -29,7 +29,10 @@ export function EventbriteCardList({ event }: { event: Event }) {
 
       {/* Info — takes all remaining space, truncates properly */}
       <div className="flex-1 min-w-0 overflow-hidden">
-        <h3 className="text-base sm:text-lg font-black text-[var(--text)] leading-tight mb-2 group-hover:text-blue-500 transition-colors line-clamp-2 capitalize">
+        <h3
+          className="leading-tight mb-2 group-hover:text-blue-500 transition-colors line-clamp-2"
+          style={{ fontSize: 'clamp(1rem,1.2vw+0.75rem,1.0625rem)' }}
+        >
           {event.title.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())}
         </h3>
         <div className="flex flex-col gap-1">
@@ -44,10 +47,10 @@ export function EventbriteCardList({ event }: { event: Event }) {
         </div>
       </div>
 
-      {/* Price — right-aligned, fixed width, never breaks layout */}
-      <div className="flex flex-col items-end justify-center shrink-0 text-right gap-1">
-        <span className="text-base font-black text-[var(--text)] leading-none">{priceLabel}</span>
-        <span className="text-[9px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">from</span>
+      {/* Price — right-aligned, label above price like hero */}
+      <div className="flex flex-col items-end justify-center shrink-0 text-right gap-0.5">
+        <span className="text-[9px] font-semibold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Starting from</span>
+        <span className="text-base font-black leading-none" style={{ color: 'var(--text)' }}>{priceLabel}</span>
       </div>
     </Link>
   );

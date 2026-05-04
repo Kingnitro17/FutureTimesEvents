@@ -1,15 +1,66 @@
 @import "tailwindcss";
 
+/* ── Tailwind font-family theme tokens ── */
 @theme {
-  --font-sans: var(--font-inter), Inter, system-ui, sans-serif;
-  --font-display: var(--font-syne), Syne, sans-serif;
+  /* Body — Inter (loaded via next/font/google) */
+  --font-sans:    var(--font-inter), Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  /* Headings — Space Grotesk */
+  --font-display: var(--font-space-grotesk), 'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;
+  /* Sub-headings — Raleway */
+  --font-sub:     var(--font-raleway), Raleway, 'Helvetica Neue', Arial, sans-serif;
 }
 
 /* ═══════════════════════════════════════════════
    DESIGN TOKENS — STRICT 8px SYSTEM
 ═══════════════════════════════════════════════ */
 :root {
-  /* Spacing (4/8/16/24/32/48/64/96) */
+  /* ────────────────────────────────────────────────
+     TYPOGRAPHY TOKENS — Future Times Events Brief
+  ──────────────────────────────────────────────── */
+
+  /* Font Families (CSS variables — Tailwind aliases set in @theme above) */
+  --font-body:    var(--font-inter),         Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-heading: var(--font-space-grotesk), 'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;
+  --font-sub:     var(--font-raleway),       Raleway, 'Helvetica Neue', Arial, sans-serif;
+
+  /* Base scale */
+  --base-size:  16px;
+
+  /* Body: 16px → 17px fluid */
+  --body-size:  clamp(1rem, 1rem + 0.2vw, 1.0625rem);
+
+  /* H1: ~32px mobile → 45px desktop (Space Grotesk 700) */
+  --h1-size:    clamp(2rem, 3.5vw + 1.5rem, 2.8125rem);
+
+  /* H2: ~22px mobile → 28px desktop (Raleway 600) */
+  --h2-size:    clamp(1.375rem, 2.2vw + 1rem, 1.75rem);
+
+  /* H3: ~20px mobile → 24px desktop */
+  --h3-size:    clamp(1.25rem, 1.5vw + 0.75rem, 1.5rem);
+
+  /* Caption / label: 14–16px */
+  --caption-size: clamp(0.875rem, 0.5vw + 0.75rem, 1rem);
+
+  /* Weights */
+  --fw-body:    400;
+  --fw-medium:  500;
+  --fw-semi:    600;
+  --fw-bold:    700;
+
+  /* Line heights */
+  --lh-body:    1.5;
+  --lh-heading: 1.15;
+  --lh-sub:     1.25;
+
+  /* Letter spacing */
+  --ls-heading: -0.01em;
+  --ls-sub:     -0.005em;
+  --ls-btn:      0.02em;
+  --ls-overline: 0.12em;
+
+  /* ────────────────────────────────────────────────
+     SPACING — strict 8px grid
+  ──────────────────────────────────────────────── */
   --sp-1:  4px;
   --sp-2:  8px;
   --sp-3:  16px;
@@ -29,7 +80,9 @@
   --r-3xl:  32px;
   --r-full: 9999px;
 
-  /* ── LIGHT MODE PALETTE ── */
+  /* ────────────────────────────────────────────────
+     LIGHT MODE PALETTE
+  ──────────────────────────────────────────────── */
   --bg:           #ffffff;
   --bg-secondary: #f7f7fa;
   --bg-tertiary:  #efeff5;
@@ -104,70 +157,147 @@
 *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 
 html {
+  font-size: var(--base-size); /* 16px root */
   scroll-behavior: smooth;
   text-rendering: optimizeLegibility;
   -webkit-text-size-adjust: 100%;
 }
 
 body {
-  font-family: var(--font-sans);
+  font-family: var(--font-body);
+  font-size: var(--body-size);        /* clamp 16–17px */
+  line-height: var(--lh-body);        /* 1.5 */
+  font-weight: var(--fw-body);        /* 400 */
   background: var(--bg);
   color: var(--text);
-  line-height: 1.6;
-  font-size: 17px;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   transition: background 0.3s ease, color 0.3s ease;
+  max-inline-size: 100%;
+}
+
+/* ── Paragraph default: readable measure ── */
+p {
+  font-family: var(--font-body);
+  font-size: var(--body-size);
+  line-height: var(--lh-body);
+  color: var(--text-secondary);
+  max-inline-size: 72ch;
 }
 
 /* ═══════════════════════════════════════════════
-   TYPOGRAPHY SYSTEM
+   NATIVE HEADING DEFAULTS — NO CHILD LEFT BEHIND
+   Every h1–h6 gets the correct font/size/weight
+   automatically. Class overrides still work.
 ═══════════════════════════════════════════════ */
-/* H1 — 48–64px */
-.type-h1 {
-  font-family: var(--font-display);
-  font-size: clamp(2.5rem, 6vw, 4rem);
-  font-weight: 900;
-  line-height: 1.05;
-  letter-spacing: -0.035em;
+h1 {
+  font-family: var(--font-heading);
+  font-size: var(--h1-size);          /* clamp 32–45px */
+  font-weight: var(--fw-bold);        /* 700 */
+  line-height: var(--lh-heading);     /* 1.15 */
+  letter-spacing: var(--ls-heading);  /* -0.01em */
+  color: var(--text);
 }
-/* H2 — 28–40px */
-.type-h2 {
-  font-family: var(--font-display);
-  font-size: clamp(1.75rem, 3.5vw, 2.5rem);
-  font-weight: 800;
-  line-height: 1.1;
-  letter-spacing: -0.025em;
+
+h2 {
+  font-family: var(--font-sub);
+  font-size: var(--h2-size);          /* clamp 22–28px */
+  font-weight: var(--fw-semi);        /* 600 */
+  line-height: var(--lh-sub);         /* 1.25 */
+  letter-spacing: var(--ls-sub);      /* -0.005em */
+  color: var(--text);
 }
-/* H3 — 20–24px */
-.type-h3 {
-  font-size: clamp(1.25rem, 2vw, 1.5rem);
-  font-weight: 700;
+
+h3 {
+  font-family: var(--font-sub);
+  font-size: var(--h3-size);          /* clamp 20–24px */
+  font-weight: var(--fw-semi);        /* 600 */
+  line-height: var(--lh-sub);
+  letter-spacing: var(--ls-sub);
+  color: var(--text);
+}
+
+h4 {
+  font-family: var(--font-body);
+  font-size: clamp(1rem, 1vw + 0.75rem, 1.125rem);
+  font-weight: var(--fw-semi);
   line-height: 1.3;
-  letter-spacing: -0.015em;
+  color: var(--text);
 }
-/* Body — 16px */
-.type-body {
-  font-size: 1.0625rem; /* 17px */
-  line-height: 1.6;
+
+h5, h6 {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: var(--fw-medium);
+  line-height: 1.4;
+  color: var(--text);
 }
-/* Small — 14px */
+
+/* ═══════════════════════════════════════════════
+   TYPOGRAPHY SYSTEM — Future Times Events
+   Brief-spec classes: .h1 .h2 .h3 .text-body .caption .btn-primary
+   Legacy aliases:     .type-h1 .type-h2 .type-h3 .type-body .type-sm .type-caption .type-overline
+═══════════════════════════════════════════════ */
+
+/* ── H1 — Space Grotesk 700 — clamp 32–45px ── */
+.h1, .type-h1 {
+  font-family: var(--font-heading);
+  font-size: var(--h1-size);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-heading);
+  letter-spacing: var(--ls-heading);
+}
+
+/* ── H2 — Raleway 600 — clamp 22–28px ── */
+.h2, .type-h2 {
+  font-family: var(--font-sub);
+  font-size: var(--h2-size);
+  font-weight: var(--fw-semi);
+  line-height: var(--lh-sub);
+  letter-spacing: var(--ls-sub);
+}
+
+/* ── H3 — Raleway 600 — clamp 20–24px ── */
+.h3, .type-h3 {
+  font-family: var(--font-sub);
+  font-size: var(--h3-size);
+  font-weight: var(--fw-semi);
+  line-height: var(--lh-sub);
+  letter-spacing: var(--ls-sub);
+}
+
+/* ── Body text — Inter 400 — clamp 16–17px ── */
+.text-body, .type-body {
+  font-family: var(--font-body);
+  font-size: var(--body-size);
+  font-weight: var(--fw-body);
+  line-height: var(--lh-body);
+  /* 45–75ch line measure for readability */
+  max-inline-size: 72ch;
+}
+
+/* ── Caption / label — Inter 500 — clamp 14–16px ── */
+.caption, .type-caption {
+  font-family: var(--font-body);
+  font-size: var(--caption-size);
+  font-weight: var(--fw-medium);
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+}
+
+/* ── Small — Inter 400 — 14px ── */
 .type-sm {
   font-size: 0.875rem;
   line-height: 1.55;
 }
-/* Caption — 12px */
-.type-caption {
-  font-size: 0.75rem;
-  line-height: 1.5;
-  letter-spacing: 0.01em;
-}
-/* Overline */
+
+/* ── Overline — Inter 700 — 11px uppercase ── */
 .type-overline {
+  font-family: var(--font-body);
   font-size: 0.6875rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-overline);
   text-transform: uppercase;
 }
 
@@ -258,7 +388,11 @@ body {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  font-weight: 600;
+  /* Typography per brief: min 16px, weight 600, letter-spacing 0.02em */
+  font-family: var(--font-body);
+  font-size: max(1rem, var(--caption-size)); /* min 16px */
+  font-weight: var(--fw-semi);
+  letter-spacing: var(--ls-btn);             /* 0.02em */
   line-height: 1;
   border: none;
   cursor: pointer;
@@ -268,7 +402,9 @@ body {
   -webkit-user-select: none;
   user-select: none;
   white-space: nowrap;
-  min-height: 48px;
+  /* Accessibility: 44×44px minimum tap target */
+  min-height: 44px;
+  min-width: 44px;
   padding-inline: var(--sp-4); /* 24px */
 }
 .btn:hover  { transform: scale(1.02); }
@@ -280,9 +416,24 @@ body {
 .btn-md  { padding-block: var(--sp-3); font-size: 0.875rem;  border-radius: var(--r-lg); } /* 16px */
 .btn-lg  { padding-block: var(--sp-3); font-size: 1rem;      border-radius: var(--r-xl); } /* 16px */
 
-/* Variants */
-.btn-primary  { background: var(--bg-card); border: 1px solid var(--border); color: var(--text); }
-.btn-primary:hover { border-color: var(--border-hover); }
+/* ── VARIANTS ── */
+/* btn-primary: accessible high-contrast CTA (WCAG AA on white/dark bg) */
+.btn-primary  { background: var(--grad-primary); color: #fff; box-shadow: 0 4px 20px rgba(var(--accent-rgb),0.28); }
+.btn-primary:hover { box-shadow: 0 8px 28px rgba(var(--accent-rgb),0.42); }
+
+/* btn-outline: ghost with border (for nav/secondary) */
+.btn-outline  { background: transparent; border: 1.5px solid var(--border); color: var(--text); }
+.btn-outline:hover { border-color: var(--border-hover); color: var(--accent); }
+
+/* btn-nav: minimum 16px, weight 600, letter-spacing (nav links) */
+.btn-nav {
+  font-size: max(1rem, var(--caption-size));
+  font-weight: var(--fw-semi);
+  letter-spacing: var(--ls-btn);
+  min-height: 44px;
+  padding: 10px 16px;
+  border-radius: var(--r-full);
+}
 .btn-ghost    { background: transparent; border: 1px solid var(--border); color: var(--text-muted); }
 .btn-ghost:hover { border-color: var(--border-hover); color: var(--text); }
 .btn-grad     { background: var(--grad-primary); color: #fff; box-shadow: 0 4px 20px rgba(var(--accent-rgb),0.28); }
@@ -479,27 +630,49 @@ body {
   padding-inline: var(--sp-3); /* 16px */
 }
 
-/* Section vertical rhythm — use these, not ad-hoc py-* */
-.section-pad    { padding-block: var(--sp-6); } /* 48px */
-.section-pad-sm { padding-block: var(--sp-5); } /* 32px */
+/* Section vertical rhythm — generous premium spacing */
+.section-pad    { padding-block: var(--sp-8); } /* 96px */
+.section-pad-sm { padding-block: var(--sp-7); } /* 64px */
+.section-pad-xs { padding-block: var(--sp-6); } /* 48px */
 
-@media (min-width: 640px) {
+/* Two-line section title block — label + heading combo */
+.section-title {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-5);
+}
+.section-title .overline {
+  font-family: var(--font-body);
+  font-size: 0.6875rem;
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-overline);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.section-title h2 {
+  /* Inherits native h2 styles; tweak locally if needed */
+  margin: 0;
+}
+
+@media (min-width: 600px) {
   .container { padding-inline: var(--sp-4); } /* 24px */
 }
 @media (min-width: 1024px) {
   .container { padding-inline: var(--sp-5); } /* 32px */
+  .section-pad    { padding-block: var(--sp-8); }
+  .section-pad-sm { padding-block: var(--sp-7); }
 }
 
 /* ───────────────────────────────────────────────
-   MOBILE OVERRIDES (≤480px)
-   Enforce strict 8px-grid vertical rhythm
+   MOBILE OVERRIDES (≤600px)
+   Generous but scaled-down vertical rhythm
 ─────────────────────────────────────────────── */
-@media (max-width: 480px) {
-  /* Container: always exactly 16px each side on mobile */
-  .container { padding-inline: var(--sp-3); }
-
-  .section-pad    { padding-block: var(--sp-5); } /* 32px */
-  .section-pad-sm { padding-block: var(--sp-5); } /* 32px */
+@media (max-width: 600px) {
+  .container { padding-inline: var(--sp-3); } /* 16px */
+  .section-pad    { padding-block: var(--sp-6); } /* 48px */
+  .section-pad-sm { padding-block: var(--sp-6); } /* 48px */
+  .section-pad-xs { padding-block: var(--sp-5); } /* 32px */
 }
 
 /* Bottom nav clearance — add to page wrapper when bottom nav is present */

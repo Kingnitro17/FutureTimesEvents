@@ -32,10 +32,11 @@ export default function MapPage() {
       </div>
 
       {/* Events List Section */}
-      <div className="container pt-6 pb-12">
-        <div className="mb-4">
-          <h2 className="text-xl font-black text-[var(--text)] tracking-tight">Events in your area</h2>
-          <p className="text-sm text-[var(--text-muted)] mt-1">Showing events happening around Harare</p>
+      <div className="container pt-8 pb-12">
+        <div className="section-title mb-6">
+          <span className="overline">Near you</span>
+          <h2>Events in your area</h2>
+          <p className="caption text-[var(--text-muted)] mt-1">Showing events happening around Harare</p>
         </div>
 
         <div className="flex flex-col gap-4">

@@ -79,12 +79,12 @@ export default function Navbar() {
               whileHover={{ rotate: 18, scale: 1.15 }}
               transition={{ type: 'spring', stiffness: 400, damping: 14 }}
               className="w-8 h-8 rounded-xl flex items-center justify-center text-white"
-              style={{ background: 'linear-gradient(135deg,#1D5BFF,#7222E3)' }}
+              style={{ background: 'linear-gradient(135deg,#FF55C2,#7222E3)' }}
             >
-              <span className="text-xl leading-none">e</span>
+              <span className="text-xl leading-none font-black">FT</span>
             </motion.div>
             <span className={`tracking-tight transition-colors duration-300 ${textCol}`}>
-              events distro
+              Future Times Events
             </span>
           </Link>
 

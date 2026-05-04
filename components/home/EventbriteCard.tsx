@@ -64,9 +64,9 @@ export default function EventbriteCard({ event, index = 0 }: { event: Event; ind
           </div>
 
           <div className="mt-4 flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <p className="type-caption text-[var(--text-muted)]">Starting from</p>
-              <p className="text-lg font-black text-[var(--text)]">{price}</p>
+            <div className="min-w-0 text-center">
+              <p className="text-[10px] font-semibold uppercase tracking-widest mb-0.5" style={{ color: 'var(--text-muted)' }}>Starting from</p>
+              <p className="text-lg font-black" style={{ color: 'var(--text)' }}>{price}</p>
             </div>
             <div className="btn btn-md btn-primary">
               Details <ChevronRight size={14} />

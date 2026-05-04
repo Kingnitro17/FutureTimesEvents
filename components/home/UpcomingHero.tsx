@@ -184,13 +184,13 @@ export default function UpcomingHero({
                 {/* Date + Price badge — top left */}
                 <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-20">
                   <div className="bg-black/60 backdrop-blur-xl border border-white/15 rounded-2xl px-6 py-4 shadow-xl min-w-[120px]">
-                    <p className="type-overline text-white/60 text-[10px] tracking-widest mb-1 text-center">DATE</p>
-                    <p className="text-white font-black leading-tight text-base sm:text-lg text-center whitespace-nowrap">
+                    <p className="text-[10px] tracking-widest mb-1 text-center font-bold uppercase" style={{ color: 'rgba(255,255,255,0.65)', letterSpacing: '0.12em' }}>DATE</p>
+                    <p className="font-black leading-tight text-base sm:text-lg text-center whitespace-nowrap" style={{ color: '#ffffff' }}>
                       {ev.date}
                     </p>
                     <div className="my-2 w-full h-px bg-gradient-to-r from-white/20 to-transparent" />
-                    <p className="type-overline text-white/60 text-[10px] tracking-widest mb-1 text-center">FROM</p>
-                    <p className="text-white font-black leading-tight text-2xl sm:text-3xl text-center">
+                    <p className="text-[10px] tracking-widest mb-1 text-center font-bold uppercase" style={{ color: 'rgba(255,255,255,0.65)', letterSpacing: '0.12em' }}>FROM</p>
+                    <p className="font-black leading-tight text-2xl sm:text-3xl text-center" style={{ color: '#ffffff' }}>
                       {formatPrice(ev)}
                     </p>
                   </div>
@@ -199,7 +199,7 @@ export default function UpcomingHero({
                 {/* Category badge — top right */}
                 <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-20">
                   <div className="bg-black/50 backdrop-blur-md border border-white/15 rounded-2xl px-6 py-2 min-w-[80px]">
-                    <p className="type-overline text-white font-bold text-[10px] tracking-widest text-center whitespace-nowrap">{ev.categoryLabel}</p>
+                    <p className="font-bold text-[10px] tracking-widest text-center whitespace-nowrap uppercase" style={{ color: '#ffffff', letterSpacing: '0.12em' }}>{ev.categoryLabel}</p>
                   </div>
                 </div>
 
@@ -274,8 +274,8 @@ export default function UpcomingHero({
                   >
                     {/* Price block — text-center aligns $? under "Starting from", pl-4 clears the corner */}
                     <div className="min-w-0 pl-4 text-center">
-                      <p className="text-white/60 text-xs font-semibold mb-1 uppercase tracking-widest">Starting from</p>
-                      <p className="text-white font-black text-3xl leading-none">
+                      <p className="text-xs font-semibold mb-1 uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.65)' }}>Starting from</p>
+                      <p className="font-black text-3xl leading-none" style={{ color: '#ffffff' }}>
                         {formatPrice(ev)}
                       </p>
                     </div>

@@ -53,7 +53,7 @@ export default function Footer() {
           <div className="col-span-2 lg:col-span-2">
             <Link href="/" className="flex items-center gap-2.5 font-display font-black text-xl mb-4">
               <span className="text-2xl" style={{ background: 'linear-gradient(135deg,#FF55C2,#7222E3)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>◈</span>
-              <span className="text-[var(--text)] tracking-tight">Events Distro</span>
+              <span className="text-[var(--text)] tracking-tight">Future Times Events</span>
             </Link>
             <p className="type-sm text-[var(--text-muted)] mb-6 max-w-xs leading-relaxed">
               Discover the world&apos;s most exciting events, curated for you. Built for explorers, dreamers &amp; night owls.
@@ -86,7 +86,7 @@ export default function Footer() {
 
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="type-caption text-[var(--text-muted)]">
-            © {new Date().getFullYear()} Events Distro. All rights reserved.
+            © {new Date().getFullYear()} Future Times Events. All rights reserved.
           </p>
           <div className="flex items-center gap-4">
             {SOCIALS.map(s => (

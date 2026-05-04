@@ -49,11 +49,13 @@ function EventsContent() {
       {/* Hero Header */}
       <div className="border-b border-[var(--border)] relative overflow-hidden" style={{ background: 'var(--bg)' }}>
         <div className="absolute inset-0 opacity-40 dark:opacity-20 animate-stripe pointer-events-none" />
-        <div className="container relative z-10 py-6 sm:py-12 text-left">
+        <div className="container relative z-10 py-10 sm:py-16 text-left">
           <motion.div {...fadeUp(0)}>
-            <p className="section-label mb-2">Discover</p>
-            <h1 className="text-2xl sm:text-5xl font-black text-[var(--text)] mb-2 tracking-tight">Browse Events</h1>
-            <p className="text-sm text-[var(--text-muted)] max-w-xl">
+            <div className="section-title">
+              <span className="overline">Discover</span>
+              <h1>Browse Events</h1>
+            </div>
+            <p className="caption text-[var(--text-muted)] max-w-xl">
               {MOCK_EVENTS.length} upcoming events across Zimbabwe.
             </p>
           </motion.div>
@@ -107,7 +109,7 @@ function EventsContent() {
                   
                   {/* Category */}
                   <div className="mb-8">
-                    <h3 className="text-sm font-bold text-[var(--text)] mb-4">Category</h3>
+                    <h3 style={{ fontSize: '0.875rem' }} className="mb-4">Category</h3>
                     <div className="flex flex-col gap-2">
                       {CATEGORIES.map(c => (
                         <button key={c.id} onClick={() => setCat(c.id)}
@@ -123,7 +125,7 @@ function EventsContent() {
                   {/* Price */}
                   <div className="mb-8">
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-sm font-bold text-[var(--text)]">Max Price</h3>
+                      <h3 style={{ fontSize: '0.875rem' }}>Max Price</h3>
                       <span className="text-xs font-bold text-[var(--accent)]">${priceMax}</span>
                     </div>
                     <input type="range" min="0" max="1000" step="10" value={priceMax} onChange={e => setPriceMax(Number(e.target.value))}
@@ -135,7 +137,7 @@ function EventsContent() {
 
                   {/* Date (Mock) */}
                   <div>
-                    <h3 className="text-sm font-bold text-[var(--text)] mb-4">Date</h3>
+                    <h3 style={{ fontSize: '0.875rem' }} className="mb-4">Date</h3>
                     <div className="space-y-2">
                       {['Anytime', 'Today', 'This Weekend', 'Next Week'].map((d, i) => (
                         <label key={d} className="flex items-center gap-4 cursor-pointer group">

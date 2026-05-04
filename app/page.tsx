@@ -40,9 +40,12 @@ export default function HomePage() {
       <div aria-hidden className="h-[calc(var(--nav-h)+16px)] sm:h-24" />
 
       {/* ── EVENT CATEGORIES MARQUEE ── */}
-      <section className="relative z-10 pt-12 pb-12 overflow-hidden" style={{ background: 'var(--bg)' }}>
-        <div className="container mb-4">
-          <h2 className="text-3xl md:text-4xl font-black text-[var(--text)] tracking-tight">Event Categories</h2>
+      <section className="relative z-10 section-pad overflow-hidden" style={{ background: 'var(--bg)' }}>
+        <div className="container mb-6">
+          <div className="section-title">
+            <span className="overline">Browse by interest</span>
+            <h2>Event Categories</h2>
+          </div>
         </div>
         
         {/* Marquee Container */}
@@ -100,9 +103,9 @@ export default function HomePage() {
       {/* ── UPCOMING EVENTS LIST ── */}
       <section className="section-pad-sm relative z-10 border-t border-gray-200 dark:border-white/5" style={{ background: 'var(--bg)' }}>
         <div className="container">
-          {/* Section header — Ticketbay style: 18px left, View all → text link right */}
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-[var(--text)] tracking-tight">Upcoming Events</h2>
+          {/* Section header */}
+          <div className="flex items-center justify-between mb-6">
+            <h2 style={{ fontSize: 'clamp(1.1rem,2vw + 0.8rem,1.375rem)' }}>Upcoming Events</h2>
             <Link
               href="/events"
               className="flex items-center gap-1 text-blue-500 text-xs font-semibold"

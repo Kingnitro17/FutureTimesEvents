@@ -36,20 +36,32 @@ export default function EventDateBadge({
       className={`bg-black/60 backdrop-blur-xl border border-white/15 rounded-2xl shadow-xl ${padX} ${padY}`}
       style={{ minWidth: isMd ? 120 : 104 }}
     >
-      <p className="type-overline text-white/60 text-[10px] tracking-widest mb-1 text-center">
+      <p
+        className={`text-[10px] tracking-widest mb-1 text-center font-bold uppercase`}
+        style={{ color: 'rgba(255,255,255,0.65)', letterSpacing: '0.12em' }}
+      >
         {label}
       </p>
-      <p className={`text-white font-black leading-tight text-center whitespace-nowrap ${dateText}`}>
+      <p
+        className={`font-black leading-tight text-center whitespace-nowrap ${dateText}`}
+        style={{ color: '#ffffff' }}
+      >
         {date}
       </p>
 
       {showPrice && (
         <>
           <div className="my-2 w-full h-px bg-gradient-to-r from-white/20 to-transparent" />
-          <p className="type-overline text-white/60 text-[10px] tracking-widest mb-1 text-center">
+          <p
+            className="text-[10px] tracking-widest mb-1 text-center font-bold uppercase"
+            style={{ color: 'rgba(255,255,255,0.65)', letterSpacing: '0.12em' }}
+          >
             FROM
           </p>
-          <p className={`text-white font-black leading-tight text-center ${priceText}`}>
+          <p
+            className={`font-black leading-tight text-center ${priceText}`}
+            style={{ color: '#ffffff' }}
+          >
             {formatPrice(price!, priceLabel)}
           </p>
         </>
