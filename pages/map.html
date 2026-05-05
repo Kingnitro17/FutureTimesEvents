@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" class="page-light">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -10,121 +10,106 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../css/styles.css" />
   <style>
-    .map-page { display: flex; height: calc(100vh - var(--nav-height)); margin-top: var(--nav-height); }
+    /* Polished Map Page - Enhanced for #FFFFF0 light theme */
+    .map-wrapper { 
+      min-height: 100vh; display: flex; flex-direction: column; 
+      background: var(--bg-light);
+    }
+    
+    .map-main-content {
+      flex: 1; display: flex; height: calc(100vh - var(--nav-height));
+      overflow: hidden;
+    }
+    
     .map-sidebar {
-      width: 380px; flex-shrink: 0; overflow-y: auto;
-      padding: 24px; border-right: 1px solid var(--border);
-      background: var(--bg);
+      width: 440px; flex-shrink: 0; 
+      padding: 48px 32px; border-right: 1px solid var(--border-light);
+      background: var(--bg-glass-light); backdrop-filter: var(--glass-blur);
+      overflow-y: auto;
     }
-    .map-sidebar h2 { font-family: var(--font-display); font-size: 1.3rem; margin-bottom: 16px; }
+    
+    .map-sidebar h2 { 
+      font-family: var(--font-display); font-size: 1.6rem; 
+      font-weight: 800; margin-bottom: 32px; color: var(--text-light);
+    }
+    
     .map-search {
-      display: flex; align-items: center; gap: 8px;
-      padding: 10px 16px; border-radius: 50px;
-      background: var(--bg-card); border: 1px solid var(--border);
-      margin-bottom: 16px;
+      padding: 16px 24px; border-radius: 50px; gap: 12px;
+      background: var(--bg-card-light); border: 2px solid var(--border-light);
+      margin-bottom: 32px; font-size: 1.05rem;
     }
+    
     .map-search input {
-      flex: 1; background: none; border: none; outline: none;
-      color: var(--text); font-size: 0.9rem;
+      color: var(--text-light); font-size: 1.05rem; font-weight: 500;
     }
-    .map-search input::placeholder { color: var(--text-secondary); }
-    .map-event-list { display: flex; flex-direction: column; gap: 12px; }
+    
+    .map-event-list { gap: 20px; }
     .map-event-item {
-      display: flex; gap: 12px; padding: 14px;
-      background: var(--bg-card); border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      cursor: pointer; transition: var(--transition);
+      padding: 24px; gap: 20px; border-radius: var(--radius);
+      background: var(--bg-glass-light); border: 2px solid var(--border-light);
+      transition: all var(--transition);
     }
+    
     .map-event-item:hover, .map-event-item.active {
-      border-color: var(--accent); background: rgba(93,63,211,0.08);
+      border-color: #3b82f6; 
+      background: rgba(59,130,246,0.08);
+      transform: translateX(8px);
     }
+    
     .map-event-item img {
-      width: 64px; height: 64px; border-radius: var(--radius-xs);
-      object-fit: cover; flex-shrink: 0;
+      width: 80px; height: 80px; border-radius: var(--radius-sm);
     }
-    .map-event-info h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 4px; }
-    .map-event-info p { font-size: 0.78rem; color: var(--text-secondary); }
-    .map-event-info .distance { color: var(--accent-light); font-weight: 600; font-size: 0.78rem; margin-top: 4px; }
-
+    
+    .map-event-info h4 { 
+      font-size: 1.15rem; font-weight: 800; margin-bottom: 8px;
+      color: var(--text-light);
+    }
+    
+    .map-event-info p { 
+      font-size: 0.98rem; color: var(--text-secondary-light);
+      margin-bottom: 4px;
+    }
+    
+    .map-event-info .distance { 
+      color: #3b82f6 !important; font-weight: 700; font-size: 1rem;
+    }
+    
     .map-container {
-      flex: 1; position: relative;
-      background: var(--bg-card);
-      display: flex; align-items: center; justify-content: center;
+      flex: 1; position: relative; 
+      background: linear-gradient(135deg, var(--bg-card-light), var(--bg-light));
     }
-    .map-placeholder {
-      text-align: center; max-width: 400px; padding: 40px;
-    }
-    .map-placeholder .map-icon { font-size: 4rem; margin-bottom: 16px; }
-    .map-placeholder h3 { font-size: 1.3rem; margin-bottom: 8px; }
-    .map-placeholder p { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 20px; }
-    .map-placeholder code {
-      display: block; padding: 12px 16px;
-      background: var(--bg); border: 1px solid var(--border);
-      border-radius: var(--radius-xs);
-      font-size: 0.8rem; color: var(--accent-light);
-      text-align: left; margin-bottom: 20px; word-break: break-all;
-    }
-
-    /* Mock map markers */
+    
+    /* Blue-themed pins */
     .mock-map {
       position: absolute; inset: 0;
       background:
-        radial-gradient(circle at 30% 40%, rgba(93,63,211,0.15) 0%, transparent 40%),
-        radial-gradient(circle at 70% 60%, rgba(123,97,255,0.1) 0%, transparent 35%),
-        radial-gradient(circle at 50% 50%, rgba(93,63,211,0.05) 0%, transparent 60%);
+        radial-gradient(circle at 30% 40%, rgba(59,130,246,0.15) 0%, transparent 40%),
+        radial-gradient(circle at 70% 60%, rgba(59,130,246,0.1) 0%, transparent 35%),
+        radial-gradient(circle at 50% 50%, rgba(96,165,250,0.08) 0%, transparent 60%);
     }
+    
     .map-pin {
-      position: absolute;
-      width: 40px; height: 40px;
-      border-radius: 50% 50% 50% 0;
-      background: var(--gradient);
-      transform: rotate(-45deg);
-      display: flex; align-items: center; justify-content: center;
-      cursor: pointer; transition: var(--transition);
-      box-shadow: 0 4px 16px var(--accent-glow);
-      z-index: 2;
+      background: var(--blue-gradient) !important;
+      box-shadow: 0 6px 20px var(--blue-glow) !important;
     }
-    .map-pin:hover { transform: rotate(-45deg) scale(1.2); }
-    .map-pin span { transform: rotate(45deg); font-size: 1rem; }
+    
     .map-pin-pulse {
-      position: absolute; inset: -8px;
-      border-radius: 50%; border: 2px solid var(--accent-light);
-      animation: pinPulse 2s infinite;
+      border-color: #3b82f6;
     }
-    @keyframes pinPulse {
-      0% { transform: scale(0.8); opacity: 1; }
-      100% { transform: scale(1.6); opacity: 0; }
-    }
-
-    .pin-tooltip {
-      position: absolute; bottom: calc(100% + 12px); left: 50%;
-      transform: translateX(-50%) rotate(45deg);
-      display: none;
-    }
-    .pin-tooltip-inner {
-      transform: rotate(-45deg);
-      background: var(--bg-glass); backdrop-filter: var(--glass-blur);
-      border: 1px solid var(--border); border-radius: var(--radius-xs);
-      padding: 10px 14px; white-space: nowrap;
-      box-shadow: var(--shadow);
-    }
-    .pin-tooltip-inner strong { display: block; font-size: 0.85rem; }
-    .pin-tooltip-inner span { font-size: 0.75rem; color: var(--text-secondary); }
-    .map-pin:hover .pin-tooltip { display: block; }
-
+    
     .nearby-badge {
-      position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%);
-      padding: 10px 24px;
-      background: var(--bg-glass); backdrop-filter: var(--glass-blur);
-      border: 1px solid var(--border); border-radius: 50px;
-      font-size: 0.85rem; font-weight: 500; z-index: 5;
-      display: flex; align-items: center; gap: 8px;
+      bottom: 40px; padding: 16px 32px; font-size: 1.1rem;
+      background: var(--bg-glass-light); border: 2px solid var(--border-light);
+      box-shadow: var(--shadow-light);
     }
-    .nearby-badge .badge-dot { width: 8px; height: 8px; border-radius: 50%; background: #4ade80; }
-
+    
     @media (max-width: 768px) {
-      .map-page { flex-direction: column; }
-      .map-sidebar { width: 100%; max-height: 40vh; border-right: none; border-bottom: 1px solid var(--border); }
+      .map-sidebar { 
+        width: 100%; padding: 32px 24px; 
+        border-right: none; border-bottom: 1px solid var(--border-light);
+        max-height: 45vh;
+      }
+      .map-main-content { height: calc(100vh - var(--nav-height) - 1px); }
     }
   </style>
 </head>
@@ -176,41 +161,54 @@
     </div>
   </nav>
 
-  <div class="map-page">
-    <!-- Sidebar -->
-    <div class="map-sidebar">
-      <h2>📍 Events Near You</h2>
-      <div class="map-search">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        <input type="text" placeholder="Search locations…" id="mapSearchInput" />
-      </div>
-      <div class="map-event-list" id="mapEventList"></div>
-    </div>
-
-    <!-- Map Area -->
-    <div class="map-container">
-      <div class="mock-map">
-        <!-- Pins placed visually -->
-        <div class="map-pin" style="top:25%;left:35%"><span>🎵</span><div class="map-pin-pulse"></div>
-          <div class="pin-tooltip"><div class="pin-tooltip-inner"><strong>Neon Dreams Festival</strong><span>Brooklyn Mirage · $45</span></div></div>
+  <div class="map-wrapper">
+    <div class="map-main-content">
+      <!-- Enhanced Sidebar -->
+      <div class="map-sidebar">
+        <h2>📍 Events Near You</h2>
+        <div class="map-search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" placeholder="Search locations or venues..." id="mapSearchInput" />
         </div>
-        <div class="map-pin" style="top:40%;left:55%"><span>💻</span>
-          <div class="pin-tooltip"><div class="pin-tooltip-inner"><strong>AI & Future Summit</strong><span>Javits Center · $120</span></div></div>
-        </div>
-        <div class="map-pin" style="top:60%;left:30%"><span>🍽️</span>
-          <div class="pin-tooltip"><div class="pin-tooltip-inner"><strong>Harvest & Vine</strong><span>Hudson Valley · $35</span></div></div>
-        </div>
-        <div class="map-pin" style="top:35%;left:70%"><span>🎨</span>
-          <div class="pin-tooltip"><div class="pin-tooltip-inner"><strong>Contemporary Art Walk</strong><span>Chelsea · Free</span></div></div>
-        </div>
-        <div class="map-pin" style="top:55%;left:50%"><span>🎷</span><div class="map-pin-pulse"></div>
-          <div class="pin-tooltip"><div class="pin-tooltip-inner"><strong>Jazz Under The Stars</strong><span>Lincoln Center · $55</span></div></div>
-        </div>
+        <div class="map-event-list" id="mapEventList"></div>
       </div>
 
-      <div class="nearby-badge">
-        <span class="badge-dot" style="animation:pulse 2s infinite"></span>
-        5 events within 25 km
+      <!-- Enhanced Map Area -->
+      <div class="map-container">
+        <div class="mock-map">
+          <!-- Blue-themed event pins -->
+          <div class="map-pin" style="top:25%;left:35%"><span>🎵</span><div class="map-pin-pulse"></div>
+            <div class="pin-tooltip"><div class="pin-tooltip-inner">
+              <strong>Neon Dreams Festival</strong><span>Brooklyn Mirage · $45</span>
+            </div></div>
+          </div>
+          <div class="map-pin" style="top:40%;left:55%"><span>💻</span>
+            <div class="pin-tooltip"><div class="pin-tooltip-inner">
+              <strong>AI & Future Summit</strong><span>Javits Center · $120</span>
+            </div></div>
+          </div>
+          <div class="map-pin" style="top:60%;left:30%"><span>🍽️</span>
+            <div class="pin-tooltip"><div class="pin-tooltip-inner">
+              <strong>Harvest & Vine</strong><span>Hudson Valley · $35</span>
+            </div></div>
+          </div>
+          <div class="map-pin" style="top:35%;left:70%"><span>🎨</span>
+            <div class="pin-tooltip"><div class="pin-tooltip-inner">
+              <strong>Contemporary Art Walk</strong><span>Chelsea · Free</span>
+            </div></div>
+          </div>
+          <div class="map-pin" style="top:55%;left:50%"><span>🎷</span><div class="map-pin-pulse"></div>
+            <div class="pin-tooltip"><div class="pin-tooltip-inner">
+              <strong>Jazz Under The Stars</strong><span>Lincoln Center · $55</span>
+            </div></div>
+          </div>
+        </div>
+
+        <div class="nearby-badge">
+          <span class="badge-dot" style="animation:pulse 2s infinite; background:#3b82f6;"></span>
+          5 events within 25 km
+          <button class="btn-dynamo" style="margin-left:auto; padding:8px 20px; font-size:0.9rem;">View All</button>
+        </div>
       </div>
     </div>
   </div>
