@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { MOCK_EVENTS, MOCK_USER, HIGH_SPENDERS } from '@/lib/mockData';
+// TODO: Replace MOCK_EVENTS with getEvents() from @/lib/queries when wiring admin fully
 
 const ADMIN_USERS = [
   { id: 'u1', name: 'Alex Johnson', email: 'alex@eventsdistro.com', role: 'organizer', status: 'active', spent: 1250, color: '#7B61FF' },

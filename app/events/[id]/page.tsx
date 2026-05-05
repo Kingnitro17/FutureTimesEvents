@@ -1,11 +1,12 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MOCK_EVENTS } from '@/lib/mockData';
-import { TicketTier, TableOption } from '@/types';
-import { ArrowLeft, Calendar, MapPin, Users, ShieldCheck, ChevronRight } from 'lucide-react';
+import { getEventById } from '@/lib/queries';
+import { supabase } from '@/lib/supabase';
+import { TicketTier, TableOption, Event } from '@/types';
+import { ArrowLeft, Calendar, MapPin, Users, ShieldCheck, Loader2 } from 'lucide-react';
 
 const fadeUp = (delay = 0) => ({
   initial: { opacity: 0, y: 16 },
@@ -16,17 +17,34 @@ const fadeUp = (delay = 0) => ({
 export default function EventDetailPage() {
   const { id } = useParams();
   const router  = useRouter();
-  const event   = MOCK_EVENTS.find(e => e.id === id);
-  const [tier,    setTier]    = useState<TicketTier | null>(null);
-  const [qty,     setQty]     = useState(1);
-  const [table,   setTable]   = useState<TableOption | null>(null);
-  const [bottles, setBottles] = useState<Record<string,number>>({});
-  const [comment, setComment] = useState('');
-  const [comments,setComments]= useState([
-    { id:'c1', author:'Alex J.',    color:'#7222E3', text:"Can't wait for this! Last year was insane 🔥", time:'2h ago' },
-    { id:'c2', author:'Kim L.',     color:'#FF55C2', text:'Anyone know if they have the silent disco stage?', time:'5h ago' },
-    { id:'c3', author:'Marcus R.',  color:'#2CC4EA', text:'VIP section is so worth it. The views are unreal.', time:'1d ago' },
+  const [event,    setEvent]    = useState<Event | null>(null);
+  const [loading,  setLoading]  = useState(true);
+  const [tier,     setTier]     = useState<TicketTier | null>(null);
+  const [qty,      setQty]      = useState(1);
+  const [table,    setTable]    = useState<TableOption | null>(null);
+  const [bottles,  setBottles]  = useState<Record<string,number>>({});
+  const [comment,  setComment]  = useState('');
+  const [comments, setComments] = useState([
+    { id:'c1', author:'Alex J.',   color:'#7222E3', text:"Can't wait for this! Last year was insane 🔥", time:'2h ago' },
+    { id:'c2', author:'Kim L.',    color:'#FF55C2', text:'Anyone know if they have the silent disco stage?', time:'5h ago' },
+    { id:'c3', author:'Marcus R.', color:'#2CC4EA', text:'VIP section is so worth it. The views are unreal.', time:'1d ago' },
   ]);
+
+  useEffect(() => {
+    if (!id) return;
+    getEventById(id as string).then(ev => {
+      setEvent(ev);
+      setLoading(false);
+    });
+  }, [id]);
+
+
+
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center page-offset">
+      <Loader2 size={32} className="animate-spin" style={{ color: 'var(--accent)' }} />
+    </div>
+  );
 
   if (!event) return (
     <div className="min-h-screen flex items-center justify-center page-offset">

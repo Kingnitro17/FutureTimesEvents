@@ -1,12 +1,13 @@
 'use client';
-import { useState, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Search, SlidersHorizontal, ChevronDown, X } from 'lucide-react';
 import EventCard from '@/components/events/EventCard';
 import dynamic from 'next/dynamic';
 const EventsMap = dynamic(() => import('@/components/events/EventsMap'), { ssr: false });
-import { MOCK_EVENTS } from '@/lib/mockData';
+import { getEvents } from '@/lib/queries';
+import type { Event } from '@/types';
 
 const CATEGORIES = [
   { id: 'all',      label: '✦ All'      },
@@ -32,8 +33,13 @@ function EventsContent() {
   const [search,      setSearch]      = useState(() => searchParams.get('q') || '');
   const [priceMax,    setPriceMax]    = useState(500);
   const [showFilters, setShowFilters] = useState(false);
+  const [allEvents,   setAllEvents]   = useState<Event[]>([]);
 
-  let events = MOCK_EVENTS.filter(e => {
+  useEffect(() => {
+    getEvents().then(setAllEvents);
+  }, []);
+
+  let events = allEvents.filter(e => {
     if (cat !== 'all' && e.category !== cat) return false;
     if (search && !e.title.toLowerCase().includes(search.toLowerCase()) && !e.venue.toLowerCase().includes(search.toLowerCase())) return false;
     if (e.price > priceMax) return false;
@@ -42,6 +48,7 @@ function EventsContent() {
   if (sort === 'Price: Low')  events = [...events].sort((a, b) => a.price - b.price);
   if (sort === 'Price: High') events = [...events].sort((a, b) => b.price - a.price);
   if (sort === 'Popularity')  events = [...events].sort((a, b) => b.attendees - a.attendees);
+
 
   return (
     <div className="min-h-screen page-offset pb-nav" style={{ background: 'var(--bg-secondary)' }}>
@@ -56,7 +63,7 @@ function EventsContent() {
               <h1>Browse Events</h1>
             </div>
             <p className="caption text-[var(--text-muted)] max-w-xl">
-              {MOCK_EVENTS.length} upcoming events across Zimbabwe.
+              {allEvents.length} upcoming events across Zimbabwe.
             </p>
           </motion.div>
         </div>

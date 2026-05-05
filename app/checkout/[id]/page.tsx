@@ -4,9 +4,10 @@ import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import { ShieldCheck, MapPin, Calendar, ArrowLeft, Check, Loader2 } from 'lucide-react';
-import { MOCK_EVENTS } from '@/lib/mockData';
+import { getEventById, purchaseTicket } from '@/lib/queries';
+import { supabase } from '@/lib/supabase';
 import { generateTicket, getLoyaltyPoints } from '@/lib/ticketGenerator';
-import { Ticket } from '@/types';
+import { Ticket, Event } from '@/types';
 import EventDateBadge from '@/components/events/EventDateBadge';
 
 const stepVariants = {
@@ -19,20 +20,36 @@ export default function CheckoutPage() {
   const { id } = useParams();
   const sp     = useSearchParams();
   const router = useRouter();
-  const event  = MOCK_EVENTS.find(e => e.id === id);
+
+  const [event,   setEvent]   = useState<Event | null>(null);
+  const [authUser,setAuthUser]= useState<any>(null);
   const tierId = sp.get('tier') || 'ga';
   const qty    = parseInt(sp.get('qty') || '1');
+
   const tier   = event?.ticketTiers.find(t => t.id === tierId) || event?.ticketTiers[0];
 
   const [step,    setStep]    = useState<'info'|'payment'|'success'>('info');
-  const [name,    setName]    = useState('Alex Johnson');
-  const [email,   setEmail]   = useState('alex@eventsdistro.com');
+  const [name,    setName]    = useState('');
+  const [email,   setEmail]   = useState('');
   const [loading, setLoading] = useState(false);
   const [ticket,  setTicket]  = useState<Ticket | null>(null);
   const [scrolled,setScrolled]= useState(false);
 
   const total  = (tier?.price || 0) * qty;
   const points = getLoyaltyPoints(total);
+
+  // Fetch event + auth user on mount
+  useEffect(() => {
+    if (!id) return;
+    getEventById(id as string).then(setEvent);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setAuthUser(session.user);
+        setName(session.user.user_metadata?.full_name || '');
+        setEmail(session.user.email || '');
+      }
+    });
+  }, [id]);
 
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 120);
@@ -43,14 +60,40 @@ export default function CheckoutPage() {
   const handlePurchase = async () => {
     if (!event || !tier) return;
     setLoading(true);
-    await new Promise(r => setTimeout(r, 2200));
-    const t = generateTicket(event, tier, qty, name, email);
-    const stored = JSON.parse(localStorage.getItem('ed-tickets') || '[]');
-    localStorage.setItem('ed-tickets', JSON.stringify([t, ...stored]));
-    setTicket(t);
-    setStep('success');
+
+    const isRealEvent = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(event.id);
+
+    if (authUser && isRealEvent) {
+      // Save to Supabase
+      const result = await purchaseTicket({
+        eventId: event.id,
+        tierId: tier.id,
+        userId: authUser.id,
+        quantity: qty,
+        totalAmount: total,
+        holderName: name,
+        holderEmail: email,
+      });
+      if (result) {
+        const t = generateTicket(event, tier, qty, name, email);
+        t.ticketId = result.ticketId;
+        setTicket(t);
+        setStep('success');
+        toast.success('Ticket confirmed! 🎉');
+      } else {
+        toast.error('Purchase failed. Please try again.');
+      }
+    } else {
+      // Fallback: save to localStorage (mock/guest)
+      await new Promise(r => setTimeout(r, 1800));
+      const t = generateTicket(event, tier, qty, name, email);
+      const stored = JSON.parse(localStorage.getItem('ed-tickets') || '[]');
+      localStorage.setItem('ed-tickets', JSON.stringify([t, ...stored]));
+      setTicket(t);
+      setStep('success');
+      toast.success('Ticket confirmed! Check your email. 🎉');
+    }
     setLoading(false);
-    toast.success('Ticket confirmed! Check your email.', { icon: '🎉' });
   };
 
   if (!event || !tier) return (

@@ -1,16 +1,18 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowRight, ChevronDown } from 'lucide-react';
 import UpcomingHero from '@/components/home/UpcomingHero';
 import { EventbriteCardList } from '@/components/home/EventbriteCardList';
-import { MOCK_EVENTS } from '@/lib/mockData';
+import { getEvents } from '@/lib/queries';
+import type { Event } from '@/types';
 import EventsInCitySection from '@/components/home/EventsInCitySection';
 import {
   Music, Palette, Heart,
   Sparkles, Plane, Gamepad2, Briefcase, UtensilsCrossed,
 } from 'lucide-react';
+
 
 const CATEGORY_ICONS = [
   { id: 'music',    label: 'Music',              icon: Music,   grad: 'linear-gradient(135deg,#FF55C2,#7222E3)' },
@@ -28,13 +30,19 @@ export default function HomePage() {
   const router = useRouter();
   const [location] = useState('Harare, Zimbabwe');
   const [page, setPage] = useState(1);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const visible = MOCK_EVENTS.slice(0, Math.min(5, page * 5));
+  useEffect(() => {
+    getEvents().then(data => { setEvents(data); setLoading(false); });
+  }, []);
+
+  const visible = events.slice(0, Math.min(5, page * 5));
 
   return (
     <div className="min-h-screen pb-nav">
 
-      <UpcomingHero events={MOCK_EVENTS} locationLabel={location.split(',')[0] || 'Zimbabwe'} />
+      <UpcomingHero events={events} locationLabel={location.split(',')[0] || 'Zimbabwe'} />
 
       {/* Intentional breathing room after hero (noticeably larger than header) */}
       <div aria-hidden className="h-[calc(var(--nav-h)+16px)] sm:h-24" />
@@ -98,7 +106,7 @@ export default function HomePage() {
       </section>
 
       {/* ── EVENTS IN CITY (replaces "What's Hot Right Now") ── */}
-      <EventsInCitySection events={MOCK_EVENTS} city="Harare" country="Zimbabwe" />
+      <EventsInCitySection events={events} city="Harare" country="Zimbabwe" />
 
       {/* ── UPCOMING EVENTS LIST ── */}
       <section className="section-pad-sm relative z-10 border-t border-gray-200 dark:border-white/5" style={{ background: 'var(--bg)' }}>
@@ -120,7 +128,7 @@ export default function HomePage() {
             ))}
           </div>
 
-          {visible.length < Math.min(5, MOCK_EVENTS.length) && (
+          {visible.length < Math.min(5, events.length) && (
             <div className="mt-8 text-center">
               <button
                 onClick={() => setPage(p => p + 1)}

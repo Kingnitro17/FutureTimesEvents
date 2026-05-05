@@ -1,9 +1,10 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
+import { supabase } from '@/lib/supabase';
 import { MOCK_EVENTS, MOCK_TICKETS } from '@/lib/mockData';
-import { TrendingUp, Ticket, Users, DollarSign, Eye, Pencil, Copy, Download, Plus, QrCode } from 'lucide-react';
+import { TrendingUp, Ticket, Users, DollarSign, Eye, Pencil, Copy, Download, Plus, QrCode, Loader2 } from 'lucide-react';
 import EventDateBadge from '@/components/events/EventDateBadge';
 
 const fadeUp = (delay = 0) => ({
@@ -14,14 +15,48 @@ const fadeUp = (delay = 0) => ({
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<'overview'|'events'|'attendees'|'create'>('overview');
+  const [user, setUser] = useState<any>(null);
+  const [myEvents, setMyEvents] = useState<any[]>([]);
+  const [myTickets, setMyTickets] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const totalRevenue   = MOCK_TICKETS.reduce((s, t) => s + t.totalAmount, 0);
+  useEffect(() => {
+    async function load() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) { setLoading(false); return; }
+      setUser(session.user);
+
+      // Fetch organizer's events
+      const { data: evts } = await supabase
+        .from('events')
+        .select('*, ticket_tiers(*)')
+        .eq('organizer_id', session.user.id)
+        .order('date', { ascending: true });
+      setMyEvents(evts && evts.length > 0 ? evts : MOCK_EVENTS.slice(0, 3));
+
+      // Fetch tickets for those events
+      if (evts && evts.length > 0) {
+        const eventIds = evts.map((e: any) => e.id);
+        const { data: tkts } = await supabase
+          .from('tickets')
+          .select('*')
+          .in('event_id', eventIds);
+        setMyTickets(tkts || MOCK_TICKETS);
+      } else {
+        setMyTickets(MOCK_TICKETS);
+      }
+      setLoading(false);
+    }
+    load();
+  }, []);
+
+  const totalRevenue   = myTickets.reduce((s: number, t: any) => s + parseFloat(t.totalAmount || t.total_amount || 0), 0);
   const checkedIn      = 847;
-  const avgTicketValue = Math.round(totalRevenue / MOCK_TICKETS.length);
+  const avgTicketValue = myTickets.length > 0 ? Math.round(totalRevenue / myTickets.length) : 0;
 
   const STATS = [
     { label: 'Total Revenue', value: `$${totalRevenue.toLocaleString()}`, icon: DollarSign, grad: 'linear-gradient(135deg,#FF55C2,#7222E3)', change: '+23%' },
-    { label: 'Tickets Sold',  value: MOCK_TICKETS.length.toString(),      icon: Ticket,     grad: 'linear-gradient(135deg,#2CC4EA,#533885)', change: '+12%' },
+    { label: 'Tickets Sold',  value: myTickets.length.toString(),         icon: Ticket,     grad: 'linear-gradient(135deg,#2CC4EA,#533885)', change: '+12%' },
     { label: 'Checked In',    value: checkedIn.toString(),                icon: Users,      grad: 'linear-gradient(135deg,#46FFAB,#A02EFF)', change: '71%' },
     { label: 'Avg Ticket',    value: `$${avgTicketValue}`,                icon: TrendingUp, grad: 'linear-gradient(135deg,#1D5BFF,#C7FE17)', change: '+5%' },
   ];
@@ -43,7 +78,7 @@ export default function DashboardPage() {
           <motion.div {...fadeUp(0)}>
             <p className="section-label mb-2">Organizer</p>
             <h1 className="type-h1 text-[var(--text)] mb-2">Dashboard</h1>
-            <p className="type-sm text-[var(--text-muted)]">Welcome back, Alex 👋 — here&apos;s what&apos;s happening today.</p>
+            <p className="type-sm text-[var(--text-muted)]">Welcome back{user ? `, ${user.user_metadata?.full_name?.split(' ')[0] || 'there'}` : ''} 👋 — here&apos;s what&apos;s happening today.</p>
           </motion.div>
           <div className="flex flex-wrap items-center gap-3">
             <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
@@ -134,9 +169,9 @@ export default function DashboardPage() {
                   <div className="card rounded-2xl p-6 sm:p-8">
                     <h2 className="type-h3 text-[var(--text)] mb-6">Active Events</h2>
                     <div className="space-y-4">
-                      {MOCK_EVENTS.slice(0, 3).map((ev) => (
+                      {myEvents.slice(0, 3).map((ev: any) => (
                         <div key={ev.id} className="flex flex-col sm:flex-row gap-4 p-4 rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] hover:border-[var(--border-hover)] transition-colors group">
-                          <img src={ev.image} alt={ev.title} className="w-full sm:w-24 h-32 sm:h-24 rounded-lg object-cover shrink-0" />
+                          <img src={ev.image || ev.image_url} alt={ev.title} className="w-full sm:w-24 h-32 sm:h-24 rounded-lg object-cover shrink-0" />
                           <div className="shrink-0 hidden sm:block">
                             <EventDateBadge date={ev.date} size="sm" />
                           </div>

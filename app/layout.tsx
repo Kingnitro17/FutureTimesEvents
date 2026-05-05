@@ -7,6 +7,7 @@ import Footer from '@/components/layout/Footer';
 import StripeBackground from '@/components/layout/StripeBackground';
 import { Toaster } from 'react-hot-toast';
 import MobileBottomNav from '@/components/layout/MobileBottomNav';
+import CookieConsent from '@/components/layout/CookieConsent';
 
 /* ── Body font: Inter 400/500/600/700 ── */
 const inter = Inter({
@@ -52,6 +53,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <main className="relative z-10 pb-24 md:pb-0">{children}</main>
         <Footer />
         <MobileBottomNav />
+        <CookieConsent />
         <Toaster
           position="bottom-right"
           gutter={12}
