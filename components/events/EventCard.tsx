@@ -49,9 +49,12 @@ interface EventCardProps {
   event: Event;
   index?: number;
   variant?: 'default' | 'compact' | 'featured';
+  /** Override the link destination — defaults to /events/[id] */
+  href?: string;
 }
 
-export default function EventCard({ event, index = 0, variant = 'default' }: EventCardProps) {
+export default function EventCard({ event, index = 0, variant = 'default', href }: EventCardProps) {
+  const eventHref = href ?? `/events/${event.id}`;
   const [imgLoaded, setImgLoaded] = useState(false);
   const [liked, setLiked] = useState(false);
 
@@ -80,7 +83,7 @@ export default function EventCard({ event, index = 0, variant = 'default' }: Eve
         whileHover={{ y: -3 }}
       >
         <Link
-          href={`/events/${event.id}`}
+          href={eventHref}
           className="flex gap-4 p-5 rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] hover:border-[var(--border-hover)] hover:shadow-[var(--shadow)] transition-all group"
         >
           <div className="relative w-16 h-16 rounded-xl overflow-hidden shrink-0">
@@ -114,7 +117,7 @@ export default function EventCard({ event, index = 0, variant = 'default' }: Eve
       className="group overflow-hidden"
     >
       {/* ── IMAGE ── */}
-      <Link href={`/events/${event.id}`} className="block relative overflow-hidden" style={{ height: '200px' }}>
+      <Link href={eventHref} className="block relative overflow-hidden" style={{ height: '200px' }}>
         {!imgLoaded && <div className="absolute inset-0 skeleton" />}
         <motion.img
           src={event.image}
@@ -205,14 +208,14 @@ export default function EventCard({ event, index = 0, variant = 'default' }: Eve
       {/* ── FOOTER ── */}
       <div className="px-6 pb-6 flex items-center justify-between">
         <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
-          <Link href={`/events/${event.id}`}
+          <Link href={eventHref}
             className="min-h-12 flex items-center gap-2 text-xs font-bold text-white px-6 py-2 rounded-xl"
             style={{ background: catGrad }}>
             {isFree ? 'Register' : 'Get Tickets'} <ChevronRight size={12} />
           </Link>
         </motion.div>
         <button
-          onClick={e => { e.preventDefault(); navigator.clipboard?.writeText(window.location.origin + '/events/' + event.id); }}
+          onClick={e => { e.preventDefault(); navigator.clipboard?.writeText(window.location.origin + eventHref); }}
           className="w-7 h-7 rounded-full flex items-center justify-center border border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--border-hover)] hover:text-[var(--text)] transition-all"
         >
           <Share2 size={11} />
