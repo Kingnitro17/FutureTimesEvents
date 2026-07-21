@@ -71,9 +71,9 @@ function EventsContent() {
         .order('starts_at', { ascending: true });
 
       if (!error && data) {
-        const mapped = data.map((ev) => {
+        const mapped = data.map((ev: any) => {
           const tiers = (ev.ticket_types as unknown as { price: number; quantity_available: number }[]) ?? [];
-          const minPrice = tiers.length > 0 ? Math.min(...tiers.map(t => t.price)) : 0;
+          const minPrice = tiers.length > 0 ? Math.min(...tiers.map((t: any) => t.price)) : 0;
           return { ...ev, price: minPrice, attendees: 0, lat: ev.lat ?? null, lng: ev.lng ?? null } as EventRow;
         });
         setAllEvents(mapped);
@@ -93,7 +93,6 @@ function EventsContent() {
   if (sort === 'Price: Low')  events = [...events].sort((a, b) => a.price - b.price);
   if (sort === 'Price: High') events = [...events].sort((a, b) => b.price - a.price);
   if (sort === 'Popularity')  events = [...events].sort((a, b) => b.attendees - a.attendees);
-
 
   return (
     <div className="min-h-screen page-offset pb-nav" style={{ background: 'var(--bg-secondary)' }}>
@@ -157,7 +156,7 @@ function EventsContent() {
 
         <div className="flex flex-col lg:flex-row gap-8 items-start">
           
-          {/* Filters sidebar — CSS-driven visibility, no hydration bug */}
+          {/* Filters sidebar */}
           <div id="events-filters" className={`w-full lg:w-64 shrink-0 ${showFilters ? 'block' : 'hidden lg:block'}`}>
                 <div className="card rounded-2xl p-6 sticky top-[calc(var(--nav-h)+24px)]">
                   
@@ -194,7 +193,6 @@ function EventsContent() {
 
           {/* Results */}
           <div className="flex-1 w-full min-w-0 space-y-4">
-            {/* Map hidden on mobile (too tall, use events list instead) */}
             <div id="events-map" className="hidden sm:block">
               <EventsMap events={events.slice(0, 24).map(e => ({
                 ...e,
@@ -210,7 +208,7 @@ function EventsContent() {
                 ticketTiers: [],
                 tableOptions: [],
                 bottleService: [],
-              }))} />
+              })) as any} />
             </div>
 
             {loading ? (
@@ -254,7 +252,7 @@ function EventsContent() {
                       ticketTiers: [],
                       tableOptions: [],
                       bottleService: [],
-                    }} index={i} href={`/events/${ev.slug}`} />
+                    } as any} index={i} href={`/events/${ev.slug}`} />
                   ))}
                 </div>
               </>

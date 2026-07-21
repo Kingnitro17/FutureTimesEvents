@@ -35,7 +35,7 @@ export default function QRDisplay({ token, size = 220, label = 'Your ticket QR c
         dark:  '#000000',
         light: '#ffffff',
       },
-    }).catch(err => {
+    }).catch((err: unknown) => {
       console.error('[QRDisplay] Failed to generate QR:', err);
     });
   }, [token, size]);

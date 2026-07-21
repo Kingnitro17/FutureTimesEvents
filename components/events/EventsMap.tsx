@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import type { Map as LeafletMap } from 'leaflet';
-import L from 'leaflet';
+import Leaflet from 'leaflet';
+import type L from 'leaflet';
 import Link from 'next/link';
 import { MapPin } from 'lucide-react';
 import type { Event } from '@/types';
@@ -22,7 +22,7 @@ interface EventsMapProps {
 }
 
 // Fix default marker icons in Next.js bundlers.
-const markerIcon = new L.Icon({
+const markerIcon = new Leaflet.Icon({
   iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
@@ -44,7 +44,7 @@ export default function EventsMap({
     () => events.filter(e => typeof e.lat === 'number' && typeof e.lng === 'number'),
     [events]
   );
-  const mapRef = useRef<LeafletMap | null>(null);
+  const mapRef = useRef<any>(null);
   const [locLabel, setLocLabel] = useState('Zimbabwe');
 
   useEffect(() => {
@@ -82,7 +82,7 @@ export default function EventsMap({
           zoom={defaultZoom}
           scrollWheelZoom={false}
           style={{ height: '100%', width: '100%' }}
-          ref={(m: LeafletMap | null) => {
+          ref={(m: any) => {
             mapRef.current = m;
           }}
         >

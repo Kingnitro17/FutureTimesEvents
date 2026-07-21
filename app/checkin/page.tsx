@@ -114,7 +114,7 @@ export default function CheckInPage() {
     if (data) {
       setStats({
         total_issued:     data.length,
-        total_checked_in: data.filter(t => t.status === 'checked_in').length,
+        total_checked_in: data.filter((t: { status: string }) => t.status === 'checked_in').length,
       });
     }
   };

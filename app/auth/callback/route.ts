@@ -7,9 +7,9 @@ export async function GET(request: NextRequest) {
   const next = searchParams.get('next') ?? '/';
 
   if (code) {
-    const { createClient } = await import('@supabase/ssr');
+    const { createServerClient } = await import('@supabase/ssr');
     const response = NextResponse.redirect(`${origin}${next}`);
-    const supabase = createClient(
+    const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {

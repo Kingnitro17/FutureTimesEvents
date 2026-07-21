@@ -119,7 +119,8 @@ export async function POST(req: NextRequest) {
     // ── Call atomic check-in function ───────────────────────
     const adminClient = getSupabaseAdminClient();
 
-    const { data: result, error: rpcError } = await adminClient.rpc('verify_and_checkin', {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: result, error: rpcError } = await (adminClient as any).rpc('verify_and_checkin', {
       p_token_hash: tokenHash,
       p_scanner_id: user.id,
       p_event_id:   eventId,

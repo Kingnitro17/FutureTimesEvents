@@ -35,7 +35,7 @@ interface CameraScannerProps {
 // ── Result display config ─────────────────────────────────────
 const RESULT_CONFIG: Record<
   ScanResultCode,
-  { label: string; sublabel: string; color: string; bg: string; border: string; icon: React.ComponentType<{ size?: number }> }
+  { label: string; sublabel: string; color: string; bg: string; border: string; icon: React.ComponentType<{ size?: number; color?: string }> }
 > = {
   valid_checked_in:   { label: '✓ ADMITTED',        sublabel: 'Ticket accepted — welcome in!',      color: '#fff',    bg: 'linear-gradient(135deg,#059669,#10b981)', border: '#059669', icon: CheckCircle2 },
   already_checked_in: { label: '⚠ ALREADY SCANNED', sublabel: 'This ticket was already used.',      color: '#fff',    bg: 'linear-gradient(135deg,#d97706,#f59e0b)', border: '#d97706', icon: AlertCircle  },
@@ -153,8 +153,8 @@ export default function CameraScanner({ eventId, gate, onScanComplete }: CameraS
       const scanFrame = async () => {
         if (!videoRef.current || !readerRef.current || !isScanning) return;
         try {
-          const result = await readerRef.current.decodeFromVideoElement(videoRef.current);
-          const token = result.getText();
+          const result = readerRef.current.decode(videoRef.current);
+          const token = result ? result.getText() : null;
 
           // Debounce: don't re-scan the same token within 5 seconds
           if (token && token !== lastTokenRef.current && !isLoading) {

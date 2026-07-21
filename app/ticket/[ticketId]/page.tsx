@@ -97,7 +97,7 @@ export default function TicketViewPage() {
 
       if (user && data.attendee_email !== user.email?.toLowerCase()) {
         const isAdmin = await supabase.from('profiles').select('role').eq('id', user.id).single()
-          .then(r => ['admin', 'super_admin'].includes(r.data?.role ?? ''));
+          .then((r: any) => ['admin', 'super_admin'].includes(r.data?.role ?? ''));
         if (!isAdmin) {
           setError('You do not have permission to view this ticket.');
           setLoading(false);

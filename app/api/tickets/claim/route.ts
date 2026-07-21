@@ -113,7 +113,8 @@ export async function POST(req: NextRequest) {
     // Role + auth checks happen INSIDE the DB function.
     const adminClient = getSupabaseAdminClient();
 
-    const { data: result, error: rpcError } = await adminClient.rpc('claim_ticket_atomic', {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: result, error: rpcError } = await (adminClient as any).rpc('claim_ticket_atomic', {
       p_event_id:           data.eventId,
       p_ticket_type_id:     data.ticketTypeId,
       p_attendee_name:      data.attendeeName,
@@ -151,8 +152,8 @@ export async function POST(req: NextRequest) {
     switch (claimResult.result) {
       case 'success':
       case 'already_claimed':
-        // Queue confirmation email job (fire and forget)
-        void adminClient.from('notification_jobs').insert({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        void (adminClient as any).from('notification_jobs').insert({
           type: 'ticket_confirmation',
           recipient_email: data.attendeeEmail.toLowerCase(),
           recipient_name:  data.attendeeName,
