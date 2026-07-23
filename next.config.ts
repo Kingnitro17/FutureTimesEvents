@@ -7,11 +7,6 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: false,
   },
 
-  // Turbopack for dev (faster)
-  turbopack: {
-    root: __dirname,
-  },
-
   // Security headers applied to all responses
   async headers() {
     return [
