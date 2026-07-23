@@ -203,7 +203,7 @@ export default function ProfilePage() {
               </div>
             ) : savedEvents.map((ev, i) => (
               <motion.div key={ev.id} {...fadeUp(i * 0.06)}>
-                <Link href={`/events/${ev.id}`}
+                <Link href={`/events/${ev.slug}`}
                   className="card rounded-xl overflow-hidden flex gap-3 p-3 hover:border-[var(--border-hover)] transition-all group">
                   {ev.image ? (
                     <img src={ev.image} alt={ev.title} className="w-16 h-16 rounded-xl object-cover shrink-0" />

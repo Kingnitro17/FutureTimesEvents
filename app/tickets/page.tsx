@@ -151,7 +151,7 @@ export default function TicketsPage() {
                           window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
                         }} className="btn btn-sm btn-ghost gap-1.5">📱 Share</button>
                         <button className="btn btn-sm btn-ghost gap-1.5"><Download size={12} /> Download</button>
-                        <Link href={`/events/${ticket.event.slug || ticket.eventId}`} className="btn btn-sm btn-ghost gap-1.5">👁️ Event</Link>
+                        <Link href={`/events/${ticket.event.slug || ticket.event.id}`} className="btn btn-sm btn-ghost gap-1.5">👁️ Event</Link>
                       </div>
                     </div>
                   </div>

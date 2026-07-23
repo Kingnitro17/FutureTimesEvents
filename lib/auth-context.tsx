@@ -62,6 +62,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const syncAuthState = async (session: { user?: { id: string; email?: string; user_metadata?: Record<string, unknown> } | null } | null) => {
       if (!mounted) return;
       if (session?.user) {
+        // Ensure profile row exists first, then load the full profile
+        const email = session.user.email || '';
+        const meta = session.user.user_metadata ?? {};
+        await ensureProfile(session.user.id, email, {
+          name: (meta.name as string) || (meta.full_name as string),
+        });
         await loadProfile(session.user.id, session.user);
       } else {
         setUser(null);
@@ -161,7 +167,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function signIn(email: string, password: string) {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
       setUser(null);
@@ -169,13 +175,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: error as Error | null };
     }
 
-    if (data.session?.user) {
-      await ensureProfile(data.session.user.id, email, { name: data.session.user.user_metadata?.name as string | undefined });
-      await loadProfile(data.session.user.id, data.session.user);
-    } else if (data.user) {
-      await loadProfile(data.user.id, data.user);
-    }
-
+    // Don't manually load profile here — onAuthStateChange will fire
+    // which calls syncAuthState → ensureProfile + loadProfile.
+    // Keep isLoading true until the listener resolves.
     return { error: null };
   }
 
@@ -191,16 +193,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: error as Error | null };
     }
 
-    if (data.user) {
-      await ensureProfile(data.user.id, email, userData);
-      if (data.session?.user) {
-        await loadProfile(data.session.user.id, data.session.user);
-      } else {
-        setUser(null);
-        setIsLoading(false);
-      }
-    }
-
+    // For sign-up with email confirmation enabled, Supabase may not
+    // set a session immediately. That's fine — the user will verify email
+    // then sign in. onAuthStateChange will handle it on sign-in.
+    // Keep isLoading true until the listener resolves if session set.
     return { error: null };
   }
 
