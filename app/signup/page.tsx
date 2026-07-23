@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/lib/auth-context';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, User, CheckCircle } from 'lucide-react';
@@ -17,6 +17,7 @@ const fadeUp = (delay = 0) => ({
 function SignupContent() {
   const { signUp, user, isLoading: authLoading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const [name,         setName]         = useState('');
   const [email,        setEmail]        = useState('');
@@ -24,24 +25,14 @@ function SignupContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [role,         setRole]         = useState<'user' | 'organizer'>('user');
   const [isLoading,    setIsLoading]    = useState(false);
-  const [isRedirecting, setIsRedirecting] = useState(false);
 
-  // Redirect to profile after successful signup when user is loaded
   useEffect(() => {
-    if (isRedirecting && user && !authLoading) {
+    if (!authLoading && user && pathname === '/signup') {
       const redirectTo = searchParams?.get('next') || '/profile';
-      // Use full page reload to ensure auth context re-initializes
-      window.location.href = redirectTo;
+      router.replace(redirectTo);
+      return;
     }
-    // Fallback: if redirecting but user not loaded after 2 seconds, redirect anyway
-    if (isRedirecting && !user && !authLoading) {
-      const timeout = setTimeout(() => {
-        const redirectTo = searchParams?.get('next') || '/profile';
-        window.location.href = redirectTo;
-      }, 2000);
-      return () => clearTimeout(timeout);
-    }
-  }, [user, authLoading, isRedirecting, searchParams]);
+  }, [user, authLoading, pathname, router, searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,7 +50,6 @@ function SignupContent() {
       setIsLoading(false);
     } else {
       toast.success('Account created successfully!');
-      setIsRedirecting(true);
     }
   };
 

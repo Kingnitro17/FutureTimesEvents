@@ -107,7 +107,7 @@ export function useRsvpPresence(eventId: string | undefined) {
           table: 'rsvps',
           filter: `event_id=eq.${eventId}`,
         },
-        (_payload) => {
+        (_payload: unknown) => {
           // Refetch snapshot on any RSVP change (debounce not needed — API is cached)
           fetchSnapshot();
         }
@@ -132,7 +132,7 @@ export function useRsvpPresence(eventId: string | undefined) {
         const state = channel.presenceState();
         setOnlineCount(Object.keys(state).length);
       })
-      .subscribe(async (status) => {
+      .subscribe(async (status: string) => {
         if (status === 'SUBSCRIBED') {
           // Track this viewer; payload is metadata only (no PII)
           await channel.track({ online_at: new Date().toISOString() });

@@ -31,8 +31,8 @@ export function useAnalytics(organizerId?: string) {
       const { data: eventsData, error: evErr } = await eventsQuery;
       if (evErr) throw evErr;
 
-      const events = eventsData ?? [];
-      const eventIds = events.map(e => e.id);
+      const events = (eventsData ?? []) as Array<{ id: string; title: string; attendees: number | null; price: number | string | null; capacity: number | null; created_at: string | null }>;
+      const eventIds = events.map((e: { id: string }) => e.id);
 
       // 2. Fetch tickets for those events
       let ticketsData: Array<{ total_amount: number; quantity: number; purchased_at: string; tier_id: string }> = [];

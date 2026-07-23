@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/lib/auth-context';
 import { signInWithGoogle } from '@/lib/oauth';
@@ -19,6 +19,7 @@ const fadeUp = (delay = 0) => ({
 function LoginContent() {
   const router       = useRouter();
   const searchParams = useSearchParams();
+  const pathname     = usePathname();
   const { signIn, user, isLoading: authLoading }   = useAuth();
 
   const [email,        setEmail]        = useState('');
@@ -27,7 +28,6 @@ function LoginContent() {
   const [isLoading,    setIsLoading]    = useState(false);
   const [oauthLoading, setOauthLoading] = useState(false);
   const [oauthError,   setOauthError]   = useState(false);
-  const [isRedirecting, setIsRedirecting] = useState(false);
 
   // Detect ?error=oauth redirect from /auth/callback
   useEffect(() => {
@@ -37,24 +37,13 @@ function LoginContent() {
     }
   }, [searchParams]);
 
-  // Redirect to profile after successful login when user is loaded
   useEffect(() => {
-    if (isRedirecting && user && !authLoading) {
+    if (!authLoading && user && pathname === '/login') {
       const redirectTo = searchParams?.get('next') || '/profile';
-      // Use router.push instead of window.location
-      router.push(redirectTo);
-      setIsRedirecting(false);
+      router.replace(redirectTo);
+      return;
     }
-    // Fallback: if redirecting but user not loaded after 3 seconds, redirect anyway
-    if (isRedirecting && !user && !authLoading) {
-      const timeout = setTimeout(() => {
-        const redirectTo = searchParams?.get('next') || '/profile';
-        router.push(redirectTo);
-        setIsRedirecting(false);
-      }, 3000);
-      return () => clearTimeout(timeout);
-    }
-  }, [user, authLoading, isRedirecting, router, searchParams]);
+  }, [user, authLoading, pathname, router, searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,9 +61,6 @@ function LoginContent() {
       setIsLoading(false);
     } else {
       toast.success('Welcome back!');
-      // Redirect immediately - let the profile page handle loading user state via onAuthStateChange
-      const redirectTo = searchParams?.get('next') || '/profile';
-      router.push(redirectTo);
     }
   };
 

@@ -1,6 +1,6 @@
 'use client';
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { supabase } from './supabase';
+import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import type { User, DbProfile } from '@/types';
 
 interface AuthContextType {
@@ -14,6 +14,7 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const supabase = getSupabaseBrowserClient();
 
 /** Map profiles row → UI User */
 function mapProfile(p: DbProfile): User {
@@ -58,17 +59,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (mounted) {
-        if (session?.user) loadProfile(session.user.id, session.user);
-        else setIsLoading(false);
+    const syncAuthState = async (session: { user?: { id: string; email?: string; user_metadata?: Record<string, unknown> } | null } | null) => {
+      if (!mounted) return;
+      if (session?.user) {
+        await loadProfile(session.user.id, session.user);
+      } else {
+        setUser(null);
+        setIsLoading(false);
       }
+    };
+
+    supabase.auth.getSession().then(({ data }: { data: { session: { user?: { id: string; email?: string; user_metadata?: Record<string, unknown> } | null } | null } }) => {
+      if (mounted) void syncAuthState(data.session);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_: string, session: { user?: { id: string; email?: string; user_metadata?: Record<string, unknown> } | null } | null) => {
       if (!mounted) return;
-      if (session?.user) loadProfile(session.user.id, session.user);
-      else { setUser(null); setIsLoading(false); }
+      void syncAuthState(session);
     });
 
     return () => {
@@ -76,6 +83,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       subscription.unsubscribe();
     };
   }, []);
+
+  async function ensureProfile(
+    userId: string,
+    email: string,
+    userData: Partial<User>
+  ) {
+    const display_name = userData.name || email.split('@')[0];
+
+    try {
+      const { data: existing } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (existing) return;
+
+      const { error } = await supabase.from('profiles').insert({
+        id:           userId,
+        email,
+        display_name,
+        initials:     display_name.slice(0, 2).toUpperCase(),
+        role:         userData.role || 'user',
+        avatar_url:   '',
+        avatar_color: '#7B61FF',
+      }).select().single();
+
+      if (error && error.code !== '23505') {
+        console.warn('[Auth] profile insert failed:', error.message);
+      }
+    } catch (err) {
+      console.warn('[Auth] profile ensure failed:', err);
+    }
+  }
 
   async function loadProfile(
     userId: string,
@@ -120,9 +161,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function signIn(email: string, password: string) {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    // Don't manually load profile - let onAuthStateChange handle it
-    return { error: error as Error | null };
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+    if (error) {
+      setUser(null);
+      setIsLoading(false);
+      return { error: error as Error | null };
+    }
+
+    if (data.session?.user) {
+      await ensureProfile(data.session.user.id, email, { name: data.session.user.user_metadata?.name as string | undefined });
+      await loadProfile(data.session.user.id, data.session.user);
+    } else if (data.user) {
+      await loadProfile(data.user.id, data.user);
+    }
+
+    return { error: null };
   }
 
   async function signUp(email: string, password: string, userData: Partial<User>) {
@@ -131,25 +185,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       options: { data: { name: userData.name, role: userData.role || 'user' } },
     });
 
-    if (!error && data.user) {
-      const display_name = userData.name || email.split('@')[0];
-      await supabase.from('profiles').insert({
-        id:           data.user.id,
-        email,
-        display_name,
-        initials:     display_name.slice(0, 2).toUpperCase(),
-        role:         userData.role || 'user',
-        avatar_url:   '',
-        avatar_color: '#7B61FF',
-      }).select().single();
+    if (error) {
+      setUser(null);
+      setIsLoading(false);
+      return { error: error as Error | null };
     }
 
-    return { error: error as Error | null };
+    if (data.user) {
+      await ensureProfile(data.user.id, email, userData);
+      if (data.session?.user) {
+        await loadProfile(data.session.user.id, data.session.user);
+      } else {
+        setUser(null);
+        setIsLoading(false);
+      }
+    }
+
+    return { error: null };
   }
 
   async function signOut() {
     await supabase.auth.signOut();
     setUser(null);
+    setIsLoading(false);
   }
 
   const isAdmin     = user?.role === 'admin';

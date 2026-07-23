@@ -59,7 +59,7 @@ export default function CheckoutPage() {
         .eq('event_id', mappedEvent.id);
       
       if (tiers && tiers.length > 0) {
-        const mappedTiers: TicketTier[] = tiers.map(t => ({
+        const mappedTiers: TicketTier[] = tiers.map((t: { id: string; name: string; price: number | string | null; description?: string | null; perks?: string[] | null; available?: number | null; total?: number | null; gradient?: string | null }) => ({
           id: t.id, name: t.name, price: Number(t.price),
           description: t.description || '', perks: t.perks || [],
           available: t.available || 0, total: t.total || 0, gradient: t.gradient || ''

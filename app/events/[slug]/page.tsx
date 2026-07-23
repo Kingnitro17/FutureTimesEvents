@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Calendar, MapPin, Clock, Users, ChevronDown, Share2, Heart, Navigation } from 'lucide-react';
+import { ChevronDown, Share2, Heart, Navigation } from 'lucide-react';
 import TicketClaimForm from '@/components/events/TicketClaimForm';
 import QRDisplay from '@/components/tickets/QRDisplay';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
@@ -150,7 +150,7 @@ export default function EventSlugPage() {
     <div className="min-h-screen bg-[var(--bg)] pb-32 sm:pb-8">
       
       {/* Compact header */}
-      <header className="sticky top-0 z-50 bg-[var(--bg)]/80 backdrop-blur-lg border-b border-[var(--border)] h-14 sm:h-16 px-4 flex items-center justify-between">
+      <header className="sticky top-0 z-50 bg-[var(--bg)]/80 backdrop-blur-lg border-b border-[var(--border)] h-14 sm:h-16 px-4 sm:px-6 lg:px-8 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
           <span className="text-lg font-black text-[var(--text)]">FT</span>
         </Link>
@@ -168,28 +168,30 @@ export default function EventSlugPage() {
       </header>
 
       {/* Hero image */}
-      <div className="relative w-full aspect-[16/9] sm:aspect-[21/9] max-h-[260px] sm:max-h-[460px] overflow-hidden">
-        {event.image_url ? (
-          <img
-            src={event.image_url}
-            alt={event.title}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="w-full h-full" style={{ background: grad }} />
-        )}
-        
-        {/* Category badge */}
-        <div className="absolute top-4 left-4">
-          <span className="px-3 py-1.5 rounded-full text-xs font-bold text-white backdrop-blur-md"
-            style={{ background: 'rgba(0,0,0,0.5)' }}>
-            {event.category_label}
-          </span>
+      <div className="px-4 sm:px-6 lg:px-8 pt-4 sm:pt-5">
+        <div className="relative w-full aspect-[16/9] sm:aspect-[21/9] max-h-[260px] sm:max-h-[460px] overflow-hidden rounded-[30px] border border-[var(--border)] shadow-[0_24px_80px_rgba(0,0,0,0.08)]">
+          {event.image_url ? (
+            <img
+              src={event.image_url}
+              alt={event.title}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full" style={{ background: grad }} />
+          )}
+          
+          {/* Category badge */}
+          <div className="absolute top-4 left-4">
+            <span className="px-3 py-1.5 rounded-full text-xs font-bold text-white backdrop-blur-md"
+              style={{ background: 'rgba(0,0,0,0.5)' }}>
+              {event.category_label}
+            </span>
+          </div>
         </div>
       </div>
 
       {/* Main content */}
-      <main className="max-w-4xl mx-auto px-6 sm:px-8 lg:px-12 mt-6 sm:mt-8">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 mt-6 sm:mt-8">
         
         {/* Event identity */}
         <div className="mb-8 sm:mb-10">
@@ -203,71 +205,61 @@ export default function EventSlugPage() {
           )}
         </div>
 
-        {/* Spacer */}
-        <div className="h-16 sm:h-20" />
+        <div className="mb-8 sm:mb-10 rounded-[28px] border border-[var(--border)] bg-[var(--bg-card)]/80 p-5 sm:p-6 lg:p-8 shadow-[0_24px_80px_rgba(0,0,0,0.06)] backdrop-blur">
+          <div className="flex items-center gap-3 pb-4 border-b border-[var(--border)]/80">
+            <div className="w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold text-white" style={{ background: grad }}>
+              {event.organizer_name?.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || 'FT'}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--text-muted)]">Hosted by</p>
+              <p className="font-semibold text-[var(--text)] truncate">{event.organizer_name || 'Future Times Events'}</p>
+            </div>
+            <button className="px-4 py-2 rounded-full border border-[var(--border)] text-sm font-medium text-[var(--text)] hover:bg-[var(--bg-secondary)] transition-colors shrink-0">
+              Follow
+            </button>
+          </div>
 
-        {/* Organiser row */}
-        <div className="flex items-center gap-3 mb-10 pb-6 border-b border-[var(--border)]">
-          <div className="w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold text-white" style={{ background: grad }}>
-            {event.organizer_name?.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || 'FT'}
+          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-2xl bg-[var(--bg-secondary)] p-3.5">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--text-muted)]">Date</p>
+              <p className="mt-1 text-sm font-semibold text-[var(--text)]">{formattedDate}</p>
+            </div>
+            <div className="rounded-2xl bg-[var(--bg-secondary)] p-3.5">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--text-muted)]">Time</p>
+              <p className="mt-1 text-sm font-semibold text-[var(--text)]">{formattedTime}</p>
+            </div>
+            <div className="rounded-2xl bg-[var(--bg-secondary)] p-3.5">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--text-muted)]">Venue</p>
+              <p className="mt-1 text-sm font-semibold text-[var(--text)]">{event.venue_name}</p>
+            </div>
           </div>
-          <div className="flex-1">
-            <p className="text-xs text-[var(--text-muted)] font-medium">Hosted by</p>
-            <p className="font-semibold text-[var(--text)]">{event.organizer_name || 'Future Times Events'}</p>
-          </div>
-          <button className="px-4 py-2 rounded-full border border-[var(--border)] text-sm font-medium text-[var(--text)] hover:bg-[var(--bg-secondary)] transition-colors">
-            Follow
-          </button>
         </div>
 
-        {/* Spacer */}
-        <div className="h-16 sm:h-20" />
+        <div className="rounded-[28px] border border-[var(--border)] bg-[var(--bg-card)]/80 p-5 sm:p-6 lg:p-8 mb-8 sm:mb-10 shadow-[0_24px_80px_rgba(0,0,0,0.06)] backdrop-blur">
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="rounded-2xl bg-[var(--bg-secondary)] p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--text-muted)]">Date</p>
+              <p className="mt-2 text-sm sm:text-base font-semibold text-[var(--text)]">{formattedDate}</p>
+              {event.doors_open_at && (
+                <p className="mt-2 text-xs text-[var(--text-muted)]">Doors open: {formatEventTime(event.doors_open_at)}</p>
+              )}
+            </div>
 
-        {/* Essential details */}
-        <div className="space-y-6 mb-10">
-          <div className="flex items-start gap-4 py-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: grad }}>
-              <Calendar size={18} color="white" />
-            </div>
-            <div className="flex-1">
-              <p className="text-xs text-[var(--text-muted)] font-medium mb-0.5">Date</p>
-              <p className="font-semibold text-[var(--text)] text-sm sm:text-base">{formattedDate}</p>
-            </div>
-          </div>
-          
-          <div className="flex items-start gap-4 py-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: grad }}>
-              <Clock size={18} color="white" />
-            </div>
-            <div className="flex-1">
-              <p className="text-xs text-[var(--text-muted)] font-medium mb-0.5">Time</p>
-              <p className="font-semibold text-[var(--text)] text-sm sm:text-base">
+            <div className="rounded-2xl bg-[var(--bg-secondary)] p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--text-muted)]">Time</p>
+              <p className="mt-2 text-sm sm:text-base font-semibold text-[var(--text)]">
                 {formattedTime}
                 {formattedEndTime && formattedEndTime !== formattedTime && ` – ${formattedEndTime}`}
               </p>
-              {event.doors_open_at && (
-                <p className="text-xs text-[var(--text-muted)] mt-1">
-                  Doors open: {formatEventTime(event.doors_open_at)}
-                </p>
-              )}
+              <p className="mt-2 text-xs text-[var(--text-muted)]">{event.timezone || 'Local time'}</p>
             </div>
-          </div>
 
-          <div className="flex items-start gap-4 py-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: grad }}>
-              <MapPin size={18} color="white" />
-            </div>
-            <div className="flex-1">
-              <p className="text-xs text-[var(--text-muted)] font-medium mb-0.5">Venue</p>
-              <p className="font-semibold text-[var(--text)] text-sm sm:text-base">{event.venue_name}</p>
-              <p className="text-sm text-[var(--text-muted)]">{event.address}</p>
+            <div className="rounded-2xl bg-[var(--bg-secondary)] p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--text-muted)]">Venue</p>
+              <p className="mt-2 text-sm sm:text-base font-semibold text-[var(--text)]">{event.venue_name}</p>
+              <p className="mt-2 text-sm text-[var(--text-muted)]">{event.address}</p>
               {(event.lat && event.lng) && (
-                <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${event.lat},${event.lng}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-purple-600 dark:text-purple-400 hover:underline mt-1 inline-block font-medium"
-                >
+                <a href={`https://www.google.com/maps/search/?api=1&query=${event.lat},${event.lng}`} target="_blank" rel="noopener noreferrer" className="text-sm text-[var(--text)] hover:underline mt-2 inline-block font-medium">
                   Get directions →
                 </a>
               )}
@@ -275,28 +267,25 @@ export default function EventSlugPage() {
           </div>
 
           {event.capacity > 0 && (
-            <div className="flex items-start gap-4 py-3">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: grad }}>
-                <Users size={18} color="white" />
-              </div>
-              <div className="flex-1">
-                <p className="text-xs text-[var(--text-muted)] font-medium mb-0.5">Entry</p>
-                <p className="font-semibold text-[var(--text)] text-sm sm:text-base">
-                  Free reservation required
-                </p>
-                <p className="text-xs text-[var(--text-muted)] mt-1">Limited to {event.capacity.toLocaleString()} guests</p>
-                {isSoldOut && <p className="text-sm text-red-500 font-semibold mt-1">Sold out</p>}
-              </div>
+            <div className="mt-4 rounded-2xl bg-[var(--bg-secondary)] p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--text-muted)]">Entry</p>
+              <p className="mt-2 text-sm sm:text-base font-semibold text-[var(--text)]">Free reservation required</p>
+              <p className="mt-2 text-xs text-[var(--text-muted)]">Limited to {event.capacity.toLocaleString()} guests</p>
+              {isSoldOut && <p className="text-sm text-red-500 font-semibold mt-2">Sold out</p>}
             </div>
           )}
         </div>
 
-        {/* Spacer */}
-        <div className="h-16 sm:h-20" />
-
-        {/* About section */}
-        <section className="mb-10 sm:mb-14">
-          <h2 className="text-xl sm:text-2xl font-bold text-[var(--text)] mb-4">About this event</h2>
+        <section className="mb-8 sm:mb-10 rounded-[28px] border border-[var(--border)] bg-[var(--bg-card)]/80 p-5 sm:p-6 lg:p-8 shadow-[0_24px_80px_rgba(0,0,0,0.06)] backdrop-blur">
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--text-muted)]">About</p>
+              <h2 className="text-xl sm:text-2xl font-bold text-[var(--text)]">About this event</h2>
+            </div>
+            <div className="rounded-full border border-[var(--border)] bg-[var(--bg-secondary)] px-3 py-1.5 text-xs font-semibold text-[var(--text-muted)]">
+              {event.category_label}
+            </div>
+          </div>
           <div className="prose prose-sm sm:prose-base max-w-none">
             <p className="text-[var(--text-secondary)] leading-relaxed text-sm sm:text-base">
               {event.long_description || event.description}
@@ -304,16 +293,24 @@ export default function EventSlugPage() {
           </div>
         </section>
 
-        {/* Who is going */}
-        <section className="mb-10 sm:mb-14">
-          <h2 className="text-xl sm:text-2xl font-bold text-[var(--text)] mb-4">Who is going</h2>
-          <div className="rounded-2xl p-5 border border-[var(--border)]" style={{ background: 'var(--bg-secondary)' }}>
-            <div className="flex items-center gap-4">
+        <section className="mb-8 sm:mb-10 rounded-[28px] border border-[var(--border)] bg-[var(--bg-card)]/80 p-5 sm:p-6 lg:p-8 shadow-[0_24px_80px_rgba(0,0,0,0.06)] backdrop-blur">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--text-muted)]">Community</p>
+              <h2 className="text-xl sm:text-2xl font-bold text-[var(--text)] mt-1">Who&apos;s going</h2>
+            </div>
+            <div className="rounded-full border border-[var(--border)] bg-[var(--bg-secondary)] px-3 py-1.5 text-xs font-semibold text-[var(--text-muted)]">
+              {event.attendees || 0} joined
+            </div>
+          </div>
+
+          <div className="mt-5 rounded-[22px] border border-[var(--border)] bg-[var(--bg-secondary)]/80 p-4 sm:p-5">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex -space-x-3">
                 {[1, 2, 3, 4].map((i) => (
                   <div
                     key={i}
-                    className="w-10 h-10 rounded-full border-2 border-[var(--bg)] flex items-center justify-center text-xs font-bold text-white"
+                    className="w-11 h-11 rounded-full border-2 border-[var(--bg-card)] flex items-center justify-center text-xs font-bold text-white"
                     style={{ background: `linear-gradient(135deg, hsl(${i * 60}, 70%, 50%), hsl(${i * 60 + 30}, 70%, 40%))` }}
                   >
                     {String.fromCharCode(64 + i)}
@@ -321,9 +318,17 @@ export default function EventSlugPage() {
                 ))}
               </div>
               <div className="flex-1">
-                <p className="font-semibold text-[var(--text)]">{event.attendees || 0} people going</p>
-                <p className="text-sm text-[var(--text-muted)]">Join them by claiming your ticket</p>
+                <p className="font-semibold text-[var(--text)]">{event.attendees || 0} people are already in</p>
+                <p className="text-sm text-[var(--text-muted)] mt-1">Claim your ticket and be part of the vibe.</p>
               </div>
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              {['No-fuss entry', 'Live energy', 'Friends welcome'].map(tag => (
+                <span key={tag} className="rounded-full border border-[var(--border)] bg-[var(--bg-card)] px-3 py-1.5 text-xs font-medium text-[var(--text-muted)]">
+                  {tag}
+                </span>
+              ))}
             </div>
           </div>
         </section>

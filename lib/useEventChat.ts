@@ -53,7 +53,7 @@ export function useEventChat(eventId: string | undefined) {
       .eq('event_id', eventId)
       .order('created_at', { ascending: true })
       .limit(100)
-      .then(({ data, error: err }) => {
+      .then(({ data, error: err }: { data: unknown; error: { message: string } | null }) => {
         if (err) setError(err.message);
         else setMessages((data as unknown as ChatMessage[]) ?? []);
         setLoading(false);
@@ -74,7 +74,7 @@ export function useEventChat(eventId: string | undefined) {
           table: 'messages',
           filter: `event_id=eq.${eventId}`,
         },
-        async (payload) => {
+        async (payload: { new: { id: string } }) => {
           // Fetch with profile join — raw payload won't include joined rows
           const { data } = await supabase
             .from('messages')

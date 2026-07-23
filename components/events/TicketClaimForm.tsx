@@ -134,14 +134,13 @@ export default function TicketClaimForm({ event, ticketTypes, onSuccess }: Ticke
 
   return (
     <div className="space-y-4">
-      {/* Progress indicator */}
       {step !== 'success' && (
-        <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
+        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)]/80 p-2.5 text-xs text-[var(--text-muted)]">
           {(['select', 'details', 'confirm'] as const).map((s, i) => (
             <div key={s} className="flex items-center gap-2">
-              <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold transition-all ${
                 step === s ? 'text-white scale-110' :
-                ['select', 'details', 'confirm'].indexOf(step) > i ? 'text-white opacity-70' : 'text-[var(--text-muted)] bg-[var(--bg-tertiary)]'
+                ['select', 'details', 'confirm'].indexOf(step) > i ? 'text-white opacity-80' : 'text-[var(--text-muted)] bg-[var(--bg-card)]'
               }`} style={step === s || ['select','details','confirm'].indexOf(step) > i
                 ? { background: 'linear-gradient(135deg,#FF55C2,#7222E3)' }
                 : {}}>
@@ -159,7 +158,11 @@ export default function TicketClaimForm({ event, ticketTypes, onSuccess }: Ticke
       {/* Step 1: Select ticket type */}
       {step === 'select' && (
         <div className="space-y-3">
-          <h3 className="font-bold text-[var(--text)]">Choose your ticket</h3>
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)]/70 p-3.5">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--text-muted)]">Reserve your spot</p>
+            <h3 className="mt-1 font-bold text-[var(--text)]">Choose your ticket</h3>
+            <p className="mt-1 text-sm text-[var(--text-muted)]">Select the pass that fits your plans and secure your spot instantly.</p>
+          </div>
 
           {isSoldOut && (
             <div className="p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
@@ -171,25 +174,31 @@ export default function TicketClaimForm({ event, ticketTypes, onSuccess }: Ticke
             <button
               key={tt.id}
               onClick={() => { setSelectedType(tt); setStep('details'); }}
-              className={`w-full p-4 rounded-2xl text-left border transition-all hover:scale-[1.01] active:scale-[0.99] ${
+              className={`w-full rounded-[22px] border p-4 text-left transition-all hover:scale-[1.01] active:scale-[0.99] ${
                 selectedType?.id === tt.id
-                  ? 'border-purple-400 shadow-md'
-                  : 'border-[var(--border)] hover:border-purple-300'
-              } bg-[var(--bg-card)]`}
+                  ? 'border-purple-400 shadow-[0_18px_45px_rgba(114,34,227,0.16)] bg-[var(--bg-card)]'
+                  : 'border-[var(--border)] bg-[var(--bg-card)]/80 hover:border-purple-300'
+              }`}
               aria-label={`Select ${tt.name} ticket`}
             >
               <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-bold text-[var(--text)]">{tt.name}</p>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-bold text-[var(--text)]">{tt.name}</p>
+                    <span className="rounded-full border border-[var(--border)] bg-[var(--bg-secondary)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                      {tt.quantity_available} left
+                    </span>
+                  </div>
                   {tt.description && (
-                    <p className="text-sm text-[var(--text-muted)] mt-0.5">{tt.description}</p>
+                    <p className="text-sm text-[var(--text-muted)] mt-1.5">{tt.description}</p>
                   )}
-                  <p className="text-xs text-[var(--text-muted)] mt-1">
-                    {tt.quantity_available} available · Max {tt.claim_limit_per_contact} per person
+                  <p className="text-xs text-[var(--text-muted)] mt-2">
+                    Max {tt.claim_limit_per_contact} per person
                   </p>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="font-black text-2xl" style={{ color: 'var(--accent)' }}>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--text-muted)]">Starting at</p>
+                  <p className="mt-1 font-black text-2xl" style={{ color: 'var(--accent)' }}>
                     {tt.price === 0 ? 'FREE' : `$${tt.price}`}
                   </p>
                 </div>
@@ -224,14 +233,17 @@ export default function TicketClaimForm({ event, ticketTypes, onSuccess }: Ticke
           </div>
 
           {/* Ticket reminder */}
-          <div className="p-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border)] flex items-center justify-between">
-            <div>
+          <div className="rounded-[22px] border border-[var(--border)] bg-[var(--bg-secondary)]/85 p-3.5 sm:p-4 flex items-center justify-between gap-3">
+            <div className="min-w-0">
               <p className="text-sm font-semibold text-[var(--text)]">{selectedType.name}</p>
-              <p className="text-xs text-[var(--text-muted)]">{event.title}</p>
+              <p className="text-xs text-[var(--text-muted)] mt-0.5 line-clamp-2">{event.title}</p>
             </div>
-            <p className="font-black text-xl" style={{ color: 'var(--accent)' }}>
-              {selectedType.price === 0 ? 'FREE' : `$${selectedType.price}`}
-            </p>
+            <div className="text-right shrink-0">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--text-muted)]">Price</p>
+              <p className="font-black text-xl" style={{ color: 'var(--accent)' }}>
+                {selectedType.price === 0 ? 'FREE' : `$${selectedType.price}`}
+              </p>
+            </div>
           </div>
 
           {/* Fields */}
@@ -331,7 +343,7 @@ export default function TicketClaimForm({ event, ticketTypes, onSuccess }: Ticke
 
           <button
             onClick={() => { if (validateDetails()) setStep('confirm'); }}
-            className="w-full py-4 rounded-2xl font-bold text-white text-base transition-all hover:scale-[1.01] active:scale-[0.99]"
+            className="w-full py-4 rounded-[22px] font-bold text-white text-base transition-all hover:scale-[1.01] active:scale-[0.99] shadow-[0_16px_40px_rgba(114,34,227,0.25)]"
             style={{ background: 'linear-gradient(135deg,#FF55C2,#7222E3)' }}
           >
             Continue →
@@ -344,7 +356,7 @@ export default function TicketClaimForm({ event, ticketTypes, onSuccess }: Ticke
         <div className="space-y-4">
           <h3 className="font-bold text-[var(--text)]">Confirm your ticket</h3>
 
-          <div className="p-5 rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] space-y-3">
+          <div className="rounded-[22px] border border-[var(--border)] bg-[var(--bg-card)] p-4 sm:p-5 space-y-3">
             <div className="flex justify-between text-sm">
               <span className="text-[var(--text-muted)]">Event</span>
               <span className="font-semibold text-[var(--text)] text-right max-w-[60%]">{event.title}</span>
@@ -370,7 +382,7 @@ export default function TicketClaimForm({ event, ticketTypes, onSuccess }: Ticke
           </div>
 
           {/* Terms */}
-          <label className="flex items-start gap-3 cursor-pointer p-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border)] hover:border-purple-400 transition-colors">
+          <label className="flex items-start gap-3 cursor-pointer rounded-[18px] border border-[var(--border)] bg-[var(--bg-secondary)] p-3.5 hover:border-purple-400 transition-colors">
             <input
               type="checkbox"
               checked={termsAccepted}

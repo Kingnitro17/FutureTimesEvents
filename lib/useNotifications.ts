@@ -68,7 +68,7 @@ export function useNotifications(userId: string | undefined) {
           table: 'notifications',
           filter: `user_id=eq.${userId}`,
         },
-        (payload) => {
+        (payload: { new: DbNotification }) => {
           const newNotif = mapDbNotif(payload.new as DbNotification);
           setNotifs(prev => [newNotif, ...prev]);
         }
