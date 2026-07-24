@@ -4,7 +4,26 @@
 -- ============================================================
 BEGIN;
 
--- ── 1. Ensure liquidlounge216@gmail.com has organizer role ──
+-- ── 0. Create event_staff table if it doesn't exist ────────
+CREATE TABLE IF NOT EXISTS public.event_staff (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  event_id UUID NOT NULL REFERENCES public.events(id) ON DELETE CASCADE,
+  gate TEXT DEFAULT 'Main Gate',
+  is_active BOOLEAN DEFAULT true,
+  assigned_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id, event_id)
+);
+
+ALTER TABLE public.event_staff ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Event staff viewable by authenticated" ON public.event_staff;
+CREATE POLICY "Event staff viewable by authenticated" ON public.event_staff
+  FOR SELECT USING (auth.role() = 'authenticated');
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.event_staff TO anon, authenticated, service_role;
+
+-- ── 1. Ensure liquidlounge216@gmail.com has event_manager role ──
 UPDATE public.profiles
 SET role = 'event_manager'
 WHERE email = 'liquidlounge216@gmail.com'
