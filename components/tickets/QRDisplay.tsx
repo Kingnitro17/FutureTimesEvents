@@ -42,7 +42,8 @@ export default function QRDisplay({ token, size = 220, label = 'Your ticket QR c
 
   return (
     <div
-      className="inline-flex flex-col items-center p-3 bg-white rounded-2xl shadow-md"
+      className="inline-flex w-full flex-col items-center rounded-2xl bg-white p-3 shadow-md"
+      style={{ maxWidth: size + 24 }}
       role="img"
       aria-label={label}
     >
@@ -50,7 +51,8 @@ export default function QRDisplay({ token, size = 220, label = 'Your ticket QR c
         ref={canvasRef}
         width={size}
         height={size}
-        style={{ display: 'block', borderRadius: '8px' }}
+        className="h-auto w-full rounded-lg"
+        style={{ display: 'block' }}
       />
     </div>
   );

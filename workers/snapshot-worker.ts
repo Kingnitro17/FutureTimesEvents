@@ -16,7 +16,7 @@
 
 import dotenv from 'dotenv';
 dotenv.config({ path: '.env.local' }); // load .env.local in dev
-import { Worker, Job } from 'bullmq';
+import { Worker, type Job } from 'bullmq';
 import { createClient } from '@supabase/supabase-js';
 import { sendWhatsAppConfirmation, sendSmsConfirmation } from './twilio-service.ts';
 
@@ -34,12 +34,25 @@ const supabaseAdmin = createClient(
 // ---------------------------------------------------------------
 const redisConnection = { url: process.env.REDIS_URL! };
 
+interface SnapshotJobData {
+  eventId: string;
+  userId: string;
+  status: string;
+}
+
+interface NotificationJobData {
+  eventId: string;
+  userId: string;
+  phone: string;
+  type: 'confirmation' | 'reminder';
+}
+
 // ---------------------------------------------------------------
 // Worker 1: Snapshot recompute
 // ---------------------------------------------------------------
-const snapshotWorker = new Worker<{ eventId: string; userId: string; status: string }>(
+const snapshotWorker = new Worker<SnapshotJobData>(
   'snapshot',
-  async (job: Job) => {
+  async (job: Job<SnapshotJobData>) => {
     const { eventId, userId, status } = job.data;
     console.log(`[snapshot-worker] Recomputing snapshot for event ${eventId}`);
 
@@ -88,14 +101,9 @@ const snapshotWorker = new Worker<{ eventId: string; userId: string; status: str
 // ---------------------------------------------------------------
 // Worker 2: Notification sender (WhatsApp / SMS)
 // ---------------------------------------------------------------
-const notificationWorker = new Worker<{
-  eventId: string;
-  userId: string;
-  phone: string;
-  type: 'confirmation' | 'reminder';
-}>(
+const notificationWorker = new Worker<NotificationJobData>(
   'notifications',
-  async (job: Job) => {
+  async (job: Job<NotificationJobData>) => {
     const { eventId, phone, type } = job.data;
 
     // Fetch event details for message content
@@ -113,8 +121,11 @@ const notificationWorker = new Worker<{
     try {
       await sendWhatsAppConfirmation({ phone, event, type });
       console.log(`[notification-worker] WhatsApp sent to ${phone} (${type})`);
-    } catch (waErr: any) {
-      console.warn(`[notification-worker] WhatsApp failed, falling back to SMS: ${waErr.message}`);
+    } catch (whatsAppError: unknown) {
+      const message = whatsAppError instanceof Error
+        ? whatsAppError.message
+        : String(whatsAppError);
+      console.warn(`[notification-worker] WhatsApp failed, falling back to SMS: ${message}`);
       await sendSmsConfirmation({ phone, event, type });
       console.log(`[notification-worker] SMS sent to ${phone} (${type})`);
     }

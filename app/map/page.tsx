@@ -1,9 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { motion, AnimatePresence } from 'framer-motion';
-import { MapPin, Navigation } from 'lucide-react';
+import { Navigation } from 'lucide-react';
 import { useEvents } from '@/lib/useEvents';
 
 const EventsMap = dynamic(() => import('@/components/events/EventsMap'), { ssr: false });
@@ -53,22 +52,7 @@ export default function MapPage() {
   const [selectedCityName, setSelectedCityName] = useState<string>('My Location');
   const [selectedCenter, setSelectedCenter] = useState<[number, number]>(DEFAULT_CENTER);
 
-  useEffect(() => {
-    const cached = localStorage.getItem('user_location_cache');
-    if (cached) {
-      try {
-        const [lat, lng] = JSON.parse(cached);
-        setUserLocation([lat, lng]);
-        setSelectedCenter([lat, lng]);
-        setSelectedCityName('My Location');
-      } catch (e) {}
-    } else {
-      // Auto-prompt on first load
-      requestLocation();
-    }
-  }, []);
-
-  const requestLocation = () => {
+  const requestLocation = useCallback(() => {
     if (typeof window === 'undefined') return;
     if (!('geolocation' in navigator)) {
       setLocationError('Geolocation not supported');
@@ -105,9 +89,30 @@ export default function MapPage() {
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
-  };
+  }, []);
 
-  const mapCenter = userLocation || DEFAULT_CENTER;
+  useEffect(() => {
+    // Defer browser-storage synchronization until after the mount effect.
+    // This avoids a synchronous render cascade while preserving the initial
+    // cached-location lookup and first-visit geolocation prompt.
+    const timeoutId = window.setTimeout(() => {
+      const cached = localStorage.getItem('user_location_cache');
+      if (cached) {
+        try {
+          const [lat, lng] = JSON.parse(cached);
+          setUserLocation([lat, lng]);
+          setSelectedCenter([lat, lng]);
+          setSelectedCityName('My Location');
+        } catch {
+          // Ignore an invalid cache entry and keep the default map position.
+        }
+      } else {
+        requestLocation();
+      }
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [requestLocation]);
 
   return (
     <div className="min-h-screen pb-nav" style={{ background: 'var(--bg)' }}>

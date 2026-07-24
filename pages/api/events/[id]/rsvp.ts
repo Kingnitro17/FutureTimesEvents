@@ -7,6 +7,7 @@
 //   "uuid": "^9"
 
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { z } from 'zod';
 import { supabaseAdmin, supabaseFromToken } from '@/lib/supabase-server';
 import { enqueueSnapshotJob } from '@/lib/worker-queue';
 
@@ -15,13 +16,14 @@ import { enqueueSnapshotJob } from '@/lib/worker-queue';
 // ---------------------------------------------------------------
 export type RsvpStatus = 'going' | 'interested' | 'not_going';
 
-interface RsvpBody {
-  status: RsvpStatus;
-  phone?: string;            // optional phone for WhatsApp/SMS
-  idempotency_key?: string;  // client-generated UUID to prevent double-submit
-}
-
-interface ApiError { error: string; code?: string }
+const MethodSchema = z.enum(['GET', 'POST']);
+const QuerySchema = z.object({
+  id: z.string().trim().uuid('Invalid event id'),
+});
+const UuidSchema = z.string().uuid();
+const LegacyIdempotencySchema = z.string().regex(
+  /^[0-9a-f-]{36}:[0-9a-f-]{36}:\d{10,16}$/i,
+);
 
 // ---------------------------------------------------------------
 // Rate limiting (Redis sliding window — 10 RSVPs per user per min)
@@ -63,10 +65,39 @@ async function checkRateLimit(userId: string): Promise<boolean> {
 function normalizePhone(raw?: string): string | null {
   if (!raw) return null;
   const digits = raw.replace(/\D/g, '');
-  if (digits.startsWith('263') && digits.length >= 12) return `+${digits}`;
+  if (digits.startsWith('263') && digits.length === 12) return `+${digits}`;
   if (digits.startsWith('0') && digits.length === 10) return `+263${digits.slice(1)}`;
   if (digits.length === 9) return `+263${digits}`;
   return null; // reject invalid
+}
+
+const OptionalPhoneSchema = z.string()
+  .trim()
+  .max(32, 'Phone number is too long')
+  .regex(/^[+\d\s().-]*$/, 'Invalid phone number')
+  .refine(value => value === '' || normalizePhone(value) !== null, {
+    message: 'Invalid Zimbabwe phone number',
+  })
+  .optional();
+
+function createRsvpBodySchema(userId: string, eventId: string) {
+  return z.object({
+    status: z.enum(['going', 'interested', 'not_going']),
+    phone: OptionalPhoneSchema,
+    idempotency_key: z.string()
+      .trim()
+      .min(1, 'Invalid idempotency key')
+      .max(160, 'Invalid idempotency key')
+      .refine((value) => {
+        if (UuidSchema.safeParse(value).success) return true;
+        if (!LegacyIdempotencySchema.safeParse(value).success) return false;
+
+        const [keyUserId, keyEventId] = value.split(':');
+        return keyUserId.toLowerCase() === userId.toLowerCase()
+          && keyEventId.toLowerCase() === eventId.toLowerCase();
+      }, { message: 'Invalid idempotency key' })
+      .optional(),
+  });
 }
 
 // ---------------------------------------------------------------
@@ -76,8 +107,11 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  const eventId = req.query.id as string;
-  if (!eventId) return res.status(400).json({ error: 'Missing event id' });
+  const queryResult = QuerySchema.safeParse(req.query);
+  if (!queryResult.success) {
+    return res.status(400).json({ error: 'Invalid event id' });
+  }
+  const { id: eventId } = queryResult.data;
 
   // Auth: extract JWT from Authorization header or cookie
   const authHeader = req.headers.authorization ?? '';
@@ -96,9 +130,13 @@ export default async function handler(
   }
 
   const userId = user.id;
+  const methodResult = MethodSchema.safeParse(req.method);
+  if (!methodResult.success) {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
 
   // ── GET: fetch caller's current RSVP status ──────────────────
-  if (req.method === 'GET') {
+  if (methodResult.data === 'GET') {
     const { data, error } = await supabaseAdmin
       .from('rsvps')
       .select('status, phone_verified, updated_at')
@@ -111,10 +149,6 @@ export default async function handler(
   }
 
   // ── POST: upsert RSVP ────────────────────────────────────────
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
   // Rate-limit check
   const allowed = await checkRateLimit(userId);
   if (!allowed) {
@@ -122,12 +156,11 @@ export default async function handler(
     return res.status(429).json({ error: 'Too many RSVPs. Slow down.' });
   }
 
-  const body = req.body as RsvpBody;
-  const { status, phone, idempotency_key } = body;
-
-  if (!['going', 'interested', 'not_going'].includes(status)) {
-    return res.status(400).json({ error: 'Invalid status' });
+  const bodyResult = createRsvpBodySchema(userId, eventId).safeParse(req.body);
+  if (!bodyResult.success) {
+    return res.status(400).json({ error: 'Invalid RSVP request' });
   }
+  const { status, phone, idempotency_key } = bodyResult.data;
 
   const phone_e164 = normalizePhone(phone);
 

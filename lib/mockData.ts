@@ -210,7 +210,7 @@ export const MOCK_USER: User = {
   id: 'u1', name: 'Alex Johnson', email: 'alex@eventsdistro.com', avatar: '', avatarColor: '#7B61FF', initials: 'AJ',
   bio: 'Music lover, night owl, festival addict. Always chasing the next great experience.',
   location: 'Harare, Zimbabwe', joinedAt: '2024-03-15', loyaltyPoints: 2840,
-  eventsAttended: 23, totalSpent: 1250, isVip: true, role: 'organizer',
+  eventsAttended: 23, totalSpent: 1250, isVip: true, role: 'event_manager',
   badges: [
     { id: 'explorer', name: 'Top Explorer', icon: '🦅', description: 'Attended 10+ events this month', earned: true, earnedAt: '2026-04-01' },
     { id: 'early-bird', name: 'Early Bird', icon: '⚡', description: 'First 100 to book 5 events', earned: true, earnedAt: '2026-03-15' },

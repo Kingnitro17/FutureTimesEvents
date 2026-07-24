@@ -1,5 +1,12 @@
 // ─── Raw Supabase DB rows (snake_case) ────────────────────────────────────────
 
+export type UserRole =
+  | 'attendee'
+  | 'host'
+  | 'event_manager'
+  | 'admin'
+  | 'super_admin';
+
 export interface DbProfile {
   id: string;
   display_name: string;
@@ -11,7 +18,8 @@ export interface DbProfile {
   location?: string;
   loyalty_points?: number;
   is_vip?: boolean;
-  role?: 'user' | 'organizer' | 'admin';
+  /** Legacy values are accepted only while the production migration normalises existing rows. */
+  role?: UserRole | 'user' | 'organizer';
   total_spent?: number;
   events_attended?: number;
   created_at?: string;
@@ -122,6 +130,39 @@ export interface Ticket {
   status: 'upcoming' | 'past' | 'cancelled' | 'checked-in';
   qrCode: string; holderName: string; holderEmail: string;
 }
+
+/**
+ * Canonical production wallet shape. One row represents one independently
+ * scannable admission. Raw QR tokens never belong in persisted ticket data.
+ */
+export interface WalletTicket {
+  id: string;
+  ticketNumber: string;
+  eventId: string;
+  status: 'issued' | 'checked_in' | 'cancelled' | 'revoked';
+  issuedAt: string;
+  checkedInAt: string | null;
+  gate: string | null;
+  holderName: string;
+  holderEmail: string;
+  event: {
+    id: string;
+    title: string;
+    slug: string;
+    startsAt: string;
+    date: string;
+    time: string;
+    venue: string;
+    address: string;
+    image: string;
+    category: string;
+  };
+  ticketType: {
+    id: string;
+    name: string;
+    price: number;
+  };
+}
 export interface Notification {
   id: string; type: 'ticket' | 'reminder' | 'update' | 'system' | 'promo';
   title: string; message: string; time: string; read: boolean; eventId?: string;
@@ -132,7 +173,7 @@ export interface Badge {
 export interface User {
   id: string; name: string; email: string; avatar: string; avatarColor: string; initials: string;
   bio: string; location: string; joinedAt: string; loyaltyPoints: number; badges: Badge[];
-  eventsAttended: number; totalSpent: number; isVip: boolean; role: 'user' | 'organizer' | 'admin';
+  eventsAttended: number; totalSpent: number; isVip: boolean; role: UserRole;
 }
 export interface AnalyticsData { date: string; tickets: number; revenue: number; attendance: number; }
 export interface Comment { id: string; author: string; avatar: string; avatarColor: string; text: string; time: string; likes: number; }

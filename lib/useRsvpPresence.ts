@@ -43,6 +43,26 @@ export interface AttendeeSnapshot {
   cached_at:         string;
 }
 
+function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message : fallback;
+}
+
+function isRsvpStatus(value: unknown): value is RsvpStatus {
+  return value === 'going' || value === 'interested' || value === 'not_going';
+}
+
+function readRsvpStatus(value: unknown): RsvpStatus | null {
+  if (!value || typeof value !== 'object' || !('rsvp' in value)) return null;
+  const rsvp = value.rsvp;
+  if (!rsvp || typeof rsvp !== 'object' || !('status' in rsvp)) return null;
+  return isRsvpStatus(rsvp.status) ? rsvp.status : null;
+}
+
+function readApiError(value: unknown): string | null {
+  if (!value || typeof value !== 'object' || !('error' in value)) return null;
+  return typeof value.error === 'string' ? value.error : null;
+}
+
 // ---------------------------------------------------------------
 // Hook
 // ---------------------------------------------------------------
@@ -50,47 +70,76 @@ export function useRsvpPresence(eventId: string | undefined) {
   const [snapshot,    setSnapshot]    = useState<AttendeeSnapshot | null>(null);
   const [onlineCount, setOnlineCount] = useState(0);
   const [myStatus,    setMyStatus]    = useState<RsvpStatus | null>(null);
-  const [loading,     setLoading]     = useState(true);
+  const [loading,     setLoading]     = useState(Boolean(eventId));
   const [error,       setError]       = useState<string | null>(null);
 
   const rsvpChannelRef     = useRef<RealtimeChannel | null>(null);
   const presenceChannelRef = useRef<RealtimeChannel | null>(null);
 
   // ── 1. Initial fetch from API (cache-first) ─────────────────
-  const fetchSnapshot = useCallback(async () => {
+  const fetchSnapshot = useCallback(async (signal?: AbortSignal) => {
     if (!eventId) return;
     try {
-      const res = await fetch(`/api/events/${eventId}/attendees`);
+      const res = await fetch(`/api/events/${eventId}/attendees`, { signal });
       if (!res.ok) throw new Error(await res.text());
       const data: AttendeeSnapshot = await res.json();
+      if (signal?.aborted) return;
       setSnapshot(data);
-    } catch (e: any) {
-      setError(e.message);
+    } catch (fetchError: unknown) {
+      if (signal?.aborted) return;
+      setError(getErrorMessage(fetchError, 'Could not load attendee activity.'));
     }
   }, [eventId]);
 
   // ── 2. Fetch caller's own RSVP status ───────────────────────
-  const fetchMyRsvp = useCallback(async () => {
+  const fetchMyRsvp = useCallback(async (signal?: AbortSignal) => {
     if (!eventId) return;
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return; // anonymous users have no RSVP
+    if (!session || signal?.aborted) return; // anonymous users have no RSVP
 
     try {
       const res = await fetch(`/api/events/${eventId}/rsvp`, {
         headers: { Authorization: `Bearer ${session.access_token}` },
+        signal,
       });
-      if (res.ok) {
-        const { rsvp } = await res.json();
-        setMyStatus(rsvp?.status ?? null);
+      if (res.ok && !signal?.aborted) {
+        const payload: unknown = await res.json();
+        if (!signal?.aborted) setMyStatus(readRsvpStatus(payload));
       }
     } catch { /* ignore */ }
   }, [eventId]);
 
   // ── 3. Initial load ─────────────────────────────────────────
   useEffect(() => {
-    if (!eventId) return;
-    setLoading(true);
-    Promise.all([fetchSnapshot(), fetchMyRsvp()]).finally(() => setLoading(false));
+    let active = true;
+    const controller = new AbortController();
+    const task = window.setTimeout(() => {
+      if (!active) return;
+      if (!eventId) {
+        setSnapshot(null);
+        setMyStatus(null);
+        setError(null);
+        setLoading(false);
+        return;
+      }
+
+      setSnapshot(null);
+      setMyStatus(null);
+      setError(null);
+      setLoading(true);
+      void Promise.all([
+        fetchSnapshot(controller.signal),
+        fetchMyRsvp(controller.signal),
+      ]).finally(() => {
+        if (active) setLoading(false);
+      });
+    }, 0);
+
+    return () => {
+      active = false;
+      controller.abort();
+      window.clearTimeout(task);
+    };
   }, [eventId, fetchSnapshot, fetchMyRsvp]);
 
   // ── 4. Subscribe to rsvps table changes (Realtime) ──────────
@@ -107,9 +156,9 @@ export function useRsvpPresence(eventId: string | undefined) {
           table: 'rsvps',
           filter: `event_id=eq.${eventId}`,
         },
-        (_payload: unknown) => {
+        () => {
           // Refetch snapshot on any RSVP change (debounce not needed — API is cached)
-          fetchSnapshot();
+          void fetchSnapshot();
         }
       )
       .subscribe();
@@ -179,17 +228,17 @@ export function useRsvpPresence(eventId: string | undefined) {
         });
 
         if (!res.ok) {
-          const { error: msg } = await res.json();
-          throw new Error(msg);
+          const payload: unknown = await res.json();
+          throw new Error(readApiError(payload) ?? `RSVP request failed (${res.status}).`);
         }
 
         // Refetch real snapshot to reconcile
         await fetchSnapshot();
-      } catch (e: any) {
+      } catch (submitError: unknown) {
         // Rollback optimistic update
         setMyStatus(previousStatus);
         setSnapshot(previousSnapshot);
-        setError(e.message);
+        setError(getErrorMessage(submitError, 'Could not update your RSVP.'));
       }
     },
     [eventId, myStatus, snapshot, fetchSnapshot]

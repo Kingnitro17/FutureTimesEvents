@@ -96,17 +96,21 @@ function EventsContent() {
 
   // Geolocation
   useEffect(() => {
-    if (typeof window === 'undefined' || !('geolocation' in navigator)) return;
-    setIsLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      ({ coords: { latitude, longitude } }) => {
-        setUserLocation([latitude, longitude]);
-        setUserCity(`${detectCity(latitude, longitude)}, Zimbabwe`);
-        setIsLocating(false);
-      },
-      () => { setIsLocating(false); setUserCity('Zimbabwe'); },
-      { enableHighAccuracy: true, timeout: 10_000, maximumAge: 0 },
-    );
+    const timer = window.setTimeout(() => {
+      if (!('geolocation' in navigator)) return;
+      setIsLocating(true);
+      navigator.geolocation.getCurrentPosition(
+        ({ coords: { latitude, longitude } }) => {
+          setUserLocation([latitude, longitude]);
+          setUserCity(`${detectCity(latitude, longitude)}, Zimbabwe`);
+          setIsLocating(false);
+        },
+        () => { setIsLocating(false); setUserCity('Zimbabwe'); },
+        { enableHighAccuracy: true, timeout: 10_000, maximumAge: 0 },
+      );
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, []);
 
   // Pass userLocation so the hook can compute distances and sort by "Nearest"

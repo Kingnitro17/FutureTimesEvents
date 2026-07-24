@@ -166,9 +166,6 @@ export default function HomePage() {
       {/* ── ABOUT SECTION ── */}
       <AboutSection />
 
-      {/* ── SPACER ── */}
-      <div className="h-16 sm:h-20" />
-
       {/* ── CITY OVALS — horizontal scroll, TravelPerk-style capsules ── */}
       <CityOvalsSection />
 

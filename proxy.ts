@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { getPublicSupabaseConfig } from '@/lib/supabase/config';
 
 // Routes that require any authenticated session
 const AUTH_ROUTES = ['/tickets', '/profile', '/settings', '/notifications'];
@@ -19,12 +20,11 @@ export async function proxy(request: NextRequest) {
   // Create a mutable response — Supabase SSR will set/refresh auth cookies on it
   let supabaseResponse = NextResponse.next({ request });
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ecbbmcqwluivbzlaqdsd.supabase.co';
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVjYmJtY3F3bHVpdmJ6bGFxZHNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc3NjEyNzcsImV4cCI6MjA5MzMzNzI3N30.XTTs7RN-SrZ0YnC20m8mZms8ZfVVeANJgvwg1Key6SQ';
+  const { url, anonKey } = getPublicSupabaseConfig();
 
   const supabase = createServerClient(
     url,
-    key,
+    anonKey,
     {
       cookies: {
         getAll() {
@@ -63,14 +63,19 @@ export async function proxy(request: NextRequest) {
 
   // ── Role-based checks for admin/host routes ───────────────────────────────
   if (user && (isAdminRoute || isHostRoute)) {
-    // Fetch role from profiles table
+    // Fetch both authorization role and suspension state from profiles.
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role')
+      .select('role, account_status')
       .eq('id', user.id)
       .single();
 
     const role = profile?.role ?? 'attendee';
+    const accountStatus = profile?.account_status ?? 'suspended';
+
+    if (accountStatus !== 'active') {
+      return NextResponse.redirect(new URL('/', request.url));
+    }
 
     if (isAdminRoute && !['admin', 'super_admin'].includes(role)) {
       return NextResponse.redirect(new URL('/', request.url));

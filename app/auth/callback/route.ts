@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { getPublicSupabaseConfig } from '@/lib/supabase/config';
 
 /**
  * /auth/callback
@@ -16,8 +17,7 @@ export async function GET(request: NextRequest) {
   const origin = url.origin;
 
   if (code) {
-    const supabaseUrl  = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ecbbmcqwluivbzlaqdsd.supabase.co';
-    const supabaseKey  = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVjYmJtY3F3bHVpdmJ6bGFxZHNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc3NjEyNzcsImV4cCI6MjA5MzMzNzI3N30.XTTs7RN-SrZ0YnC20m8mZms8ZfVVeANJgvwg1Key6SQ';
+    const { url: supabaseUrl, anonKey: supabaseKey } = getPublicSupabaseConfig();
 
     // Create a response that will carry the auth cookies
     const supabaseResponse = NextResponse.next({ request });

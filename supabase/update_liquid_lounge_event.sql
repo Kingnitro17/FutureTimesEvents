@@ -1,131 +1,231 @@
 -- ============================================================
--- UPDATE LIQUID LOUNGE EVENT — Production Ready v3
--- Run in Supabase SQL Editor
+-- Liquid Lounge production configuration
+--
+-- Prerequisite:
+--   Review and run migrations/006_production_ticketing.sql first.
+--
+-- Run this file manually in the Supabase SQL Editor after reviewing it.
+-- It is non-destructive and idempotent: no tables, policies, assignments,
+-- tickets, claims, or scans are dropped, and sold inventory is never reset.
 -- ============================================================
+
 BEGIN;
 
--- ── 0. Drop and recreate event_staff to ensure correct schema ──
-DROP TABLE IF EXISTS public.event_staff CASCADE;
+SET LOCAL lock_timeout = '15s';
+SET LOCAL statement_timeout = '60s';
+SET LOCAL search_path = public, extensions, pg_catalog;
 
-CREATE TABLE public.event_staff (
-  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  event_id     UUID NOT NULL REFERENCES public.events(id) ON DELETE CASCADE,
-  user_id      UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-  role         TEXT NOT NULL DEFAULT 'host' CHECK (role IN ('host', 'event_manager')),
-  gate         TEXT DEFAULT NULL,
-  is_active    BOOLEAN NOT NULL DEFAULT TRUE,
-  assigned_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  assigned_by  UUID REFERENCES public.profiles(id) DEFAULT NULL,
-  UNIQUE(event_id, user_id)
-);
+DO $$
+DECLARE
+  v_organizer_id       UUID;
+  v_event_id           UUID;
+  v_ticket_type_id     UUID;
+  v_event_issued       INTEGER := 0;
+  v_type_issued        INTEGER := 0;
+  v_event_capacity     INTEGER := 2000;
+  v_type_total         INTEGER := 2000;
+  v_type_available     INTEGER := 0;
+  v_general_type_count INTEGER := 0;
+BEGIN
+  SELECT p.id
+  INTO v_organizer_id
+  FROM public.profiles AS p
+  WHERE lower(p.email) = 'liquidlounge216@gmail.com'
+  ORDER BY p.created_at
+  LIMIT 1;
 
-ALTER TABLE public.event_staff ENABLE ROW LEVEL SECURITY;
+  IF v_organizer_id IS NULL THEN
+    RAISE EXCEPTION
+      'No profile exists for liquidlounge216@gmail.com. Create/sign in to that account first.';
+  END IF;
 
-DROP POLICY IF EXISTS "Event staff viewable by authenticated" ON public.event_staff;
-CREATE POLICY "Event staff viewable by authenticated" ON public.event_staff
-  FOR SELECT USING (auth.role() = 'authenticated');
+  -- This account is scoped to its assigned event. Do not preserve a legacy
+  -- admin promotion that may have originated from the old organizer mapping.
+  UPDATE public.profiles
+  SET role = 'event_manager',
+      account_status = 'active',
+      updated_at = NOW()
+  WHERE id = v_organizer_id;
 
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.event_staff TO anon, authenticated, service_role;
+  SELECT e.id
+  INTO v_event_id
+  FROM public.events AS e
+  WHERE e.slug = 'alick-macheso-peter-moyo-live'
+  ORDER BY e.created_at
+  LIMIT 1
+  FOR UPDATE;
 
--- ── 0b. Create ticket_types table if it doesn't exist ──────
-CREATE TABLE IF NOT EXISTS public.ticket_types (
-  id                     UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  event_id               UUID NOT NULL REFERENCES public.events(id) ON DELETE CASCADE,
-  name                   TEXT NOT NULL,
-  description            TEXT DEFAULT '',
-  price                  NUMERIC(10,2) NOT NULL DEFAULT 0,
-  quantity_available     INTEGER NOT NULL DEFAULT 0,
-  quantity_total         INTEGER NOT NULL DEFAULT 0,
-  claim_limit_per_contact INTEGER NOT NULL DEFAULT 1,
-  claim_opens_at         TIMESTAMPTZ DEFAULT NULL,
-  claim_closes_at        TIMESTAMPTZ DEFAULT NULL,
-  is_active              BOOLEAN NOT NULL DEFAULT TRUE,
-  sort_order             INTEGER NOT NULL DEFAULT 0,
-  created_at             TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at             TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
+  IF v_event_id IS NULL THEN
+    RAISE EXCEPTION
+      'Event slug alick-macheso-peter-moyo-live does not exist.';
+  END IF;
 
-ALTER TABLE public.ticket_types ENABLE ROW LEVEL SECURITY;
+  SELECT COALESCE(
+    SUM(GREATEST(COALESCE(t.quantity, 1), 1)),
+    0
+  )::INTEGER
+  INTO v_event_issued
+  FROM public.tickets AS t
+  WHERE t.event_id = v_event_id
+    AND t.status IN ('issued', 'checked_in');
 
-DROP POLICY IF EXISTS "Ticket types viewable by everyone" ON public.ticket_types;
-CREATE POLICY "Ticket types viewable by everyone" ON public.ticket_types
-  FOR SELECT USING (true);
+  -- Never set capacity below tickets that have already been validly issued.
+  v_event_capacity := GREATEST(2000, v_event_issued);
 
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.ticket_types TO anon, authenticated, service_role;
+  UPDATE public.events
+  SET
+    date = DATE '2026-08-09',
+    time = TIME '18:00:00',
+    end_time = TIME '23:00:00',
+    starts_at = TIMESTAMPTZ '2026-08-09 18:00:00+02',
+    ends_at = TIMESTAMPTZ '2026-08-09 23:00:00+02',
+    doors_open_at = TIMESTAMPTZ '2026-08-09 17:00:00+02',
+    timezone = 'Africa/Harare',
+    venue = 'Liquid Lounge Shamva',
+    venue_name = 'Liquid Lounge Shamva',
+    address = 'Liquid Lounge Shamva, Shamva, Zimbabwe',
+    image_url = 'https://ecbbmcqwluivbzlaqdsd.supabase.co/storage/v1/object/public/events/events/IMG_5056.JPG.jpeg',
+    lat = -17.279231829121493,
+    lng = 31.486001194492793,
+    organizer_id = v_organizer_id,
+    created_by = v_organizer_id,
+    organizer_name = 'Liquid Lounge',
+    capacity = v_event_capacity,
+    attendees = v_event_issued,
+    status = CASE
+      WHEN v_event_issued >= v_event_capacity THEN 'sold_out'
+      ELSE 'published'
+    END,
+    updated_at = NOW()
+  WHERE id = v_event_id;
 
--- ── 1. Ensure liquidlounge216@gmail.com has event_manager role ──
-UPDATE public.profiles
-SET role = 'event_manager'
-WHERE email = 'liquidlounge216@gmail.com'
-  AND (role IS NULL OR role = 'user');
+  INSERT INTO public.event_staff (
+    user_id,
+    event_id,
+    role,
+    gate,
+    is_active,
+    assigned_by
+  ) VALUES (
+    v_organizer_id,
+    v_event_id,
+    'event_manager',
+    'Main Gate',
+    TRUE,
+    v_organizer_id
+  )
+  ON CONFLICT (event_id, user_id)
+  DO UPDATE SET
+    role = EXCLUDED.role,
+    gate = EXCLUDED.gate,
+    is_active = TRUE,
+    assigned_by = EXCLUDED.assigned_by;
 
--- ── 2. Update the event details ─────────────────────────────
-UPDATE public.events
-SET
-  date = '2026-08-09',
-  time = '18:00:00',
-  end_time = '23:00:00',
-  image_url = 'https://ecbbmcqwluivbzlaqdsd.supabase.co/storage/v1/object/public/events/events/IMG_5056.JPG.jpeg',
-  lat = -17.279231829121493,
-  lng = 31.486001194492793,
-  address = 'Liquid Lounge Shamva, Shamva, Zimbabwe',
-  organizer_id = (SELECT id FROM public.profiles WHERE email = 'liquidlounge216@gmail.com' LIMIT 1),
-  organizer_name = 'Liquid Lounge',
-  capacity = 2000
-WHERE slug = 'alick-macheso-peter-moyo-live';
+  SELECT COUNT(*)::INTEGER
+  INTO v_general_type_count
+  FROM public.ticket_types AS tt
+  WHERE tt.event_id = v_event_id
+    AND lower(tt.name) = 'general admission';
 
--- ── 3. Assign liquidlounge216 as event_staff for check-in ───
-INSERT INTO public.event_staff (user_id, event_id, role, gate, is_active)
-SELECT
-  (SELECT id FROM public.profiles WHERE email = 'liquidlounge216@gmail.com' LIMIT 1),
-  id,
-  'event_manager',
-  'Main Gate',
-  true
-FROM public.events
-WHERE slug = 'alick-macheso-peter-moyo-live'
-  AND NOT EXISTS (
-    SELECT 1 FROM public.event_staff es
-    WHERE es.event_id = public.events.id
-      AND es.user_id = (SELECT id FROM public.profiles WHERE email = 'liquidlounge216@gmail.com' LIMIT 1)
-  );
+  IF v_general_type_count > 1 THEN
+    RAISE EXCEPTION
+      'Multiple General Admission ticket types exist for the Liquid Lounge event. Merge or deactivate duplicates before running this setup.';
+  END IF;
 
--- ── 4. Insert ticket_types for the claim system ─────────────
-INSERT INTO public.ticket_types (
-  event_id, name, description, price,
-  quantity_available, quantity_total,
-  claim_limit_per_contact, is_active, sort_order
-)
-SELECT
-  id,
-  'General Admission',
-  'FREE entry to Alick Macheso & Peter Moyo Live concert.',
-  0.00,
-  2000, 2000,
-  1, true, 0
-FROM public.events
-WHERE slug = 'alick-macheso-peter-moyo-live'
-  AND NOT EXISTS (
-    SELECT 1 FROM public.ticket_types tt
-    WHERE tt.event_id = public.events.id AND tt.name = 'General Admission'
-  );
+  SELECT tt.id
+  INTO v_ticket_type_id
+  FROM public.ticket_types AS tt
+  WHERE tt.event_id = v_event_id
+    AND lower(tt.name) = 'general admission'
+  ORDER BY tt.sort_order, tt.created_at
+  LIMIT 1
+  FOR UPDATE;
 
--- Also reset event status back to published if it was marked sold_out
-UPDATE public.events
-SET status = 'published'
-WHERE slug = 'alick-macheso-peter-moyo-live'
-  AND status = 'sold_out';
+  IF v_ticket_type_id IS NULL THEN
+    INSERT INTO public.ticket_types (
+      event_id,
+      name,
+      description,
+      price,
+      quantity_total,
+      quantity_available,
+      claim_limit_per_contact,
+      is_active,
+      is_visible,
+      sort_order
+    ) VALUES (
+      v_event_id,
+      'General Admission',
+      'FREE entry to Alick Macheso & Peter Moyo Live concert.',
+      0.00,
+      2000,
+      2000,
+      10,
+      TRUE,
+      TRUE,
+      0
+    )
+    RETURNING id INTO v_ticket_type_id;
+  END IF;
 
--- ── 5. Force reset ticket_types availability ──────────────
-UPDATE public.ticket_types
-SET quantity_available = 2000, quantity_total = 2000, is_active = true
-WHERE event_id = (SELECT id FROM public.events WHERE slug = 'alick-macheso-peter-moyo-live')
-  AND name = 'General Admission';
+  SELECT COALESCE(
+    SUM(GREATEST(COALESCE(t.quantity, 1), 1)),
+    0
+  )::INTEGER
+  INTO v_type_issued
+  FROM public.tickets AS t
+  WHERE t.ticket_type_id = v_ticket_type_id
+    AND t.status IN ('issued', 'checked_in');
+
+  v_type_total := GREATEST(2000, v_type_issued);
+  v_type_available := GREATEST(v_type_total - v_type_issued, 0);
+
+  UPDATE public.ticket_types
+  SET
+    name = 'General Admission',
+    description = 'FREE entry to Alick Macheso & Peter Moyo Live concert.',
+    price = 0.00,
+    quantity_total = v_type_total,
+    quantity_available = v_type_available,
+    claim_limit_per_contact = 10,
+    is_active = TRUE,
+    is_visible = TRUE,
+    sort_order = 0,
+    updated_at = NOW()
+  WHERE id = v_ticket_type_id;
+
+  -- Re-evaluate event availability after the inventory repair.
+  UPDATE public.events
+  SET status = CASE
+        WHEN attendees >= capacity OR v_type_available = 0 THEN 'sold_out'
+        ELSE 'published'
+      END,
+      updated_at = NOW()
+  WHERE id = v_event_id;
+END;
+$$;
 
 COMMIT;
 
--- ── Verification queries ────────────────────────────────────
--- SELECT id, title, date, lat, lng, image_url, organizer_name, capacity, status FROM public.events WHERE slug = 'alick-macheso-peter-moyo-live';
--- SELECT p.email, p.role FROM public.profiles p WHERE p.email = 'liquidlounge216@gmail.com';
--- SELECT es.* FROM public.event_staff es JOIN public.events e ON e.id = es.event_id WHERE e.slug = 'alick-macheso-peter-moyo-live';
--- SELECT tt.name, tt.quantity_available, tt.quantity_total FROM public.ticket_types tt JOIN public.events e ON e.id = tt.event_id WHERE e.slug = 'alick-macheso-peter-moyo-live';
+-- ============================================================
+-- Read-only verification queries (run manually after COMMIT)
+-- ============================================================
+-- SELECT id, email, role, account_status
+-- FROM public.profiles
+-- WHERE lower(email) = 'liquidlounge216@gmail.com';
+--
+-- SELECT id, title, slug, starts_at, ends_at, venue_name,
+--        organizer_id, created_by, capacity, attendees, status
+-- FROM public.events
+-- WHERE slug = 'alick-macheso-peter-moyo-live';
+--
+-- SELECT es.event_id, es.user_id, es.role, es.gate, es.is_active
+-- FROM public.event_staff AS es
+-- JOIN public.events AS e ON e.id = es.event_id
+-- WHERE e.slug = 'alick-macheso-peter-moyo-live';
+--
+-- SELECT tt.id, tt.name, tt.quantity_total, tt.quantity_available,
+--        tt.claim_limit_per_contact, tt.is_active, tt.is_visible
+-- FROM public.ticket_types AS tt
+-- JOIN public.events AS e ON e.id = tt.event_id
+-- WHERE e.slug = 'alick-macheso-peter-moyo-live';

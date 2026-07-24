@@ -1,33 +1,83 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 
 export default function AboutSection() {
-  return (
-    <section className="relative py-16 sm:py-20 overflow-hidden" style={{ background: 'var(--bg)' }}>
-      <div className="container relative z-10">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6">
-          
-          {/* Section header */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="text-center"
-          >
-            <p className="text-xs sm:text-sm font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--accent)' }}>
-              About Us
-            </p>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[var(--text)] mb-6 tracking-tight">
-              Our Identity, Vision and Values
-            </h2>
-            <p className="text-base sm:text-lg text-[var(--text-secondary)] leading-relaxed">
-              Future Times Events connects people with unforgettable entertainment, cultural experiences and community moments across Zimbabwe. We make it easy to discover events, reserve tickets and create lasting memories.
-            </p>
-          </motion.div>
+  const shouldReduceMotion = useReducedMotion();
 
-        </div>
+  const values = [
+    { label: 'Identity', value: 'Zimbabwean at heart' },
+    { label: 'Vision', value: 'Events made effortless' },
+    { label: 'Values', value: 'People, culture, connection' },
+  ];
+
+  return (
+    <section
+      className="relative section-pad-sm overflow-hidden"
+      style={{ background: 'var(--bg)' }}
+      aria-labelledby="about-heading"
+    >
+      <div className="container relative z-10">
+        <motion.div
+          initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
+          whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.25 }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
+          className="relative mx-auto max-w-6xl overflow-hidden rounded-[var(--r-3xl)] border border-[var(--border)] bg-[var(--bg-card)] shadow-[var(--shadow-card)]"
+        >
+          <div
+            aria-hidden="true"
+            className="absolute -right-20 -top-24 h-64 w-64 rounded-full opacity-20 blur-3xl"
+            style={{ background: 'var(--grad-primary)' }}
+          />
+          <div
+            aria-hidden="true"
+            className="absolute -bottom-28 -left-20 h-64 w-64 rounded-full opacity-15 blur-3xl"
+            style={{ background: 'var(--grad-ocean)' }}
+          />
+
+          <div className="relative grid gap-8 p-6 sm:p-8 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-12 lg:p-12">
+            <div className="flex flex-col items-start">
+              <span
+                className="type-overline inline-flex items-center rounded-full border border-[var(--border)] bg-[var(--bg-secondary)] px-3 py-2"
+                style={{ color: 'var(--accent)' }}
+              >
+                About Us
+              </span>
+              <span
+                aria-hidden="true"
+                className="mt-6 h-1 w-12 rounded-full"
+                style={{ background: 'var(--grad-primary)' }}
+              />
+              <h2
+                id="about-heading"
+                className="mt-4 font-display text-3xl font-bold leading-tight tracking-tight text-[var(--text)] sm:text-4xl lg:text-5xl"
+              >
+                Our identity, vision and values
+              </h2>
+            </div>
+
+            <div className="border-t border-[var(--border)] pt-8 lg:border-l lg:border-t-0 lg:pl-12 lg:pt-0">
+              <p className="text-base leading-relaxed text-[var(--text-secondary)] sm:text-lg">
+                Future Times Events connects people with unforgettable entertainment, cultural experiences and community moments across Zimbabwe. We make it easy to discover events, reserve tickets and create lasting memories.
+              </p>
+
+              <dl className="mt-6 grid gap-3 sm:grid-cols-3">
+                {values.map(({ label, value }) => (
+                  <div
+                    key={label}
+                    className="rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)] p-4"
+                  >
+                    <dt className="type-overline text-[var(--text-muted)]">{label}</dt>
+                    <dd className="mt-2 text-sm font-semibold leading-snug text-[var(--text)]">
+                      {value}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          </div>
+        </motion.div>
       </div>
     </section>
   );

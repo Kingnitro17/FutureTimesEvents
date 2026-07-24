@@ -52,7 +52,10 @@ export function useNotifications(userId: string | undefined) {
   }, [userId]);
 
   // Initial fetch
-  useEffect(() => { fetchNotifs(); }, [fetchNotifs]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => void fetchNotifs(), 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchNotifs]);
 
   // ── Realtime subscription — new notifications arrive instantly ──
   useEffect(() => {

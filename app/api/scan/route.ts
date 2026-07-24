@@ -87,16 +87,24 @@ export async function POST(req: NextRequest) {
 
     // ── Verify scanner is authorised for this event ─────────
     // Check: is staff for this event OR is admin/super_admin
-    const { data: profile } = await supabase
+    const adminClient = getSupabaseAdminClient();
+    const { data: profile, error: profileError } = await adminClient
       .from('profiles')
-      .select('role')
+      .select('role, account_status')
       .eq('id', user.id)
-      .single() as unknown as { data: { role: string } | null };
+      .maybeSingle();
 
-    const isAdmin = ['admin', 'super_admin'].includes((profile as { role: string } | null)?.role ?? '');
+    if (profileError || !profile || profile.account_status !== 'active') {
+      return NextResponse.json(
+        { error: 'Your active staff account could not be verified.' },
+        { status: 403 }
+      );
+    }
+
+    const isAdmin = ['admin', 'super_admin'].includes(profile.role);
 
     if (!isAdmin) {
-      const { data: staffRecord } = await supabase
+      const { data: staffRecord } = await adminClient
         .from('event_staff')
         .select('id')
         .eq('event_id', eventId)
@@ -117,14 +125,11 @@ export async function POST(req: NextRequest) {
     const tokenHash = hashToken(qrToken);
 
     // ── Call atomic check-in function ───────────────────────
-    const adminClient = getSupabaseAdminClient();
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: result, error: rpcError } = await (adminClient as any).rpc('verify_and_checkin', {
+    const { data: result, error: rpcError } = await adminClient.rpc('verify_and_checkin', {
       p_token_hash: tokenHash,
       p_scanner_id: user.id,
       p_event_id:   eventId,
-      p_gate:       gate ?? null,
+      p_gate:       gate ?? undefined,
     });
 
     if (rpcError) {
@@ -185,6 +190,15 @@ export async function POST(req: NextRequest) {
 
       case 'invalid_token':
         return NextResponse.json({ result: 'invalid_token' }, { status: 200 });
+
+      case 'invalid_status':
+        return NextResponse.json({ result: 'invalid_status' }, { status: 200 });
+
+      case 'unauthorized':
+        return NextResponse.json(
+          { error: 'Your staff assignment is no longer authorised for this event.' },
+          { status: 403 }
+        );
 
       default:
         return NextResponse.json({ result: 'error' }, { status: 200 });

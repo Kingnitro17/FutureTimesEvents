@@ -101,8 +101,8 @@ export default function DashboardPage() {
       router.refresh();
       setNewEvent({ title: '', category: 'Music', date: '', time: '', venue: '', city: '', price: '', capacity: '', description: '' });
       setImageFile(null);
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to create event');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to create event');
     } finally {
       setIsCreating(false);
     }
@@ -124,30 +124,16 @@ export default function DashboardPage() {
     </div>
   );
 
-  const handleUpgradeAccount = async () => {
-    if (!user) return;
-    try {
-      const { error } = await supabase.from('profiles').update({ role: 'organizer' }).eq('id', user.id);
-      if (error) throw error;
-      toast.success("Account upgraded! Refreshing...");
-      window.location.reload();
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to upgrade account');
-    }
-  };
-
   if (!isOrganizer && !isAdmin) return (
     <div className="min-h-screen flex items-center justify-center pb-nav">
       <div className="text-center space-y-4 px-6 max-w-sm">
         <p className="text-4xl">🚫</p>
         <h2 className="type-h2 text-[var(--text)]">Organizer Access Only</h2>
         <p className="text-sm text-[var(--text-muted)]">
-          Your account is currently set up as an attendee. Want to host your own events?
+          Organizer access is assigned by an administrator after your event and identity are verified.
         </p>
         <div className="flex flex-col gap-3 mt-4">
-          <button onClick={handleUpgradeAccount} className="btn btn-lg btn-grad text-white w-full">
-            Upgrade to Organizer
-          </button>
+          <Link href="/events" className="btn btn-lg btn-grad text-white w-full">Browse Events</Link>
           <Link href="/profile" className="btn btn-lg btn-outline w-full">View Profile</Link>
         </div>
       </div>

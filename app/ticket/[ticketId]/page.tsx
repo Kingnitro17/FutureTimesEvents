@@ -1,346 +1,433 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useCallback, useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { Calendar, MapPin, Clock, Download, Share2, ArrowLeft, AlertCircle, Loader2 } from 'lucide-react';
+import {
+  ArrowLeft,
+  Calendar,
+  CheckCircle2,
+  Clock,
+  Download,
+  Loader2,
+  LockKeyhole,
+  MapPin,
+  QrCode,
+  RefreshCw,
+  Share2,
+  ShieldCheck,
+  Ticket as TicketIcon,
+  XCircle,
+} from 'lucide-react';
+import toast from 'react-hot-toast';
 import QRDisplay from '@/components/tickets/QRDisplay';
-import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
+import { downloadTicketPng } from '@/lib/tickets/downloadTicket';
+import type { WalletTicket } from '@/types';
 
-interface TicketData {
-  id: string;
-  ticket_number: string;
-  attendee_name: string;
-  attendee_email: string;
-  status: 'issued' | 'checked_in' | 'cancelled' | 'revoked';
-  quantity: number;
-  issued_at: string;
-  checked_in_at: string | null;
-  gate: string | null;
-  ticket_type_name: string;
-  event_title: string;
-  event_slug: string;
-  event_starts_at: string;
-  event_venue_name: string;
-  event_address: string;
-  event_cover_image_url: string | null;
-  event_category: string;
-}
-
-const GRAD_MAP: Record<string, string> = {
-  music:    'linear-gradient(135deg,#FF55C2,#7222E3)',
-  tech:     'linear-gradient(135deg,#1D5BFF,#C7FE17)',
-  art:      'linear-gradient(135deg,#DD1FFF,#24D8FB)',
-  food:     'linear-gradient(135deg,#FFBC73,#FF00B9)',
-  wellness: 'linear-gradient(135deg,#46FFAB,#A02EFF)',
-  sports:   'linear-gradient(135deg,#2CC4EA,#533885)',
-  lounge:   'linear-gradient(135deg,#FF55C2,#7222E3)',
+const GRADIENTS: Record<string, string> = {
+  music: 'var(--grad-primary)',
+  tech: 'var(--grad-electric)',
+  art: 'var(--grad-cosmic)',
+  food: 'var(--grad-fire)',
+  wellness: 'var(--grad-emerald)',
+  sports: 'var(--grad-ocean)',
+  lounge: 'var(--grad-primary)',
 };
 
+function storageKey(ticketId: string) {
+  return `fte:ticket:qr:${ticketId}`;
+}
+
+function validDate(value: string) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
 export default function TicketViewPage() {
-  const params = useParams();
-  const router = useRouter();
-  const ticketId = params?.ticketId as string;
-  const supabase = getSupabaseBrowserClient();
+  const params = useParams<{ ticketId: string }>();
+  const ticketId = params?.ticketId ?? '';
+  const [ticket, setTicket] = useState<WalletTicket | null>(null);
+  const [qrToken, setQrToken] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [recovering, setRecovering] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const [ticket,   setTicket]   = useState<TicketData | null>(null);
-  const [qrToken,  setQrToken]  = useState<string | null>(null);
-  const [loading,  setLoading]  = useState(true);
-  const [error,    setError]    = useState<string | null>(null);
-  const [authUser, setAuthUser] = useState<{ id: string; email: string } | null>(null);
+  const loadTicket = useCallback(async () => {
+    if (!ticketId) return;
 
-  useEffect(() => {
-    const load = async () => {
-      // Check auth
-      const { data: { user } } = await supabase.auth.getUser();
-
-      // Try to get token from sessionStorage (set after claim — only valid for current session)
-      const storedToken = sessionStorage.getItem(`qr-token-${ticketId}`);
-      if (storedToken) setQrToken(storedToken);
-
-      if (user) {
-        setAuthUser({ id: user.id, email: user.email ?? '' });
-      } else if (!storedToken) {
-        // Not authenticated and no stored token — redirect to login
-        router.push(`/auth/login?next=/ticket/${ticketId}`);
-        return;
-      }
-
-      // Fetch ticket data (no QR hash — that never leaves server)
-      const { data, error: fetchErr } = await supabase
-        .from('tickets')
-        .select(`
-          id,
-          ticket_number,
-          attendee_name,
-          attendee_email,
-          status,
-          quantity,
-          issued_at,
-          checked_in_at,
-          gate,
-          ticket_types(name),
-          events(title, slug, starts_at, venue_name, address, cover_image_url, category)
-        `)
-        .eq('id', ticketId)
-        .single();
-
-      if (fetchErr || !data) {
-        setError('Ticket not found or you do not have permission to view it.');
-        setLoading(false);
-        return;
-      }
-
-      // Verify ownership: email must match or user must be authenticated owner
-      const ev = data.events as unknown as { title: string; slug: string; starts_at: string; venue_name: string; address: string; cover_image_url: string | null; category: string };
-      const tt = data.ticket_types as unknown as { name: string };
-
-      if (user && data.attendee_email !== user.email?.toLowerCase()) {
-        const isAdmin = await supabase.from('profiles').select('role').eq('id', user.id).single()
-          .then((r: any) => ['admin', 'super_admin'].includes(r.data?.role ?? ''));
-        if (!isAdmin) {
-          setError('You do not have permission to view this ticket.');
-          setLoading(false);
-          return;
-        }
-      }
-
-      setTicket({
-        id:                   data.id,
-        ticket_number:        data.ticket_number,
-        attendee_name:        data.attendee_name,
-        attendee_email:       data.attendee_email,
-        status:               data.status as TicketData['status'],
-        quantity:             data.quantity,
-        issued_at:            data.issued_at,
-        checked_in_at:        data.checked_in_at,
-        gate:                 data.gate,
-        ticket_type_name:     tt?.name ?? 'General Admission',
-        event_title:          ev?.title ?? '',
-        event_slug:           ev?.slug ?? '',
-        event_starts_at:      ev?.starts_at ?? '',
-        event_venue_name:     ev?.venue_name ?? '',
-        event_address:        ev?.address ?? '',
-        event_cover_image_url: ev?.cover_image_url ?? null,
-        event_category:       ev?.category ?? 'lounge',
+    const storedToken = sessionStorage.getItem(storageKey(ticketId));
+    try {
+      const response = await fetch(`/api/tickets/${ticketId}/view`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(storedToken ? { qrToken: storedToken } : {}),
+        cache: 'no-store',
       });
-      setLoading(false);
-    };
-    load();
-  }, [ticketId]);
+      const result = await response.json() as {
+        ticket?: WalletTicket;
+        qrTokenValid?: boolean;
+        error?: string;
+      };
 
-  // Store QR token in sessionStorage after claim (called from claim success callback)
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const tokenParam = urlParams.get('t');
-    if (tokenParam) {
-      sessionStorage.setItem(`qr-token-${ticketId}`, tokenParam);
-      setQrToken(tokenParam);
-      // Clean URL
-      window.history.replaceState({}, '', `/ticket/${ticketId}`);
+      if (!response.ok || !result.ticket) {
+        throw new Error(result.error ?? 'Ticket not found.');
+      }
+
+      setTicket(result.ticket);
+      setError(null);
+
+      if (result.ticket.status === 'issued' && storedToken && result.qrTokenValid === true) {
+        setQrToken(storedToken);
+      } else {
+        sessionStorage.removeItem(storageKey(ticketId));
+        setQrToken(null);
+      }
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : 'Could not load this ticket.');
+      setTicket(null);
+    } finally {
+      setLoading(false);
     }
   }, [ticketId]);
 
-  const handleShare = async () => {
-    if (!ticket) return;
-    const shareData = {
-      title: ticket.event_title,
-      text:  `I'm going to ${ticket.event_title} at ${ticket.event_venue_name}!`,
-      url:   `${window.location.origin}/events/${ticket.event_slug}`,
+  useEffect(() => {
+    const task = window.setTimeout(() => {
+      void loadTicket();
+    }, 0);
+    return () => window.clearTimeout(task);
+  }, [loadTicket]);
+
+  useEffect(() => {
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === 'visible') void loadTicket();
     };
-    if (navigator.share) {
-      await navigator.share(shareData);
-    } else {
-      await navigator.clipboard.writeText(shareData.url);
-      alert('Event link copied!');
+    document.addEventListener('visibilitychange', refreshWhenVisible);
+    return () => document.removeEventListener('visibilitychange', refreshWhenVisible);
+  }, [loadTicket]);
+
+  const recoverQr = async () => {
+    if (!ticket || ticket.status !== 'issued') return;
+    const confirmed = window.confirm(
+      'Create a new secure QR code? Any older downloaded copy of this ticket will stop working.',
+    );
+    if (!confirmed) return;
+
+    setRecovering(true);
+    try {
+      const response = await fetch(`/api/tickets/${ticket.id}/qr/reissue`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const result = await response.json() as { qrToken?: string; error?: string };
+
+      if (!response.ok || !result.qrToken) {
+        throw new Error(result.error ?? 'Could not recover this QR code.');
+      }
+
+      sessionStorage.setItem(storageKey(ticket.id), result.qrToken);
+      setQrToken(result.qrToken);
+      toast.success('New secure QR created. Older copies are now invalid.');
+    } catch (reissueError) {
+      toast.error(reissueError instanceof Error ? reissueError.message : 'QR recovery failed.');
+    } finally {
+      setRecovering(false);
     }
   };
 
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center page-offset">
-      <Loader2 size={32} className="animate-spin" style={{ color: 'var(--accent)' }} />
-    </div>
-  );
+  const downloadTicket = async () => {
+    if (!ticket) return;
+    try {
+      let token = qrToken;
+      if (!token) {
+        await recoverQr();
+        token = sessionStorage.getItem(storageKey(ticket.id));
+      }
+      if (!token) return;
+      await downloadTicketPng(ticket, token);
+      toast.success(`${ticket.ticketNumber} downloaded.`);
+    } catch (downloadError) {
+      toast.error(downloadError instanceof Error ? downloadError.message : 'Download failed.');
+    }
+  };
 
-  if (error || !ticket) return (
-    <div className="min-h-screen flex items-center justify-center page-offset px-4">
-      <div className="text-center max-w-sm">
-        <AlertCircle size={48} className="mx-auto mb-4 text-red-400" />
-        <h2 className="font-bold text-xl text-[var(--text)] mb-2">{error ?? 'Ticket not found'}</h2>
-        <Link href="/" className="btn btn-md btn-outline mt-4">Go home</Link>
+  const shareEvent = async () => {
+    if (!ticket) return;
+    const url = `${window.location.origin}/events/${ticket.event.slug}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: ticket.event.title,
+          text: `I am going to ${ticket.event.title} at ${ticket.event.venue}.`,
+          url,
+        });
+      } else {
+        await navigator.clipboard.writeText(url);
+        toast.success('Event link copied.');
+      }
+    } catch (shareError) {
+      if (shareError instanceof DOMException && shareError.name === 'AbortError') return;
+      toast.error('Could not share the event.');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen page-offset flex items-center justify-center">
+        <Loader2 size={34} className="animate-spin text-[var(--accent)]" aria-label="Loading ticket" />
       </div>
-    </div>
-  );
+    );
+  }
 
-  const grad = GRAD_MAP[ticket.event_category] ?? GRAD_MAP.lounge;
-  const startsAt = new Date(ticket.event_starts_at);
-  const isCheckedIn = ticket.status === 'checked_in';
-  const isCancelled = ticket.status === 'cancelled' || ticket.status === 'revoked';
-
-  return (
-    <div className="min-h-screen page-offset pb-10 bg-[var(--bg-secondary)]">
-      <div className="max-w-sm mx-auto px-4 pt-6 space-y-4">
-
-        {/* Back */}
-        <Link href={`/events/${ticket.event_slug}`}
-          className="flex items-center gap-1.5 text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors">
-          <ArrowLeft size={14} />
-          Back to event
-        </Link>
-
-        {/* Ticket card */}
-        <div className="rounded-3xl overflow-hidden shadow-2xl" style={{ border: '1px solid var(--border)' }}>
-
-          {/* Ticket header */}
-          <div className="p-6 relative overflow-hidden" style={{ background: grad }}>
-            <div className="absolute inset-0 opacity-20"
-              style={{ backgroundImage: 'radial-gradient(circle at 30% 50%, white 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
-            <p className="text-white/70 text-xs font-bold uppercase tracking-widest mb-2">Future Times Events</p>
-            <h1 className="font-display text-2xl font-black text-white leading-tight">{ticket.event_title}</h1>
-            <p className="text-white/80 font-medium mt-1">{ticket.ticket_type_name}</p>
-
-            {/* Status badge */}
-            {isCheckedIn && (
-              <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm">
-                <div className="w-2 h-2 rounded-full bg-green-300" />
-                <span className="text-white text-xs font-bold">CHECKED IN</span>
-              </div>
+  if (error || !ticket) {
+    const needsLogin = error?.toLowerCase().includes('access required');
+    return (
+      <div className="min-h-screen page-offset flex items-center justify-center px-4">
+        <div className="card rounded-3xl p-8 text-center max-w-md w-full">
+          <LockKeyhole size={44} className="mx-auto mb-4 text-[var(--accent)]" aria-hidden />
+          <h1 className="text-xl font-bold text-[var(--text)] mb-2">
+            {needsLogin ? 'Sign in to open this ticket' : 'Ticket unavailable'}
+          </h1>
+          <p className="text-sm text-[var(--text-muted)]">
+            {error ?? 'Ticket not found.'}
+          </p>
+          <div className="mt-5 flex justify-center gap-2">
+            {needsLogin && (
+              <Link href={`/login?next=/ticket/${ticketId}`} className="btn btn-md btn-primary">
+                Sign in
+              </Link>
             )}
-            {isCancelled && (
-              <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/30 backdrop-blur-sm">
-                <span className="text-white text-xs font-bold">
-                  {ticket.status === 'revoked' ? 'REVOKED' : 'CANCELLED'}
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* Tear line */}
-          <div className="relative flex items-center bg-[var(--bg-card)]">
-            <div className="w-5 h-5 rounded-full bg-[var(--bg-secondary)] -ml-2.5" />
-            <div className="flex-1 border-t-2 border-dashed border-[var(--border)]" />
-            <div className="w-5 h-5 rounded-full bg-[var(--bg-secondary)] -mr-2.5" />
-          </div>
-
-          {/* Ticket body */}
-          <div className="bg-[var(--bg-card)] p-6 space-y-5">
-
-            {/* QR Code or status */}
-            <div className="flex flex-col items-center">
-              {qrToken && !isCancelled && !isCheckedIn ? (
-                <>
-                  <QRDisplay token={qrToken} size={200} label={`QR code for ${ticket.ticket_number}`} />
-                  <p className="text-xs text-[var(--text-muted)] mt-2 text-center">
-                    Show this at the entrance
-                  </p>
-                </>
-              ) : isCheckedIn ? (
-                <div className="text-center py-6">
-                  <div className="text-6xl mb-2">✅</div>
-                  <p className="font-bold text-green-600 dark:text-green-400">Checked In</p>
-                  {ticket.checked_in_at && (
-                    <p className="text-xs text-[var(--text-muted)] mt-1">
-                      {new Date(ticket.checked_in_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
-                      {ticket.gate ? ` at ${ticket.gate}` : ''}
-                    </p>
-                  )}
-                </div>
-              ) : isCancelled ? (
-                <div className="text-center py-6">
-                  <div className="text-6xl mb-2">❌</div>
-                  <p className="font-bold text-red-500 capitalize">{ticket.status}</p>
-                </div>
-              ) : (
-                <div className="text-center py-6 space-y-2">
-                  <div className="text-4xl">🔒</div>
-                  <p className="text-sm text-[var(--text-muted)]">QR code available after signing in</p>
-                  <Link href={`/auth/login?next=/ticket/${ticketId}`}
-                    className="block px-4 py-2 rounded-xl text-sm font-bold text-white"
-                    style={{ background: grad }}>
-                    Sign in to view QR
-                  </Link>
-                </div>
-              )}
-            </div>
-
-            {/* Divider */}
-            <div className="border-t border-dashed border-[var(--border)]" />
-
-            {/* Ticket details */}
-            <div className="space-y-3">
-              <div className="flex items-start gap-3">
-                <Calendar size={16} className="text-[var(--text-muted)] mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-xs text-[var(--text-muted)]">Date</p>
-                  <p className="font-semibold text-[var(--text)] text-sm">
-                    {startsAt.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' })}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <Clock size={16} className="text-[var(--text-muted)] mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-xs text-[var(--text-muted)]">Time</p>
-                  <p className="font-semibold text-[var(--text)] text-sm">
-                    {startsAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <MapPin size={16} className="text-[var(--text-muted)] mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-xs text-[var(--text-muted)]">Venue</p>
-                  <p className="font-semibold text-[var(--text)] text-sm">{ticket.event_venue_name}</p>
-                  <p className="text-xs text-[var(--text-muted)]">{ticket.event_address}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Divider */}
-            <div className="border-t border-dashed border-[var(--border)]" />
-
-            {/* Holder info */}
-            <div className="space-y-1">
-              <p className="text-xs text-[var(--text-muted)] uppercase tracking-wide font-medium">Ticket holder</p>
-              <p className="font-bold text-[var(--text)]">{ticket.attendee_name}</p>
-              <p className="text-sm text-[var(--text-muted)]">{ticket.attendee_email}</p>
-            </div>
-
-            {/* Ticket number */}
-            <div className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-secondary)]">
-              <p className="text-xs text-[var(--text-muted)]">Ticket #</p>
-              <p className="font-mono font-bold text-sm text-[var(--text)]">{ticket.ticket_number}</p>
-            </div>
+            <Link href="/tickets" className="btn btn-md btn-outline">
+              My tickets
+            </Link>
           </div>
         </div>
+      </div>
+    );
+  }
 
-        {/* Action buttons */}
-        {!isCancelled && (
-          <div className="flex gap-3">
+  const gradient = GRADIENTS[ticket.event.category] ?? GRADIENTS.lounge;
+  const startsAt = validDate(ticket.event.startsAt);
+  const isIssued = ticket.status === 'issued';
+  const isCheckedIn = ticket.status === 'checked_in';
+  const isInactive = ticket.status === 'cancelled' || ticket.status === 'revoked';
+
+  return (
+    <div className="min-h-screen page-offset pb-12 bg-[var(--bg-secondary)]">
+      <div className="container py-6">
+        <div className="max-w-lg mx-auto">
+          <Link
+            href="/tickets"
+            className="inline-flex items-center gap-2 text-sm text-[var(--text-muted)] hover:text-[var(--text)] mb-5"
+          >
+            <ArrowLeft size={15} aria-hidden />
+            Back to wallet
+          </Link>
+
+          <article className="overflow-hidden rounded-[32px] border border-[var(--border)] shadow-2xl">
+            <header className="p-6 sm:p-8 text-white relative overflow-hidden" style={{ background: gradient }}>
+              <div
+                className="absolute inset-0 opacity-20"
+                style={{
+                  backgroundImage: 'radial-gradient(circle at 30% 50%, white 1px, transparent 1px)',
+                  backgroundSize: '24px 24px',
+                }}
+                aria-hidden
+              />
+              <div className="relative">
+                <p className="text-white/75 text-xs font-bold uppercase tracking-[0.2em]">
+                  Future Times Events
+                </p>
+                <h1 className="font-display text-2xl sm:text-3xl font-black mt-2 leading-tight">
+                  {ticket.event.title}
+                </h1>
+                <p className="text-white/85 font-semibold mt-2">{ticket.ticketType.name}</p>
+                <div className="mt-4">
+                  {isIssued && (
+                    <span className="inline-flex items-center gap-2 rounded-full bg-white/20 px-3 py-1.5 text-xs font-bold backdrop-blur">
+                      <ShieldCheck size={14} aria-hidden />
+                      ACTIVE TICKET
+                    </span>
+                  )}
+                  {isCheckedIn && (
+                    <span className="inline-flex items-center gap-2 rounded-full bg-emerald-950/25 px-3 py-1.5 text-xs font-bold backdrop-blur">
+                      <CheckCircle2 size={14} aria-hidden />
+                      CHECKED IN · NO LONGER VALID
+                    </span>
+                  )}
+                  {isInactive && (
+                    <span className="inline-flex items-center gap-2 rounded-full bg-red-950/30 px-3 py-1.5 text-xs font-bold backdrop-blur">
+                      <XCircle size={14} aria-hidden />
+                      {ticket.status.toUpperCase()}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </header>
+
+            <div className="relative flex items-center bg-[var(--bg-card)]" aria-hidden>
+              <div className="w-6 h-6 rounded-full bg-[var(--bg-secondary)] -ml-3" />
+              <div className="flex-1 border-t-2 border-dashed border-[var(--border)]" />
+              <div className="w-6 h-6 rounded-full bg-[var(--bg-secondary)] -mr-3" />
+            </div>
+
+            <div className="bg-[var(--bg-card)] p-6 sm:p-8">
+              <div className="flex flex-col items-center min-h-64 justify-center">
+                {isIssued && qrToken ? (
+                  <>
+                    <QRDisplay
+                      token={qrToken}
+                      size={220}
+                      label={`Entry QR for ${ticket.ticketNumber}`}
+                    />
+                    <p className="text-xs text-[var(--text-muted)] mt-3 text-center">
+                      Present this QR at the entrance. It can be checked in once.
+                    </p>
+                  </>
+                ) : isIssued ? (
+                  <div className="rounded-3xl bg-[var(--bg-secondary)] p-7 text-center w-full">
+                    <QrCode size={44} className="mx-auto text-[var(--accent)]" aria-hidden />
+                    <h2 className="font-bold text-[var(--text)] mt-3">Secure QR hidden</h2>
+                    <p className="text-sm text-[var(--text-muted)] mt-1">
+                      Recover a new code on this trusted device. Older QR copies will be invalidated.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => void recoverQr()}
+                      disabled={recovering}
+                      className="btn btn-md btn-primary mt-4"
+                    >
+                      {recovering
+                        ? <RefreshCw size={16} className="animate-spin" aria-hidden />
+                        : <ShieldCheck size={16} aria-hidden />}
+                      {recovering ? 'Recovering…' : 'Recover QR'}
+                    </button>
+                  </div>
+                ) : isCheckedIn ? (
+                  <div className="text-center py-6">
+                    <CheckCircle2 size={64} className="mx-auto text-emerald-500" aria-hidden />
+                    <h2 className="font-black text-xl text-emerald-600 dark:text-emerald-300 mt-3">
+                      Already checked in
+                    </h2>
+                    {ticket.checkedInAt && (
+                      <p className="text-sm text-[var(--text-muted)] mt-2">
+                        {new Date(ticket.checkedInAt).toLocaleString('en-ZW')}
+                        {ticket.gate ? ` · ${ticket.gate}` : ''}
+                      </p>
+                    )}
+                    <p className="text-xs text-[var(--text-muted)] mt-2">
+                      This QR is no longer valid for entry.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="text-center py-6">
+                    <XCircle size={64} className="mx-auto text-red-500" aria-hidden />
+                    <h2 className="font-black text-xl text-red-500 mt-3 capitalize">
+                      Ticket {ticket.status}
+                    </h2>
+                    <p className="text-xs text-[var(--text-muted)] mt-2">
+                      Entry is not permitted with this ticket.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="border-t border-dashed border-[var(--border)] my-6" />
+
+              <dl className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <Calendar size={17} className="text-[var(--text-muted)] mt-0.5 shrink-0" aria-hidden />
+                  <div>
+                    <dt className="text-xs text-[var(--text-muted)]">Date</dt>
+                    <dd className="font-semibold text-[var(--text)] text-sm">
+                      {startsAt
+                        ? startsAt.toLocaleDateString('en-ZW', {
+                            weekday: 'long',
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric',
+                            timeZone: 'Africa/Harare',
+                          })
+                        : 'To be announced'}
+                    </dd>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Clock size={17} className="text-[var(--text-muted)] mt-0.5 shrink-0" aria-hidden />
+                  <div>
+                    <dt className="text-xs text-[var(--text-muted)]">Time</dt>
+                    <dd className="font-semibold text-[var(--text)] text-sm">
+                      {startsAt
+                        ? startsAt.toLocaleTimeString('en-ZW', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            timeZone: 'Africa/Harare',
+                          })
+                        : 'To be announced'}
+                    </dd>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <MapPin size={17} className="text-[var(--text-muted)] mt-0.5 shrink-0" aria-hidden />
+                  <div>
+                    <dt className="text-xs text-[var(--text-muted)]">Venue</dt>
+                    <dd className="font-semibold text-[var(--text)] text-sm">
+                      {ticket.event.venue || 'To be announced'}
+                    </dd>
+                    {ticket.event.address && (
+                      <dd className="text-xs text-[var(--text-muted)]">{ticket.event.address}</dd>
+                    )}
+                  </div>
+                </div>
+              </dl>
+
+              <div className="border-t border-dashed border-[var(--border)] my-6" />
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-2xl bg-[var(--bg-secondary)] p-4">
+                  <p className="text-xs uppercase tracking-wider text-[var(--text-muted)]">Ticket holder</p>
+                  <p className="font-bold text-[var(--text)] mt-1">{ticket.holderName}</p>
+                  <p className="text-xs text-[var(--text-muted)] break-all">{ticket.holderEmail}</p>
+                </div>
+                <div className="rounded-2xl bg-[var(--bg-secondary)] p-4">
+                  <p className="text-xs uppercase tracking-wider text-[var(--text-muted)]">Ticket number</p>
+                  <p className="font-mono font-bold text-[var(--text)] mt-1">{ticket.ticketNumber}</p>
+                  <p className="text-xs text-[var(--text-muted)]">One admission</p>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <button
-              onClick={handleShare}
-              className="flex-1 py-3 rounded-2xl border border-[var(--border)] font-semibold text-[var(--text)] text-sm hover:bg-[var(--bg-card)] transition-colors flex items-center justify-center gap-2"
-              aria-label="Share event"
+              type="button"
+              onClick={() => void shareEvent()}
+              className="btn btn-md btn-outline"
             >
-              <Share2 size={15} />
-              Share Event
+              <Share2 size={16} aria-hidden />
+              Share event
             </button>
-            {authUser && (
-              <Link
-                href="/tickets"
-                className="flex-1 py-3 rounded-2xl font-bold text-white text-sm flex items-center justify-center gap-2"
-                style={{ background: grad }}
+            {isIssued ? (
+              <button
+                type="button"
+                onClick={() => void downloadTicket()}
+                disabled={recovering}
+                className="btn btn-md btn-primary"
               >
-                My Tickets
+                <Download size={16} aria-hidden />
+                Download PNG
+              </button>
+            ) : (
+              <Link href={`/events/${ticket.event.slug}`} className="btn btn-md btn-primary">
+                <TicketIcon size={16} aria-hidden />
+                Event details
               </Link>
             )}
           </div>
-        )}
 
-        <p className="text-center text-xs text-[var(--text-muted)] leading-relaxed">
-          This ticket is non-transferable and verified server-side at the entrance.
-          <br />Do not share your QR code with anyone.
-        </p>
+          <p className="text-center text-xs text-[var(--text-muted)] leading-relaxed mt-5">
+            QR verification happens online at the entrance. Never share your ticket QR.
+          </p>
+        </div>
       </div>
     </div>
   );

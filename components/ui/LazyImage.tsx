@@ -41,7 +41,7 @@ export default function LazyImage({
 
   // Trigger load only when image enters the viewport
   useEffect(() => {
-    if (!src) { setErrored(true); return; }
+    if (!src) return;
     const el = ref.current;
     if (!el) return;
     const io = new IntersectionObserver(

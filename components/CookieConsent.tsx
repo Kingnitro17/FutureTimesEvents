@@ -27,13 +27,22 @@ export default function CookieConsent() {
   });
 
   useEffect(() => {
-    // Check if user has already given consent
-    const stored = localStorage.getItem(COOKIE_CONSENT_KEY);
-    if (!stored) {
-      setIsVisible(true);
-    } else {
-      setPreferences(JSON.parse(stored));
-    }
+    const timer = window.setTimeout(() => {
+      // Check if user has already given consent
+      const stored = localStorage.getItem(COOKIE_CONSENT_KEY);
+      if (!stored) {
+        setIsVisible(true);
+      } else {
+        try {
+          setPreferences(JSON.parse(stored) as CookiePreferences);
+        } catch {
+          localStorage.removeItem(COOKIE_CONSENT_KEY);
+          setIsVisible(true);
+        }
+      }
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, []);
 
   const saveConsent = (prefs: CookiePreferences) => {

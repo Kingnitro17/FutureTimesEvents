@@ -1,7 +1,7 @@
 'use client';
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
-import type { User, DbProfile } from '@/types';
+import type { User, DbProfile, UserRole } from '@/types';
 
 interface AuthContextType {
   user: User | null;
@@ -15,6 +15,15 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const supabase = getSupabaseBrowserClient();
+
+function normaliseRole(role: DbProfile['role'] | string | undefined): UserRole {
+  if (role === 'organizer') return 'event_manager';
+  if (role === 'user' || !role) return 'attendee';
+  if (['attendee', 'host', 'event_manager', 'admin', 'super_admin'].includes(role)) {
+    return role as UserRole;
+  }
+  return 'attendee';
+}
 
 /** Map profiles row → UI User */
 function mapProfile(p: DbProfile): User {
@@ -32,7 +41,7 @@ function mapProfile(p: DbProfile): User {
     eventsAttended: p.events_attended ?? 0,
     totalSpent:     Number(p.total_spent)  ?? 0,
     isVip:          p.is_vip      ?? false,
-    role:           (p.role       || 'user') as User['role'],
+    role:           normaliseRole(p.role),
     badges:         [],
   };
 }
@@ -47,7 +56,7 @@ function userFromAuth(authUser: { id: string; email?: string; user_metadata?: Re
     initials: name.slice(0, 2).toUpperCase(),
     bio: '', location: '', joinedAt: new Date().toISOString(),
     loyaltyPoints: 0, eventsAttended: 0, totalSpent: 0, isVip: false,
-    role: ((meta.role as string) || 'user') as User['role'],
+    role: normaliseRole(meta.role as string | undefined),
     badges: [],
   };
 }
@@ -77,7 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email,
         display_name,
         initials:     display_name.slice(0, 2).toUpperCase(),
-        role:         userData.role || 'user',
+        role:         normaliseRole(userData.role),
         avatar_url:   '',
         avatar_color: '#7B61FF',
       }).select().single();
@@ -191,7 +200,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function signUp(email: string, password: string, userData: Partial<User>) {
     const { error, data } = await supabase.auth.signUp({
       email, password,
-      options: { data: { name: userData.name, role: userData.role || 'user' } },
+      // Role metadata is deliberately fixed for public sign-up. Elevated roles
+      // are granted in the database by an existing administrator.
+      options: { data: { name: userData.name, role: 'attendee' } },
     });
 
     if (error) {
@@ -219,8 +230,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(false);
   }
 
-  const isAdmin     = user?.role === 'admin';
-  const isOrganizer = user?.role === 'organizer' || isAdmin;
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
+  const isOrganizer = user?.role === 'event_manager' || isAdmin;
 
   return (
     <AuthContext.Provider value={{ user, isLoading, signIn, signUp, signOut, isAdmin, isOrganizer }}>

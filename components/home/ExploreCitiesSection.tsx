@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { motion, type Variants } from 'framer-motion';
 import { MapPin, ArrowUpRight } from 'lucide-react';
 import type { Event } from '@/types';
 
@@ -28,7 +28,7 @@ const ZIM_CITIES = [
 ];
 
 // Stagger animation per card
-const cardVariants: any = {
+const cardVariants: Variants = {
   hidden: { opacity: 0, y: 24, scale: 0.96 },
   visible: (i: number) => ({
     opacity: 1,
@@ -78,7 +78,7 @@ export default function ExploreCitiesSection({ events }: { events: Event[] }) {
             className="caption mt-2"
             style={{ color: 'var(--text-muted)', maxWidth: '480px' }}
           >
-            Discover what's happening across Zimbabwe — from the capital to the
+            Discover what’s happening across Zimbabwe — from the capital to the
             falls.
           </p>
         </div>

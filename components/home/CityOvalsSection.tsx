@@ -29,8 +29,6 @@ const CITIES = [
 
 // ─── Single card ──────────────────────────────────────────────────────────────
 function CityCard({ city, index }: { city: typeof CITIES[0]; index: number }) {
-  const hasEvents = city.status !== 'Coming soon';
-
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -105,10 +103,6 @@ function CityCard({ city, index }: { city: typeof CITIES[0]; index: number }) {
 export default function CityOvalsSection() {
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const scroll = (dir: 'left' | 'right') => {
-    scrollRef.current?.scrollBy({ left: dir === 'right' ? 360 : -360, behavior: 'smooth' });
-  };
-
   // Live-event cities first
   const sorted = [
     ...CITIES.filter(c => c.status !== 'Coming soon'),
@@ -132,10 +126,10 @@ export default function CityOvalsSection() {
             Top Destinations
           </span>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-gray-900 dark:text-white max-w-2xl leading-tight tracking-tight mb-4">
-            Explore Zimbabwe's Most Loved Places.
+            Explore Zimbabwe’s Most Loved Places.
           </h2>
           <p className="text-base text-gray-500 max-w-md">
-            Tap a city to discover what's happening near you.
+            Tap a city to discover what’s happening near you.
           </p>
         </motion.div>
       </div>

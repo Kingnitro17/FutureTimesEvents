@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Home, Search, Map, Ticket, User } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Home, Map, Ticket, User } from 'lucide-react';
 
 const ITEMS = [
   { href: '/', label: 'Home', Icon: Home },
@@ -15,8 +15,10 @@ const ITEMS = [
 export default function MobileBottomNav() {
   const pathname = usePathname();
 
-  // Hide bottom nav on event details and ticket pages to avoid conflict with sticky CTA
-  const shouldHide = pathname?.startsWith('/events/') || pathname?.startsWith('/ticket/');
+  // Hide bottom nav where it conflicts with ticket or scanner controls.
+  const shouldHide = pathname?.startsWith('/events/')
+    || pathname?.startsWith('/ticket/')
+    || pathname?.startsWith('/checkin');
 
   if (shouldHide) return null;
 

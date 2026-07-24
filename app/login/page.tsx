@@ -27,15 +27,14 @@ function LoginContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading,    setIsLoading]    = useState(false);
   const [oauthLoading, setOauthLoading] = useState(false);
-  const [oauthError,   setOauthError]   = useState(false);
+  const oauthError = searchParams?.get('error') === 'oauth';
 
   // Detect ?error=oauth redirect from /auth/callback
   useEffect(() => {
-    if (searchParams?.get('error') === 'oauth') {
-      setOauthError(true);
+    if (oauthError) {
       toast.error('Google sign-in failed. Please try again.');
     }
-  }, [searchParams]);
+  }, [oauthError]);
 
   useEffect(() => {
     if (!authLoading && user && pathname === '/login') {

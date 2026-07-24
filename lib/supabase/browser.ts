@@ -18,21 +18,21 @@
  *   how many times this module is instantiated, only one client is ever created.
  */
 import { createBrowserClient } from '@supabase/ssr';
-
-const URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ecbbmcqwluivbzlaqdsd.supabase.co';
-const KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVjYmJtY3F3bHVpdmJ6bGFxZHNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc3NjEyNzcsImV4cCI6MjA5MzMzNzI3N30.XTTs7RN-SrZ0YnC20m8mZms8ZfVVeANJgvwg1Key6SQ';
+import { getPublicSupabaseConfig } from './config';
 
 const GLOBAL_KEY = '__SUPABASE_BROWSER_CLIENT__';
 
 export function getSupabaseBrowserClient() {
+  const { url, anonKey } = getPublicSupabaseConfig();
+
   if (typeof window === 'undefined') {
-    return createBrowserClient(URL, KEY, {
+    return createBrowserClient(url, anonKey, {
       auth: { persistSession: false },
     });
   }
   const existing = (globalThis as Record<string, unknown>)[GLOBAL_KEY];
   if (existing) return existing as ReturnType<typeof createBrowserClient>;
-  const client = createBrowserClient(URL, KEY, {
+  const client = createBrowserClient(url, anonKey, {
     auth: {
       persistSession: true,
       autoRefreshToken: true,
@@ -47,6 +47,3 @@ export function getSupabaseBrowserClient() {
   (globalThis as Record<string, unknown>)[GLOBAL_KEY] = client;
   return client;
 }
-
-/** Convenience alias — avoid calling at module level! */
-export const supabase = getSupabaseBrowserClient();

@@ -130,7 +130,10 @@ export function useAnalytics(organizerId?: string) {
     setLoading(false);
   }, [organizerId]);
 
-  useEffect(() => { fetch(); }, [fetch]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => void fetch(), 0);
+    return () => window.clearTimeout(timer);
+  }, [fetch]);
 
   return { analytics, loading, error, refetch: fetch };
 }

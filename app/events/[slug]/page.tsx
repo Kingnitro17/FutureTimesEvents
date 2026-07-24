@@ -1,25 +1,57 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { motion } from 'framer-motion';
-import { ChevronDown, Share2, Heart, Navigation } from 'lucide-react';
-import TicketClaimForm from '@/components/events/TicketClaimForm';
-import QRDisplay from '@/components/tickets/QRDisplay';
+import {
+  ArrowLeft,
+  CalendarDays,
+  CheckCircle2,
+  ChevronDown,
+  Clock3,
+  MapPin,
+  Navigation,
+  Share2,
+  Ticket,
+  Users,
+} from 'lucide-react';
+import TicketClaimForm, {
+  type ClaimableTicketType,
+  type TicketClaimReference,
+} from '@/components/events/TicketClaimForm';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
-import { formatEventDate, formatEventTime, formatEventDateTimeRange } from '@/lib/dateUtils';
+import {
+  formatEventDate,
+  formatEventDateTimeRange,
+  formatEventTime,
+} from '@/lib/dateUtils';
 
-interface TicketType {
+interface EventFaq {
+  id: string;
+  question: string;
+  answer: string;
+  sort_order: number;
+}
+
+interface EventSponsor {
   id: string;
   name: string;
-  description: string;
-  price: number;
-  quantity_available: number;
-  claim_limit_per_contact: number;
-  claim_opens_at: string | null;
-  claim_closes_at: string | null;
-  is_active: boolean;
+  logo_url: string | null;
+  website_url: string | null;
+  tier: string;
+  sort_order: number;
+}
+
+interface EventScheduleItem {
+  id: string;
+  title: string;
+  description: string | null;
+  performer: string | null;
+  starts_at: string;
+  ends_at: string | null;
+  stage: string | null;
+  sort_order: number;
 }
 
 interface EventData {
@@ -30,18 +62,21 @@ interface EventData {
   long_description: string;
   category: string;
   category_label: string;
-  date: string;
-  time: string;
+  date: string | null;
+  time: string | null;
   end_time: string | null;
+  starts_at: string;
   doors_open_at: string | null;
   timezone: string;
-  starts_at: string; // Computed from date + time for TicketClaimForm compatibility
   venue_name: string;
+  venue: string | null;
   address: string;
   city: string;
   lat: number | null;
   lng: number | null;
   image_url: string | null;
+  landscape_image_url: string | null;
+  cover_image_url: string | null;
   capacity: number;
   attendees: number;
   status: string;
@@ -50,549 +85,1014 @@ interface EventData {
   event_rules: string | null;
   organizer_name: string;
   contact_email: string | null;
-  ticket_tiers: TicketType[];
-  event_faqs: { id: string; question: string; answer: string; sort_order: number }[];
-  event_sponsors: { id: string; name: string; logo_url: string | null; tier: string }[];
-  event_schedule_items: { id: string; title: string; performer: string | null; starts_at: string; stage: string | null }[];
+  ticket_types: ClaimableTicketType[];
+  event_faqs: EventFaq[];
+  event_sponsors: EventSponsor[];
+  event_schedule_items: EventScheduleItem[];
+}
+
+interface ClaimedTicketReference {
+  ticketId: string;
+  ticketNumber: string;
+}
+
+interface BookingPanelProps {
+  event: EventData;
+  ticketTypes: ClaimableTicketType[];
+  isCompleted: boolean;
+  isSoldOut: boolean;
+  priceLabel: string;
+  availabilityLabel: string;
+  dateTimeRange: string;
+  claimedTickets: ClaimedTicketReference[];
+  claimRequiresQrReissue: boolean;
+  onSuccess: (
+    tickets: TicketClaimReference[],
+    options: { requiresQrReissue: boolean; ticketTypeId?: string },
+  ) => void;
 }
 
 const GRAD_MAP: Record<string, string> = {
-  music:    'linear-gradient(135deg,#FF55C2,#7222E3)',
-  tech:     'linear-gradient(135deg,#1D5BFF,#C7FE17)',
-  art:      'linear-gradient(135deg,#DD1FFF,#24D8FB)',
-  food:     'linear-gradient(135deg,#FFBC73,#FF00B9)',
-  wellness: 'linear-gradient(135deg,#46FFAB,#A02EFF)',
-  sports:   'linear-gradient(135deg,#2CC4EA,#533885)',
-  lounge:   'linear-gradient(135deg,#FF55C2,#7222E3)',
+  music: 'var(--grad-primary)',
+  tech: 'var(--grad-electric)',
+  art: 'var(--grad-cosmic)',
+  food: 'var(--grad-fire)',
+  wellness: 'var(--grad-emerald)',
+  sports: 'var(--grad-ocean)',
+  lounge: 'var(--grad-primary)',
 };
+
+function formatPrice(value: number): string {
+  if (value === 0) return 'Free';
+
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: Number.isInteger(value) ? 0 : 2,
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
+function normalizeCoordinate(value: unknown): number | null {
+  if (value === null || value === undefined || value === '') return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function formatTimeValue(value?: string | null): string {
+  if (!value) return 'Time to be announced';
+
+  if (!value.includes('T')) {
+    return formatEventTime(value);
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return 'Time to be announced';
+
+  return new Intl.DateTimeFormat('en-ZW', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+    timeZone: 'Africa/Harare',
+  }).format(parsed);
+}
+
+function normalizeTicketType(ticketType: ClaimableTicketType): ClaimableTicketType {
+  return {
+    ...ticketType,
+    description: ticketType.description ?? null,
+    price: Number(ticketType.price) || 0,
+    quantity_available: Math.max(0, Number(ticketType.quantity_available) || 0),
+    claim_limit_per_contact: Math.max(
+      1,
+      Number(ticketType.claim_limit_per_contact) || 1,
+    ),
+    claim_opens_at: ticketType.claim_opens_at ?? null,
+    claim_closes_at: ticketType.claim_closes_at ?? null,
+    is_active: ticketType.is_active !== false,
+    is_visible: ticketType.is_visible !== false,
+    sort_order: Number(ticketType.sort_order) || 0,
+  };
+}
+
+function normalizeEventData(value: unknown): EventData | null {
+  if (!value || typeof value !== 'object') return null;
+
+  const raw = value as Partial<EventData>;
+  if (!raw.id || !raw.title) return null;
+
+  const venueName = raw.venue_name?.trim()
+    || raw.venue?.trim()
+    || 'Venue to be announced';
+  const date = raw.date ?? (raw.starts_at ? raw.starts_at.slice(0, 10) : null);
+  const time = raw.time ?? null;
+  const startsAt = raw.starts_at
+    || (date ? `${date}T${time || '00:00:00'}` : '');
+
+  const ticketTypes = Array.isArray(raw.ticket_types)
+    ? raw.ticket_types.map(normalizeTicketType).sort(
+      (first, second) => (first.sort_order ?? 0) - (second.sort_order ?? 0),
+    )
+    : [];
+
+  return {
+    id: raw.id,
+    title: raw.title,
+    subtitle: raw.subtitle ?? null,
+    description: raw.description ?? '',
+    long_description: raw.long_description ?? '',
+    category: raw.category ?? 'lounge',
+    category_label: raw.category_label ?? raw.category ?? 'Event',
+    date,
+    time,
+    end_time: raw.end_time ?? null,
+    starts_at: startsAt,
+    doors_open_at: raw.doors_open_at ?? null,
+    timezone: raw.timezone ?? 'Africa/Harare',
+    venue_name: venueName,
+    venue: raw.venue ?? null,
+    address: raw.address ?? '',
+    city: raw.city ?? '',
+    lat: normalizeCoordinate(raw.lat),
+    lng: normalizeCoordinate(raw.lng),
+    image_url: raw.image_url ?? null,
+    landscape_image_url: raw.landscape_image_url ?? null,
+    cover_image_url: raw.cover_image_url ?? null,
+    capacity: Math.max(0, Number(raw.capacity) || 0),
+    attendees: Math.max(0, Number(raw.attendees) || 0),
+    status: raw.status ?? 'published',
+    dress_code: raw.dress_code ?? null,
+    age_guidance: raw.age_guidance ?? null,
+    event_rules: raw.event_rules ?? null,
+    organizer_name: raw.organizer_name?.trim() || 'Future Times Events',
+    contact_email: raw.contact_email ?? null,
+    ticket_types: ticketTypes,
+    event_faqs: Array.isArray(raw.event_faqs) ? raw.event_faqs : [],
+    event_sponsors: Array.isArray(raw.event_sponsors) ? raw.event_sponsors : [],
+    event_schedule_items: Array.isArray(raw.event_schedule_items)
+      ? raw.event_schedule_items
+      : [],
+  };
+}
+
+async function fetchEvent(slug: string): Promise<EventData | null> {
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug);
+  const supabase = getSupabaseBrowserClient();
+
+  let query = supabase
+    .from('events')
+    .select(`
+      *,
+      ticket_types(*),
+      event_faqs(*),
+      event_sponsors(*),
+      event_schedule_items(*)
+    `)
+    .in('status', ['published', 'sold_out', 'completed', 'postponed']);
+
+  query = isUuid ? query.eq('id', slug) : query.eq('slug', slug);
+
+  const { data, error } = await query.single();
+  if (error) return null;
+
+  return normalizeEventData(data);
+}
+
+function BookingPanel({
+  event,
+  ticketTypes,
+  isCompleted,
+  isSoldOut,
+  priceLabel,
+  availabilityLabel,
+  dateTimeRange,
+  claimedTickets,
+  claimRequiresQrReissue,
+  onSuccess,
+}: BookingPanelProps) {
+  return (
+    <div className="rounded-[var(--r-3xl)] border border-[var(--border)] bg-[var(--bg-card)] p-5 shadow-[var(--shadow-card)] sm:p-6">
+      {isCompleted ? (
+        <div className="py-6 text-center" role="status">
+          <CheckCircle2
+            className="mx-auto text-[var(--accent)]"
+            size={36}
+            aria-hidden="true"
+          />
+          <h2 className="mt-3 text-xl font-bold text-[var(--text)]">
+            Event completed
+          </h2>
+          <p className="mt-2 text-sm text-[var(--text-muted)]">
+            Ticket reservations are closed.
+          </p>
+        </div>
+      ) : isSoldOut ? (
+        <div className="py-6 text-center" role="status">
+          <Ticket
+            className="mx-auto text-[var(--text-muted)]"
+            size={36}
+            aria-hidden="true"
+          />
+          <h2 className="mt-3 text-xl font-bold text-[var(--text)]">
+            No tickets available
+          </h2>
+          <p className="mt-2 text-sm text-[var(--text-muted)]">
+            This event is sold out or reservations are not currently available.
+          </p>
+        </div>
+      ) : claimedTickets.length > 0 ? (
+        <div className="space-y-5" role="status" aria-live="polite">
+          <div className="text-center">
+            <CheckCircle2
+              className="mx-auto text-emerald-500"
+              size={36}
+              aria-hidden="true"
+            />
+            <h2 className="mt-3 text-xl font-bold text-[var(--text)]">
+              {claimedTickets.length}{' '}
+              {claimRequiresQrReissue
+                ? (claimedTickets.length === 1
+                    ? 'ticket was already reserved'
+                    : 'tickets were already reserved')
+                : (claimedTickets.length === 1 ? 'ticket is ready' : 'tickets are ready')}
+            </h2>
+            <p className="mt-2 text-sm text-[var(--text-muted)]">
+              {claimRequiresQrReissue
+                ? 'Sign in with the booking email and recover the secure QR codes from your wallet.'
+                : 'Open each ticket to view its unique QR code.'}
+            </p>
+          </div>
+          {claimRequiresQrReissue ? (
+            <Link href="/tickets" className="btn btn-lg btn-primary w-full">
+              Open secure ticket wallet
+            </Link>
+          ) : (
+            <ul className="space-y-2">
+              {claimedTickets.map((ticket) => (
+                <li key={ticket.ticketId}>
+                  <Link
+                    href={`/ticket/${ticket.ticketId}`}
+                    className="flex min-h-12 items-center justify-between gap-3 rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--bg-secondary)] px-4 py-3 font-semibold text-[var(--text)] hover:border-[var(--border-hover)]"
+                  >
+                    <span className="truncate">{ticket.ticketNumber}</span>
+                    <span className="shrink-0 text-sm text-[var(--accent)]">
+                      View
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      ) : (
+        <>
+          <div className="mb-6 grid grid-cols-2 gap-3">
+            <div className="rounded-[var(--r-lg)] bg-[var(--bg-secondary)] p-3">
+              <p className="type-overline text-[var(--text-muted)]">Price</p>
+              <p className="mt-1 font-black text-[var(--text)]">{priceLabel}</p>
+            </div>
+            <div className="rounded-[var(--r-lg)] bg-[var(--bg-secondary)] p-3">
+              <p className="type-overline text-[var(--text-muted)]">
+                Availability
+              </p>
+              <p className="mt-1 font-black text-[var(--text)]">
+                {availabilityLabel}
+              </p>
+            </div>
+            <div className="col-span-2 rounded-[var(--r-lg)] bg-[var(--bg-secondary)] p-3">
+              <p className="type-overline text-[var(--text-muted)]">When</p>
+              <p className="mt-1 text-sm font-semibold text-[var(--text)]">
+                {dateTimeRange}
+              </p>
+            </div>
+          </div>
+          <TicketClaimForm
+            event={event}
+            ticketTypes={ticketTypes}
+            onSuccess={onSuccess}
+          />
+        </>
+      )}
+    </div>
+  );
+}
 
 export default function EventSlugPage() {
   const params = useParams();
   const slug = params?.slug as string;
-  const supabase = getSupabaseBrowserClient();
 
-  const [event,      setEvent]      = useState<EventData | null>(null);
-  const [loading,    setLoading]    = useState(true);
-  const [notFound,   setNotFound]   = useState(false);
-  const [openFaqId,  setOpenFaqId]  = useState<string | null>(null);
-  const [claimedTicketId,     setClaimedTicketId]     = useState<string | null>(null);
-  const [claimedTicketNumber, setClaimedTicketNumber] = useState<string | null>(null);
-  const [claimedQrToken,      setClaimedQrToken]      = useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
+  const [event, setEvent] = useState<EventData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+  const [openFaqId, setOpenFaqId] = useState<string | null>(null);
+  const [shareStatus, setShareStatus] = useState('');
+  const [claimedTickets, setClaimedTickets] = useState<ClaimedTicketReference[]>([]);
+  const [claimRequiresQrReissue, setClaimRequiresQrReissue] = useState(false);
 
-  const loadEvent = useCallback(async () => {
+  useEffect(() => {
     if (!slug) return;
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug);
 
-    let query = supabase
-      .from('events')
-      .select(`
-        *,
-        ticket_tiers(*)
-      `)
-      .in('status', ['published', 'sold_out', 'completed']);
+    let ignore = false;
 
-    if (isUuid) {
-      query = query.eq('id', slug);
-    } else {
-      query = query.eq('slug', slug);
-    }
+    void fetchEvent(slug)
+      .then((loadedEvent) => {
+        if (ignore) return;
 
-    const { data, error } = await query.single();
+        if (!loadedEvent) {
+          setEvent(null);
+          setNotFound(true);
+          setLoading(false);
+          return;
+        }
 
-    if (error || !data) { setNotFound(true); setLoading(false); return; }
-    
-    // Compute starts_at from date + time for TicketClaimForm compatibility
-    const eventData = data as unknown as EventData;
-    if (eventData.date && eventData.time) {
-      eventData.starts_at = `${eventData.date}T${eventData.time}`;
-    } else {
-      eventData.starts_at = eventData.date || '';
-    }
-    
-    // Ensure attendees has a default value
-    if (typeof eventData.attendees !== 'number') {
-      eventData.attendees = 0;
-    }
-    
-    setEvent(eventData);
-    setLoading(false);
+        setClaimedTickets([]);
+        setClaimRequiresQrReissue(false);
+        setNotFound(false);
+        setEvent(loadedEvent);
+        setLoading(false);
+      })
+      .catch(() => {
+        if (ignore) return;
+        setEvent(null);
+        setNotFound(true);
+        setLoading(false);
+      });
+
+    return () => {
+      ignore = true;
+    };
   }, [slug]);
 
-  useEffect(() => { loadEvent(); }, [loadEvent]);
-
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="animate-spin w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full" />
-    </div>
-  );
-
-  if (notFound || !event) return (
-    <div className="min-h-screen flex items-center justify-center px-4">
-      <div className="text-center max-w-md">
-        <div className="text-6xl mb-5">🔍</div>
-        <h2 className="text-2xl font-bold text-[var(--text)] mb-3">Event not found</h2>
-        <p className="text-[var(--text-muted)] mb-5">This event may have been removed or the link is incorrect.</p>
-        <Link href="/events" className="btn btn-md btn-primary">Browse Events</Link>
+  if (loading) {
+    return (
+      <div
+        className="flex min-h-screen items-center justify-center"
+        style={{ paddingTop: 'var(--nav-h)' }}
+      >
+        <div className="flex flex-col items-center gap-3" role="status">
+          <div className="h-9 w-9 animate-spin rounded-full border-4 border-[var(--accent)] border-t-transparent" />
+          <p className="text-sm text-[var(--text-muted)]">Loading event…</p>
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
 
-  const grad = GRAD_MAP[event.category] ?? GRAD_MAP.lounge;
-  const isSoldOut = event.status === 'sold_out';
+  if (notFound || !event) {
+    return (
+      <div
+        className="flex min-h-screen items-center justify-center px-4"
+        style={{ paddingTop: 'var(--nav-h)' }}
+      >
+        <div className="max-w-md rounded-[var(--r-3xl)] border border-[var(--border)] bg-[var(--bg-card)] p-8 text-center shadow-[var(--shadow-card)]">
+          <Ticket
+            className="mx-auto text-[var(--text-muted)]"
+            size={44}
+            aria-hidden="true"
+          />
+          <h1 className="mt-4 text-2xl font-bold text-[var(--text)]">
+            Event not found
+          </h1>
+          <p className="mt-3 text-[var(--text-muted)]">
+            This event may have been removed or the link is incorrect.
+          </p>
+          <Link href="/events" className="btn btn-md btn-primary mt-6">
+            Browse events
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const visibleTicketTypes = event.ticket_types.filter(
+    (ticketType) => ticketType.is_active && ticketType.is_visible !== false,
+  );
+  const availableTicketTypes = visibleTicketTypes.filter(
+    (ticketType) => ticketType.quantity_available > 0,
+  );
+  const availableTicketCount = availableTicketTypes.reduce(
+    (total, ticketType) => total + ticketType.quantity_available,
+    0,
+  );
+  const availablePrices = availableTicketTypes.map(
+    (ticketType) => ticketType.price,
+  );
+  const minPrice = availablePrices.length > 0
+    ? Math.min(...availablePrices)
+    : 0;
+  const maxPrice = availablePrices.length > 0
+    ? Math.max(...availablePrices)
+    : 0;
+  const priceLabel = availablePrices.length === 0
+    ? 'Unavailable'
+    : minPrice === 0 && maxPrice > 0
+      ? 'Free & paid'
+      : minPrice === maxPrice
+        ? formatPrice(minPrice)
+        : `From ${formatPrice(minPrice)}`;
+  const availabilityLabel = availableTicketCount === 1
+    ? '1 ticket left'
+    : `${availableTicketCount} tickets left`;
   const isCompleted = event.status === 'completed';
+  const isSoldOut = event.status !== 'published'
+    || visibleTicketTypes.length === 0
+    || availableTicketTypes.length === 0;
   const formattedDate = formatEventDate(event.date, event.time);
   const formattedTime = formatEventTime(event.time);
-  const formattedEndTime = formatEventTime(event.end_time);
-  const dateTimeRange = formatEventDateTimeRange(event.date, event.time, event.end_time);
+  const formattedEndTime = event.end_time
+    ? formatEventTime(event.end_time)
+    : null;
+  const dateTimeRange = formatEventDateTimeRange(
+    event.date,
+    event.time,
+    event.end_time,
+  );
+  const gradient = GRAD_MAP[event.category] ?? GRAD_MAP.lounge;
+  const mobileHeroImage = event.image_url
+    || event.cover_image_url
+    || event.landscape_image_url;
+  const desktopHeroImage = event.landscape_image_url
+    || event.cover_image_url
+    || event.image_url;
+  const hasCoordinates = event.lat !== null && event.lng !== null;
+  const locationQuery = hasCoordinates
+    ? `${event.lat},${event.lng}`
+    : [event.venue_name, event.address, event.city].filter(Boolean).join(', ');
+  const directionsUrl = locationQuery
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(locationQuery)}`
+    : null;
+  const mapEmbedUrl = hasCoordinates
+    ? `https://www.google.com/maps?q=${encodeURIComponent(`${event.lat},${event.lng}`)}&z=15&output=embed`
+    : null;
+  const sortedSchedule = [...event.event_schedule_items].sort(
+    (first, second) => {
+      if (first.sort_order !== second.sort_order) {
+        return first.sort_order - second.sort_order;
+      }
+      return new Date(first.starts_at).getTime()
+        - new Date(second.starts_at).getTime();
+    },
+  );
+  const sortedFaqs = [...event.event_faqs].sort(
+    (first, second) => first.sort_order - second.sort_order,
+  );
+  const sortedSponsors = [...event.event_sponsors].sort(
+    (first, second) => first.sort_order - second.sort_order,
+  );
+  const goodToKnow = [
+    event.doors_open_at
+      ? { label: 'Doors open', value: formatTimeValue(event.doors_open_at) }
+      : null,
+    event.dress_code
+      ? { label: 'Dress code', value: event.dress_code }
+      : null,
+    event.age_guidance
+      ? { label: 'Age guidance', value: event.age_guidance }
+      : null,
+    event.event_rules
+      ? { label: 'Entry rules', value: event.event_rules }
+      : null,
+  ].filter((item): item is { label: string; value: string } => Boolean(item));
+
+  const handleClaimSuccess = (
+    tickets: TicketClaimReference[],
+    options: { requiresQrReissue: boolean; ticketTypeId?: string },
+  ) => {
+    setClaimedTickets(
+      tickets.map(({ ticketId, ticketNumber }) => ({
+        ticketId,
+        ticketNumber,
+      })),
+    );
+    setClaimRequiresQrReissue(options.requiresQrReissue);
+
+    if (!options.requiresQrReissue) {
+      setEvent(current => {
+        if (!current) return current;
+        return {
+          ...current,
+          attendees: current.attendees + tickets.length,
+          ticket_types: current.ticket_types.map(ticketType => (
+            ticketType.id === options.ticketTypeId
+              ? {
+                  ...ticketType,
+                  quantity_available: Math.max(
+                    ticketType.quantity_available - tickets.length,
+                    0,
+                  ),
+                }
+              : ticketType
+          )),
+        };
+      });
+    }
+  };
+
+  const handleShare = async () => {
+    const shareData = {
+      title: event.title,
+      text: event.subtitle || `View ${event.title} on Future Times Events`,
+      url: window.location.href,
+    };
+
+    try {
+      if (typeof navigator.share === 'function') {
+        await navigator.share(shareData);
+        setShareStatus('Shared');
+        return;
+      }
+
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(shareData.url);
+        setShareStatus('Link copied');
+        return;
+      }
+
+      setShareStatus('Copy this page URL from your browser');
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
+      setShareStatus('Could not share this event');
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-[var(--bg)] pb-32 sm:pb-8">
-      
-      {/* Compact header */}
-      <header className="sticky top-0 z-50 bg-[var(--bg)]/80 backdrop-blur-lg border-b border-[var(--border)] h-14 sm:h-16 px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2">
-          <span className="text-lg font-black text-[var(--text)]">FT</span>
-        </Link>
-        <div className="flex items-center gap-2">
-          <button 
-            onClick={() => setSaved(!saved)}
-            className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-[var(--bg-secondary)] transition-colors"
-          >
-            <Heart size={20} className={saved ? 'fill-red-500 text-red-500' : 'text-[var(--text)]'} />
-          </button>
-          <button className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-[var(--bg-secondary)] transition-colors">
-            <Share2 size={20} className="text-[var(--text)]" />
-          </button>
-        </div>
-      </header>
-
-      {/* Hero image */}
-      <div className="px-4 sm:px-6 lg:px-8 pt-4 sm:pt-5">
-        <div className="relative w-full aspect-[16/9] sm:aspect-[21/9] max-h-[260px] sm:max-h-[460px] overflow-hidden rounded-[30px] border border-[var(--border)] shadow-[0_24px_80px_rgba(0,0,0,0.08)]">
-          {/* Desktop: landscape poster, Mobile: original image_url */}
-          <picture>
-            <source media="(min-width: 640px)" srcSet="https://ecbbmcqwluivbzlaqdsd.supabase.co/storage/v1/object/public/events/events/landscape-poster.png" />
-            <img
-              src={event.image_url || 'https://ecbbmcqwluivbzlaqdsd.supabase.co/storage/v1/object/public/events/events/landscape-poster.png'}
-              alt={event.title}
-              className="w-full h-full object-cover"
-            />
-          </picture>
-          
-          {/* Category badge */}
-          <div className="absolute top-4 left-4">
-            <span className="px-3 py-1.5 rounded-full text-xs font-bold text-white backdrop-blur-md"
-              style={{ background: 'rgba(0,0,0,0.5)' }}>
-              {event.category_label}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Main content */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 mt-6 sm:mt-8">
-        
-        {/* Event identity */}
-        <div className="mb-8 sm:mb-10">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[var(--text)] leading-tight mb-2">
-            {event.title}
-          </h1>
-          {event.subtitle && (
-            <p className="text-base sm:text-lg text-[var(--text-muted)] leading-relaxed">
-              {event.subtitle}
-            </p>
-          )}
-        </div>
-
-        <div className="mb-8 sm:mb-10 rounded-[28px] border border-[var(--border)] bg-[var(--bg-card)]/80 p-5 sm:p-6 lg:p-8 shadow-[0_24px_80px_rgba(0,0,0,0.06)] backdrop-blur">
-          <div className="flex items-center gap-3 pb-4 border-b border-[var(--border)]/80">
-            <div className="w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold text-white" style={{ background: grad }}>
-              {event.organizer_name?.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || 'FT'}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--text-muted)]">Hosted by</p>
-              <p className="font-semibold text-[var(--text)] truncate">{event.organizer_name || 'Future Times Events'}</p>
-            </div>
-            <button className="px-4 py-2 rounded-full border border-[var(--border)] text-sm font-medium text-[var(--text)] hover:bg-[var(--bg-secondary)] transition-colors shrink-0">
-              Follow
-            </button>
-          </div>
-
-          <div className="mt-5 grid gap-3 sm:grid-cols-3">
-            <div className="rounded-2xl bg-[var(--bg-secondary)] p-3.5">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--text-muted)]">Date</p>
-              <p className="mt-1 text-sm font-semibold text-[var(--text)]">{formattedDate}</p>
-            </div>
-            <div className="rounded-2xl bg-[var(--bg-secondary)] p-3.5">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--text-muted)]">Time</p>
-              <p className="mt-1 text-sm font-semibold text-[var(--text)]">{formattedTime}</p>
-            </div>
-            <div className="rounded-2xl bg-[var(--bg-secondary)] p-3.5">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--text-muted)]">Venue</p>
-              <p className="mt-1 text-sm font-semibold text-[var(--text)]">{event.venue_name}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-[28px] border border-[var(--border)] bg-[var(--bg-card)]/80 p-5 sm:p-6 lg:p-8 mb-8 sm:mb-10 shadow-[0_24px_80px_rgba(0,0,0,0.06)] backdrop-blur">
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div className="rounded-2xl bg-[var(--bg-secondary)] p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--text-muted)]">Date</p>
-              <p className="mt-2 text-sm sm:text-base font-semibold text-[var(--text)]">{formattedDate}</p>
-              {event.doors_open_at && (
-                <p className="mt-2 text-xs text-[var(--text-muted)]">Doors open: {formatEventTime(event.doors_open_at)}</p>
-              )}
-            </div>
-
-            <div className="rounded-2xl bg-[var(--bg-secondary)] p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--text-muted)]">Time</p>
-              <p className="mt-2 text-sm sm:text-base font-semibold text-[var(--text)]">
-                {formattedTime}
-                {formattedEndTime && formattedEndTime !== formattedTime && ` – ${formattedEndTime}`}
-              </p>
-              <p className="mt-2 text-xs text-[var(--text-muted)]">{event.timezone || 'Local time'}</p>
-            </div>
-
-            <div className="rounded-2xl bg-[var(--bg-secondary)] p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--text-muted)]">Venue</p>
-              <p className="mt-2 text-sm sm:text-base font-semibold text-[var(--text)]">{event.venue_name}</p>
-              <p className="mt-2 text-sm text-[var(--text-muted)]">{event.address}</p>
-              {(event.lat && event.lng) && (
-                <a href={`https://www.google.com/maps/search/?api=1&query=${event.lat},${event.lng}`} target="_blank" rel="noopener noreferrer" className="text-sm text-[var(--text)] hover:underline mt-2 inline-block font-medium">
-                  Get directions →
-                </a>
-              )}
-            </div>
-          </div>
-
-          {event.capacity > 0 && (
-            <div className="mt-4 rounded-2xl bg-[var(--bg-secondary)] p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--text-muted)]">Entry</p>
-              <p className="mt-2 text-sm sm:text-base font-semibold text-[var(--text)]">Free reservation required</p>
-              <p className="mt-2 text-xs text-[var(--text-muted)]">Limited to {event.capacity.toLocaleString()} guests</p>
-              {isSoldOut && <p className="text-sm text-red-500 font-semibold mt-2">Sold out</p>}
-            </div>
-          )}
-        </div>
-
-        <section className="mb-8 sm:mb-10 rounded-[28px] border border-[var(--border)] bg-[var(--bg-card)]/80 p-5 sm:p-6 lg:p-8 shadow-[0_24px_80px_rgba(0,0,0,0.06)] backdrop-blur">
-          <div className="flex items-center justify-between gap-3 mb-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--text-muted)]">About</p>
-              <h2 className="text-xl sm:text-2xl font-bold text-[var(--text)]">About this event</h2>
-            </div>
-            <div className="rounded-full border border-[var(--border)] bg-[var(--bg-secondary)] px-3 py-1.5 text-xs font-semibold text-[var(--text-muted)]">
-              {event.category_label}
-            </div>
-          </div>
-          <div className="prose prose-sm sm:prose-base max-w-none">
-            <p className="text-[var(--text-secondary)] leading-relaxed text-sm sm:text-base">
-              {event.long_description || event.description}
-            </p>
-          </div>
-        </section>
-
-        <section className="mb-8 sm:mb-10 rounded-[28px] border border-[var(--border)] bg-[var(--bg-card)]/80 p-5 sm:p-6 lg:p-8 shadow-[0_24px_80px_rgba(0,0,0,0.06)] backdrop-blur">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--text-muted)]">Community</p>
-              <h2 className="text-xl sm:text-2xl font-bold text-[var(--text)] mt-1">Who&apos;s going</h2>
-            </div>
-            <div className="rounded-full border border-[var(--border)] bg-[var(--bg-secondary)] px-3 py-1.5 text-xs font-semibold text-[var(--text-muted)]">
-              {event.attendees || 0} joined
-            </div>
-          </div>
-
-          <div className="mt-5 rounded-[22px] border border-[var(--border)] bg-[var(--bg-secondary)]/80 p-4 sm:p-5">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex -space-x-3">
-                {[1, 2, 3, 4].map((i) => (
-                  <div
-                    key={i}
-                    className="w-11 h-11 rounded-full border-2 border-[var(--bg-card)] flex items-center justify-center text-xs font-bold text-white"
-                    style={{ background: `linear-gradient(135deg, hsl(${i * 60}, 70%, 50%), hsl(${i * 60 + 30}, 70%, 40%))` }}
-                  >
-                    {String.fromCharCode(64 + i)}
-                  </div>
-                ))}
-              </div>
-              <div className="flex-1">
-                <p className="font-semibold text-[var(--text)]">{event.attendees || 0} people are already in</p>
-                <p className="text-sm text-[var(--text-muted)] mt-1">Claim your ticket and be part of the vibe.</p>
-              </div>
-            </div>
-
-            <div className="mt-4 flex flex-wrap gap-2">
-              {['No-fuss entry', 'Live energy', 'Friends welcome'].map(tag => (
-                <span key={tag} className="rounded-full border border-[var(--border)] bg-[var(--bg-card)] px-3 py-1.5 text-xs font-medium text-[var(--text-muted)]">
-                  {tag}
-                </span>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Spacer */}
-        <div className="h-16 sm:h-20" />
-
-        {/* Schedule */}
-        {event.event_schedule_items?.length > 0 && (
-          <section className="mb-10 sm:mb-14">
-            <h2 className="text-xl sm:text-2xl font-bold text-[var(--text)] mb-4">Event schedule</h2>
-            <div className="space-y-3">
-              {event.event_schedule_items
-                .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime())
-                .map(item => (
-                  <div key={item.id} className="flex items-start gap-4 py-3 border-b border-[var(--border)] last:border-0">
-                    <div className="text-sm font-mono text-[var(--text-muted)] w-16 shrink-0 pt-0.5">
-                      {formatEventTime(item.starts_at)}
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-semibold text-[var(--text)]">{item.title}</p>
-                      {item.performer && <p className="text-sm text-[var(--text-muted)]">{item.performer}</p>}
-                      {item.stage && <p className="text-xs text-purple-600 dark:text-purple-400 font-medium mt-1">{item.stage}</p>}
-                    </div>
-                  </div>
-                ))}
-            </div>
-          </section>
-        )}
-
-        {/* Spacer */}
-        <div className="h-16 sm:h-20" />
-
-        {/* FAQs */}
-        {event.event_faqs?.length > 0 && (
-          <section className="mb-10 sm:mb-14">
-            <h2 className="text-xl sm:text-2xl font-bold text-[var(--text)] mb-4">Frequently Asked Questions</h2>
-            <div className="space-y-2">
-              {event.event_faqs
-                .sort((a, b) => a.sort_order - b.sort_order)
-                .map(faq => (
-                  <div key={faq.id} className="border border-[var(--border)] rounded-xl overflow-hidden">
-                    <button
-                      onClick={() => setOpenFaqId(openFaqId === faq.id ? null : faq.id)}
-                      className="w-full px-4 py-4 flex items-center justify-between gap-3 text-left hover:bg-[var(--bg-secondary)] transition-colors"
-                      aria-expanded={openFaqId === faq.id}
-                    >
-                      <p className="font-semibold text-[var(--text)] text-sm sm:text-base">{faq.question}</p>
-                      <ChevronDown
-                        size={20}
-                        className={`text-[var(--text-muted)] shrink-0 transition-transform duration-200 ${openFaqId === faq.id ? 'rotate-180' : ''}`}
-                      />
-                    </button>
-                    {openFaqId === faq.id && (
-                      <div className="px-4 pb-4">
-                        <p className="text-sm sm:text-base text-[var(--text-secondary)] leading-relaxed">{faq.answer}</p>
-                      </div>
-                    )}
-                  </div>
-                ))}
-            </div>
-          </section>
-        )}
-
-        {/* Spacer */}
-        <div className="h-16 sm:h-20" />
-
-        {/* Venue and map */}
-        {(event.venue_name || event.address) && (
-          <section className="mb-10 sm:mb-14">
-            <h2 className="text-xl sm:text-2xl font-bold text-[var(--text)] mb-4">Location</h2>
-            <div className="space-y-4">
-              <div className="glass rounded-2xl p-5 border border-[var(--border)]">
-                <h3 className="font-semibold text-[var(--text)] text-lg mb-2">{event.venue_name}</h3>
-                <p className="text-[var(--text-secondary)] mb-4">{event.address}</p>
-                {(event.lat && event.lng) && (
-                  <a
-                    href={`https://www.google.com/maps/search/?api=1&query=${event.lat},${event.lng}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--bg-secondary)] text-sm font-medium text-[var(--text)] hover:bg-[var(--border)] transition-colors"
-                  >
-                    <Navigation size={16} />
-                    Get directions
-                  </a>
-                )}
-              </div>
-              
-              {/* Embedded map — Google Maps */}
-              {(event.lat && event.lng) && (
-                <div className="rounded-2xl overflow-hidden border border-[var(--border)] h-64 sm:h-80">
-                  <iframe
-                    width="100%"
-                    height="100%"
-                    frameBorder="0"
-                    style={{ border: 0 }}
-                    src={`https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d125484.3574096095!2d31.486001194492793!3d-17.279231829121493!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x1930270053325827%3A0xde97b4a1ed0d2193!2sLiquid%20Lounge%20Shamva!5e0!3m2!1sen!2szw!4v1784873732849!5m2!1sen!2szw`}
-                    allowFullScreen
-                    loading="lazy"
-                    referrerPolicy="strict-origin-when-cross-origin"
-                  />
-                </div>
-              )}
-            </div>
-          </section>
-        )}
-
-        {/* Spacer */}
-        <div className="h-16 sm:h-20" />
-
-        {/* Sponsors */}
-        {event.event_sponsors?.length > 0 && (
-          <section className="mb-10 sm:mb-14">
-            <h2 className="text-xl sm:text-2xl font-bold text-[var(--text)] mb-4">Supported by</h2>
-            <div className="flex flex-wrap gap-3">
-              {event.event_sponsors.map(s => (
-                <span key={s.id} className="px-4 py-2 rounded-full bg-[var(--bg-secondary)] text-sm font-medium text-[var(--text)]">
-                  {s.name}
-                </span>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Desktop ticket sidebar */}
-        <div className="hidden lg:block">
-          <div className="sticky top-24 bg-white dark:bg-[#1a1a2e] rounded-2xl p-6 border border-gray-200 dark:border-white/10 shadow-lg max-w-sm ml-auto">
-            {isCompleted ? (
-              <div className="text-center py-6">
-                <div className="text-4xl mb-3">✅</div>
-                <p className="font-bold text-gray-900 dark:text-white">Event completed</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Thank you for attending!</p>
-              </div>
-            ) : isSoldOut ? (
-              <div className="text-center py-6">
-                <div className="text-4xl mb-3">🔥</div>
-                <p className="font-black text-xl text-gray-900 dark:text-white">Sold Out</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">All tickets have been claimed.</p>
-              </div>
-            ) : claimedTicketId && claimedQrToken ? (
-              <div className="text-center space-y-4">
-                <div className="w-12 h-12 rounded-2xl mx-auto flex items-center justify-center" style={{ background: grad }}>
-                  <span className="text-2xl">🎟️</span>
-                </div>
-                <h3 className="font-black text-xl text-gray-900 dark:text-white">Your Ticket</h3>
-                <p className="text-gray-500 dark:text-gray-400 text-sm">{claimedTicketNumber}</p>
-                <div className="flex justify-center">
-                  <QRDisplay token={claimedQrToken} size={200} label={`Ticket QR for ${event.title}`} />
-                </div>
-                <p className="text-xs text-center text-gray-500 dark:text-gray-400">
-                  Screenshot or save this QR code. Show it at the entrance.
-                </p>
-                <Link
-                  href={`/ticket/${claimedTicketId}`}
-                  className="block w-full py-3 rounded-xl text-center font-bold text-white text-sm transition-all hover:opacity-90"
-                  style={{ background: grad }}
-                >
-                  View Full Ticket →
-                </Link>
-              </div>
-            ) : (
+    <div
+      className="min-h-screen bg-[var(--bg)] pb-28 lg:pb-16"
+      style={{ paddingTop: 'var(--nav-h)' }}
+    >
+      <article>
+        <div className="container pt-4 sm:pt-6">
+          <div className="relative aspect-[4/5] max-h-[680px] overflow-hidden rounded-[var(--r-3xl)] border border-[var(--border)] bg-[var(--bg-secondary)] shadow-[var(--shadow-lg)] sm:aspect-[16/9] lg:aspect-[21/9] lg:max-h-[500px]">
+            {mobileHeroImage && desktopHeroImage ? (
               <>
-                <div className="mb-6">
-                  <p className="text-sm text-gray-500 dark:text-gray-400 font-medium mb-1">Price</p>
-                  <p className="text-2xl font-black text-gray-900 dark:text-white">Free</p>
-                </div>
-                <div className="mb-6">
-                  <p className="text-sm text-gray-500 dark:text-gray-400 font-medium mb-1">Date & Time</p>
-                  <p className="text-base font-semibold text-gray-900 dark:text-white">{dateTimeRange}</p>
-                </div>
-                <div className="mb-6">
-                  <p className="text-sm text-gray-500 dark:text-gray-400 font-medium mb-1">Venue</p>
-                  <p className="text-base font-semibold text-gray-900 dark:text-white">{event.venue_name}</p>
-                </div>
-                <TicketClaimForm
-                  event={event}
-                  ticketTypes={event.ticket_tiers ?? []}
-                  onSuccess={(id, num, token) => {
-                    setClaimedTicketId(id);
-                    setClaimedTicketNumber(num);
-                    setClaimedQrToken(token);
-                  }}
+                <Image
+                  src={mobileHeroImage}
+                  alt={`${event.title} event artwork`}
+                  fill
+                  sizes="(max-width: 639px) calc(100vw - 32px), 1px"
+                  className="object-cover sm:hidden"
+                  fetchPriority="high"
+                />
+                <Image
+                  src={desktopHeroImage}
+                  alt={`${event.title} event artwork`}
+                  fill
+                  sizes="(min-width: 1280px) 1216px, (min-width: 640px) calc(100vw - 48px), 1px"
+                  className="hidden object-cover sm:block"
+                  fetchPriority="high"
                 />
               </>
+            ) : (
+              <div
+                className="absolute inset-0"
+                style={{ background: gradient }}
+                aria-hidden="true"
+              />
             )}
+
+            <div
+              className="absolute inset-0"
+              style={{
+                background: 'linear-gradient(180deg, rgba(0,0,0,0.36) 0%, transparent 42%, rgba(0,0,0,0.66) 100%)',
+              }}
+              aria-hidden="true"
+            />
+
+            <div className="absolute inset-x-4 top-4 z-10 flex items-start justify-between gap-3 sm:inset-x-6 sm:top-6">
+              <Link
+                href="/events"
+                className="inline-flex min-h-11 items-center gap-2 rounded-full border border-white/20 bg-black/55 px-4 py-2 text-sm font-semibold text-white backdrop-blur-xl hover:bg-black/70"
+                aria-label="Back to all events"
+              >
+                <ArrowLeft size={17} aria-hidden="true" />
+                <span className="hidden sm:inline">All events</span>
+              </Link>
+              <button
+                type="button"
+                onClick={handleShare}
+                className="inline-flex min-h-11 items-center gap-2 rounded-full border border-white/20 bg-black/55 px-4 py-2 text-sm font-semibold text-white backdrop-blur-xl hover:bg-black/70"
+                aria-label="Share this event"
+              >
+                <Share2 size={17} aria-hidden="true" />
+                <span>
+                  {shareStatus === 'Link copied'
+                    ? 'Copied'
+                    : shareStatus === 'Shared'
+                      ? 'Shared'
+                      : 'Share'}
+                </span>
+              </button>
+            </div>
+
+            <div className="absolute bottom-4 left-4 z-10 sm:bottom-6 sm:left-6">
+              <span className="rounded-full border border-white/20 bg-black/55 px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] text-white backdrop-blur-xl">
+                {event.category_label}
+              </span>
+            </div>
+            <span className="sr-only" aria-live="polite">{shareStatus}</span>
+          </div>
+
+          <header className="mt-4 rounded-[var(--r-3xl)] border border-[var(--border)] bg-[var(--bg-card)] p-5 shadow-[var(--shadow-card)] sm:mt-6 sm:p-8">
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+              <div className="min-w-0">
+                <div className="mb-4 flex flex-wrap items-center gap-2">
+                  {event.status === 'postponed' && (
+                    <span className="badge badge-warn">Postponed</span>
+                  )}
+                  {isCompleted && (
+                    <span className="badge badge-info">Completed</span>
+                  )}
+                  {isSoldOut && !isCompleted && (
+                    <span className="badge badge-error">No tickets available</span>
+                  )}
+                </div>
+                <h1 className="max-w-4xl text-3xl font-bold leading-tight text-[var(--text)] sm:text-4xl lg:text-5xl">
+                  {event.title}
+                </h1>
+                {event.subtitle && (
+                  <p className="mt-3 max-w-3xl text-base leading-relaxed text-[var(--text-secondary)] sm:text-lg">
+                    {event.subtitle}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex items-center gap-3 rounded-[var(--r-xl)] bg-[var(--bg-secondary)] p-3 sm:min-w-64">
+                <div
+                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
+                  style={{ background: gradient }}
+                  aria-hidden="true"
+                >
+                  {event.organizer_name
+                    .split(' ')
+                    .map((word) => word[0])
+                    .join('')
+                    .slice(0, 2)
+                    .toUpperCase()}
+                </div>
+                <div className="min-w-0">
+                  <p className="type-overline text-[var(--text-muted)]">Hosted by</p>
+                  <p className="mt-1 truncate font-semibold text-[var(--text)]">
+                    {event.organizer_name}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </header>
+
+          <div className="mt-6 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-8">
+            <div className="min-w-0 space-y-6">
+              <section
+                className="rounded-[var(--r-3xl)] border border-[var(--border)] bg-[var(--bg-card)] p-5 shadow-[var(--shadow-card)] sm:p-8"
+                aria-labelledby="event-details-heading"
+              >
+                <p className="type-overline text-[var(--text-muted)]">Plan your visit</p>
+                <h2 id="event-details-heading" className="mt-1 text-2xl font-bold text-[var(--text)]">
+                  Event details
+                </h2>
+
+                <dl className="mt-5 grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-[var(--r-xl)] bg-[var(--bg-secondary)] p-4">
+                    <dt className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                      <CalendarDays size={16} aria-hidden="true" />
+                      Date
+                    </dt>
+                    <dd className="mt-2 font-semibold text-[var(--text)]">
+                      {formattedDate}
+                    </dd>
+                  </div>
+                  <div className="rounded-[var(--r-xl)] bg-[var(--bg-secondary)] p-4">
+                    <dt className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                      <Clock3 size={16} aria-hidden="true" />
+                      Time
+                    </dt>
+                    <dd className="mt-2 font-semibold text-[var(--text)]">
+                      {formattedTime}
+                      {formattedEndTime
+                        && formattedEndTime !== formattedTime
+                        && ` – ${formattedEndTime}`}
+                    </dd>
+                    <p className="mt-1 text-xs text-[var(--text-muted)]">
+                      {event.timezone}
+                    </p>
+                  </div>
+                  <div className="rounded-[var(--r-xl)] bg-[var(--bg-secondary)] p-4 sm:col-span-2">
+                    <dt className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                      <MapPin size={16} aria-hidden="true" />
+                      Venue
+                    </dt>
+                    <dd className="mt-2 font-semibold text-[var(--text)]">
+                      {event.venue_name}
+                    </dd>
+                    {(event.address || event.city) && (
+                      <p className="mt-1 text-sm text-[var(--text-muted)]">
+                        {[event.address, event.city].filter(Boolean).join(', ')}
+                      </p>
+                    )}
+                    {directionsUrl && (
+                      <a
+                        href={directionsUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-sm btn-outline mt-4"
+                      >
+                        <Navigation size={15} aria-hidden="true" />
+                        Get directions
+                      </a>
+                    )}
+                  </div>
+                  <div className="rounded-[var(--r-xl)] bg-[var(--bg-secondary)] p-4">
+                    <dt className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                      <Ticket size={16} aria-hidden="true" />
+                      Tickets
+                    </dt>
+                    <dd className="mt-2 font-semibold text-[var(--text)]">
+                      {priceLabel}
+                    </dd>
+                    {!isCompleted && !isSoldOut && (
+                      <p className="mt-1 text-xs text-[var(--text-muted)]">
+                        {availabilityLabel}
+                      </p>
+                    )}
+                  </div>
+                  <div className="rounded-[var(--r-xl)] bg-[var(--bg-secondary)] p-4">
+                    <dt className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                      <Users size={16} aria-hidden="true" />
+                      Attendance
+                    </dt>
+                    <dd className="mt-2 font-semibold text-[var(--text)]">
+                      {event.attendees.toLocaleString()} claimed
+                    </dd>
+                    {event.capacity > 0 && (
+                      <p className="mt-1 text-xs text-[var(--text-muted)]">
+                        Capacity {event.capacity.toLocaleString()}
+                      </p>
+                    )}
+                  </div>
+                </dl>
+              </section>
+
+              <div
+                id="ticket-form"
+                className="scroll-mt-[calc(var(--nav-h)+16px)] lg:hidden"
+              >
+                <BookingPanel
+                  event={event}
+                  ticketTypes={visibleTicketTypes}
+                  isCompleted={isCompleted}
+                  isSoldOut={isSoldOut}
+                  priceLabel={priceLabel}
+                  availabilityLabel={availabilityLabel}
+                  dateTimeRange={dateTimeRange}
+                  claimedTickets={claimedTickets}
+                  claimRequiresQrReissue={claimRequiresQrReissue}
+                  onSuccess={handleClaimSuccess}
+                />
+              </div>
+
+              <section
+                className="rounded-[var(--r-3xl)] border border-[var(--border)] bg-[var(--bg-card)] p-5 shadow-[var(--shadow-card)] sm:p-8"
+                aria-labelledby="about-event-heading"
+              >
+                <p className="type-overline text-[var(--text-muted)]">About</p>
+                <h2 id="about-event-heading" className="mt-1 text-2xl font-bold text-[var(--text)]">
+                  About this event
+                </h2>
+                <p className="mt-4 whitespace-pre-line text-base leading-relaxed text-[var(--text-secondary)]">
+                  {event.long_description || event.description || 'More event details will be announced soon.'}
+                </p>
+
+                {goodToKnow.length > 0 && (
+                  <dl className="mt-6 grid gap-3 sm:grid-cols-2">
+                    {goodToKnow.map((item) => (
+                      <div
+                        key={item.label}
+                        className="rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)] p-4"
+                      >
+                        <dt className="type-overline text-[var(--text-muted)]">
+                          {item.label}
+                        </dt>
+                        <dd className="mt-2 text-sm font-semibold leading-relaxed text-[var(--text)]">
+                          {item.value}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                )}
+              </section>
+
+              {sortedSchedule.length > 0 && (
+                <section
+                  className="rounded-[var(--r-3xl)] border border-[var(--border)] bg-[var(--bg-card)] p-5 shadow-[var(--shadow-card)] sm:p-8"
+                  aria-labelledby="event-schedule-heading"
+                >
+                  <p className="type-overline text-[var(--text-muted)]">Programme</p>
+                  <h2 id="event-schedule-heading" className="mt-1 text-2xl font-bold text-[var(--text)]">
+                    Event schedule
+                  </h2>
+                  <ol className="mt-5 space-y-3">
+                    {sortedSchedule.map((item) => (
+                      <li
+                        key={item.id}
+                        className="grid grid-cols-[72px_minmax(0,1fr)] gap-4 rounded-[var(--r-xl)] bg-[var(--bg-secondary)] p-4"
+                      >
+                        <time
+                          dateTime={item.starts_at}
+                          className="text-sm font-bold text-[var(--accent)]"
+                        >
+                          {formatTimeValue(item.starts_at)}
+                        </time>
+                        <div>
+                          <p className="font-semibold text-[var(--text)]">{item.title}</p>
+                          {item.performer && (
+                            <p className="mt-1 text-sm text-[var(--text-muted)]">
+                              {item.performer}
+                            </p>
+                          )}
+                          {item.description && (
+                            <p className="mt-2 text-sm leading-relaxed text-[var(--text-secondary)]">
+                              {item.description}
+                            </p>
+                          )}
+                          {item.stage && (
+                            <span className="badge badge-info mt-2">{item.stage}</span>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                </section>
+              )}
+
+              {(event.address || hasCoordinates) && (
+                <section
+                  className="overflow-hidden rounded-[var(--r-3xl)] border border-[var(--border)] bg-[var(--bg-card)] shadow-[var(--shadow-card)]"
+                  aria-labelledby="event-location-heading"
+                >
+                  <div className="p-5 sm:p-8">
+                    <p className="type-overline text-[var(--text-muted)]">Location</p>
+                    <h2 id="event-location-heading" className="mt-1 text-2xl font-bold text-[var(--text)]">
+                      {event.venue_name}
+                    </h2>
+                    {(event.address || event.city) && (
+                      <p className="mt-3 text-[var(--text-secondary)]">
+                        {[event.address, event.city].filter(Boolean).join(', ')}
+                      </p>
+                    )}
+                    {directionsUrl && (
+                      <a
+                        href={directionsUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-md btn-outline mt-5"
+                      >
+                        <Navigation size={16} aria-hidden="true" />
+                        Open directions
+                      </a>
+                    )}
+                  </div>
+                  {mapEmbedUrl && (
+                    <div className="h-64 border-t border-[var(--border)] sm:h-80">
+                      <iframe
+                        title={`Map showing ${event.venue_name}`}
+                        src={mapEmbedUrl}
+                        className="h-full w-full"
+                        style={{ border: 0 }}
+                        allowFullScreen
+                        loading="lazy"
+                        referrerPolicy="strict-origin-when-cross-origin"
+                      />
+                    </div>
+                  )}
+                </section>
+              )}
+
+              {sortedFaqs.length > 0 && (
+                <section
+                  className="rounded-[var(--r-3xl)] border border-[var(--border)] bg-[var(--bg-card)] p-5 shadow-[var(--shadow-card)] sm:p-8"
+                  aria-labelledby="event-faq-heading"
+                >
+                  <p className="type-overline text-[var(--text-muted)]">Need to know</p>
+                  <h2 id="event-faq-heading" className="mt-1 text-2xl font-bold text-[var(--text)]">
+                    Frequently asked questions
+                  </h2>
+                  <div className="mt-5 space-y-2">
+                    {sortedFaqs.map((faq) => {
+                      const isOpen = openFaqId === faq.id;
+                      const answerId = `faq-answer-${faq.id}`;
+
+                      return (
+                        <div
+                          key={faq.id}
+                          className="overflow-hidden rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)]"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => setOpenFaqId(isOpen ? null : faq.id)}
+                            className="flex min-h-14 w-full items-center justify-between gap-4 px-4 py-3 text-left hover:bg-[var(--bg-tertiary)]"
+                            aria-expanded={isOpen}
+                            aria-controls={answerId}
+                          >
+                            <span className="font-semibold text-[var(--text)]">
+                              {faq.question}
+                            </span>
+                            <ChevronDown
+                              size={20}
+                              className={`shrink-0 text-[var(--text-muted)] transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                              aria-hidden="true"
+                            />
+                          </button>
+                          {isOpen && (
+                            <div id={answerId} className="px-4 pb-4">
+                              <p className="text-sm leading-relaxed text-[var(--text-secondary)]">
+                                {faq.answer}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+              )}
+
+              {sortedSponsors.length > 0 && (
+                <section
+                  className="rounded-[var(--r-3xl)] border border-[var(--border)] bg-[var(--bg-card)] p-5 shadow-[var(--shadow-card)] sm:p-8"
+                  aria-labelledby="event-sponsors-heading"
+                >
+                  <p className="type-overline text-[var(--text-muted)]">Partners</p>
+                  <h2 id="event-sponsors-heading" className="mt-1 text-2xl font-bold text-[var(--text)]">
+                    Supported by
+                  </h2>
+                  <ul className="mt-5 flex flex-wrap gap-2">
+                    {sortedSponsors.map((sponsor) => (
+                      <li key={sponsor.id}>
+                        {sponsor.website_url ? (
+                          <a
+                            href={sponsor.website_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex min-h-11 items-center rounded-full border border-[var(--border)] bg-[var(--bg-secondary)] px-4 py-2 text-sm font-semibold text-[var(--text)] hover:border-[var(--border-hover)]"
+                          >
+                            {sponsor.name}
+                          </a>
+                        ) : (
+                          <span className="inline-flex min-h-11 items-center rounded-full border border-[var(--border)] bg-[var(--bg-secondary)] px-4 py-2 text-sm font-semibold text-[var(--text)]">
+                            {sponsor.name}
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+            </div>
+
+            <aside
+              className="sticky top-[calc(var(--nav-h)+24px)] hidden lg:block"
+              aria-label="Ticket reservation"
+            >
+              <BookingPanel
+                event={event}
+                ticketTypes={visibleTicketTypes}
+                isCompleted={isCompleted}
+                isSoldOut={isSoldOut}
+                priceLabel={priceLabel}
+                availabilityLabel={availabilityLabel}
+                dateTimeRange={dateTimeRange}
+                claimedTickets={claimedTickets}
+                claimRequiresQrReissue={claimRequiresQrReissue}
+                onSuccess={handleClaimSuccess}
+              />
+            </aside>
           </div>
         </div>
-      </main>
+      </article>
 
-      {/* Mobile sticky CTA */}
-      <div className="fixed bottom-0 left-0 right-0 z-[60] lg:hidden bg-white dark:bg-[#1a1a2e] border-t border-gray-200 dark:border-white/10 px-5 py-4 sm:py-5" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}>
-        {isCompleted ? (
-          <div className="text-center py-2">
-            <p className="font-semibold text-gray-900 dark:text-white">Event completed</p>
-          </div>
-        ) : isSoldOut ? (
-          <div className="text-center py-2">
-            <p className="font-black text-gray-900 dark:text-white">Sold Out</p>
-          </div>
-        ) : claimedTicketId && claimedQrToken ? (
-          <Link
-            href={`/ticket/${claimedTicketId}`}
-            className="block w-full py-4 sm:py-5 rounded-2xl text-center font-bold text-white text-base sm:text-lg transition-all hover:opacity-90 shadow-lg"
-            style={{ background: grad }}
-          >
-            View Your Ticket
-          </Link>
-        ) : (
-          <Link
-            href="#ticket-form"
-            className="block w-full py-4 sm:py-5 rounded-2xl text-center font-bold text-white text-base sm:text-lg transition-all hover:opacity-90 shadow-lg"
-            style={{ background: grad }}
-          >
-            Get Free Ticket
-          </Link>
-        )}
-      </div>
-
-      {/* Mobile ticket form (hidden, used for anchor) */}
-      <div id="ticket-form" className="lg:hidden mb-8">
-        <div className="glass rounded-2xl p-6 border border-[var(--border)]">
+      <div
+        className="fixed inset-x-0 bottom-0 z-[60] border-t border-[var(--border)] bg-[var(--bg-card)]/95 px-4 pt-3 shadow-[0_-12px_40px_rgba(0,0,0,0.10)] backdrop-blur-xl lg:hidden"
+        style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}
+      >
+        <div className="mx-auto max-w-2xl">
           {isCompleted ? (
-            <div className="text-center py-6">
-              <div className="text-4xl mb-3">✅</div>
-              <p className="font-bold text-[var(--text)]">Event completed</p>
-              <p className="text-sm text-[var(--text-muted)] mt-1">Thank you for attending!</p>
+            <div className="flex min-h-12 items-center justify-center rounded-[var(--r-xl)] bg-[var(--bg-secondary)] font-semibold text-[var(--text-muted)]">
+              Event completed
             </div>
           ) : isSoldOut ? (
-            <div className="text-center py-6">
-              <div className="text-4xl mb-3">🔥</div>
-              <p className="font-black text-xl text-[var(--text)]">Sold Out</p>
-              <p className="text-sm text-[var(--text-muted)] mt-1">All tickets have been claimed.</p>
-            </div>
-          ) : claimedTicketId && claimedQrToken ? (
-            <div className="text-center space-y-4">
-              <div className="w-12 h-12 rounded-2xl mx-auto flex items-center justify-center" style={{ background: grad }}>
-                <span className="text-2xl">🎟️</span>
-              </div>
-              <h3 className="font-black text-xl text-[var(--text)]">Your Ticket</h3>
-              <p className="text-[var(--text-muted)] text-sm">{claimedTicketNumber}</p>
-              <div className="flex justify-center">
-                <QRDisplay token={claimedQrToken} size={200} label={`Ticket QR for ${event.title}`} />
-              </div>
-              <p className="text-xs text-center text-[var(--text-muted)]">
-                Screenshot or save this QR code. Show it at the entrance.
-              </p>
-              <Link
-                href={`/ticket/${claimedTicketId}`}
-                className="block w-full py-3 rounded-2xl text-center font-bold text-white text-sm"
-                style={{ background: grad }}
-              >
-                View Full Ticket →
-              </Link>
+            <div className="flex min-h-12 items-center justify-center rounded-[var(--r-xl)] bg-[var(--bg-secondary)] font-semibold text-[var(--text-muted)]">
+              No tickets available
             </div>
           ) : (
-            <TicketClaimForm
-              event={event}
-              ticketTypes={event.ticket_tiers ?? []}
-              onSuccess={(id, num, token) => {
-                setClaimedTicketId(id);
-                setClaimedTicketNumber(num);
-                setClaimedQrToken(token);
-              }}
-            />
+            <Link
+              href={claimRequiresQrReissue ? '/tickets' : '#ticket-form'}
+              className="btn btn-lg btn-primary w-full"
+            >
+              <Ticket size={18} aria-hidden="true" />
+              {claimRequiresQrReissue
+                ? 'Open secure ticket wallet'
+                : claimedTickets.length > 0
+                ? `View ${claimedTickets.length} ${claimedTickets.length === 1 ? 'ticket' : 'tickets'}`
+                : 'Choose tickets'}
+            </Link>
           )}
         </div>
       </div>

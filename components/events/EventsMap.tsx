@@ -1,13 +1,15 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { MapContainer, TileLayer, Marker, useMapEvent } from 'react-leaflet';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { MapContainer, Marker, TileLayer, useMap, useMapEvent } from 'react-leaflet';
+import type { MapRef } from 'react-leaflet/MapContainer';
 import L from 'leaflet';
-import type { LatLngBounds } from 'leaflet';
 import { useRouter } from 'next/navigation';
-import { Calendar, MapPin, ChevronRight } from 'lucide-react';
-import EventDateBadge from '@/components/events/EventDateBadge';
+import { MapPin } from 'lucide-react';
 import type { Event } from '@/types';
+
+type LeafletMap = NonNullable<MapRef>;
+type LeafletBounds = ReturnType<LeafletMap['getBounds']>;
 
 const DEFAULT_CENTER: [number, number] = [-19.0154, 29.1549];
 const DEFAULT_ZOOM = 11; // Zoomed out for ~30km radius
@@ -23,20 +25,6 @@ interface EventsMapProps {
   heightClass?: string;
   userLocation?: [number, number] | null;
 }
-
-// Calculate time until event
-const getTimeUntil = (dateStr: string, timeStr: string): string => {
-  const eventDate = new Date(dateStr + ' ' + timeStr);
-  const now = new Date();
-  const diff = eventDate.getTime() - now.getTime();
-  const hours = Math.floor(diff / (1000 * 60 * 60));
-  const days = Math.floor(hours / 24);
-  
-  if (hours < 0) return 'Event ended';
-  if (hours < 24) return `in ${hours}h`;
-  if (days === 1) return 'Tomorrow';
-  return `in ${days}d`;
-};
 
 // Calculate distance between two coordinates
 const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number): string => {
@@ -132,8 +120,16 @@ const createUserMarker = () => {
 };
 
 // Zoom level detector component
-function MapEventsDetector({ onZoomChange, onBoundsChange }: { onZoomChange: (zoom: number) => void, onBoundsChange: (bounds: any) => void }) {
-  const map = useMapEvent('zoomend', () => {
+function MapEventsDetector({
+  onZoomChange,
+  onBoundsChange,
+}: {
+  onZoomChange: (zoom: number) => void;
+  onBoundsChange: (bounds: LeafletBounds) => void;
+}) {
+  const map = useMap();
+
+  useMapEvent('zoomend', () => {
     onZoomChange(map.getZoom());
     onBoundsChange(map.getBounds());
   });
@@ -169,20 +165,13 @@ export default function EventsMap({
     ),
     [events]
   );
-  const mapRef = useRef<any>(null);
+  const mapRef = useRef<LeafletMap | null>(null);
   const [zoom, setZoom] = useState(defaultZoom);
-  const [userLocation, setUserLocation] = useState<[number, number] | null>(propUserLocation || null);
-  const [center, setCenter] = useState<[number, number]>(propUserLocation || defaultCenter);
+  const userLocation = propUserLocation ?? null;
+  const [initialCenter] = useState<[number, number]>(
+    () => propUserLocation ?? defaultCenter,
+  );
   const [visibleEvents, setVisibleEvents] = useState<Event[]>([]);
-
-  // Handle user location updates for the marker
-  useEffect(() => {
-    if (propUserLocation) {
-      setUserLocation(propUserLocation);
-      // We no longer forcefully set the view to zoom 14 here.
-      // The defaultCenter useEffect will handle centering at the correct defaultZoom.
-    }
-  }, [propUserLocation]);
 
   // Handle defaultCenter changes (e.g. clicking a city pill)
   useEffect(() => {
@@ -198,7 +187,7 @@ export default function EventsMap({
     }
   }, [defaultZoom, propUserLocation]);
 
-  const handleBoundsChange = useCallback((bounds: any) => {
+  const handleBoundsChange = useCallback((bounds: LeafletBounds) => {
     setVisibleEvents((prev) => {
       const visible = points.filter(ev => bounds.contains([ev.lat!, ev.lng!]));
       if (prev.length !== visible.length) return visible;
@@ -221,13 +210,11 @@ export default function EventsMap({
     <div className={`relative overflow-hidden ${title || subtitle ? 'card rounded-3xl' : 'h-full w-full'}`}>
       <div className={heightClass}>
         <MapContainer
-          center={center}
+          center={initialCenter}
           zoom={defaultZoom}
           scrollWheelZoom={true}
           style={{ height: '100%', width: '100%' }}
-          ref={(m: any) => {
-            mapRef.current = m;
-          }}
+          ref={mapRef}
         >
           <TileLayer
             attribution="&copy; OpenStreetMap contributors"

@@ -23,7 +23,6 @@ function SignupContent() {
   const [email,        setEmail]        = useState('');
   const [password,     setPassword]     = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [role,         setRole]         = useState<'user' | 'organizer'>('user');
   const [isLoading,    setIsLoading]    = useState(false);
 
   useEffect(() => {
@@ -38,7 +37,9 @@ function SignupContent() {
     e.preventDefault();
     setIsLoading(true);
 
-    const { error } = await signUp(email, password, { name, role });
+    // Public sign-ups always start as attendees. Staff and manager roles are
+    // assigned by an administrator so an account cannot promote itself.
+    const { error } = await signUp(email, password, { name, role: 'attendee' });
 
     if (error) {
       // Supabase returns this when the user already exists but is unconfirmed
@@ -157,36 +158,6 @@ function SignupContent() {
               </p>
             </div>
 
-            {/* Role cards */}
-            <div className="flex flex-col gap-2">
-              <label className="text-[13px] font-medium leading-none" style={{ color: 'var(--text)' }}>
-                I want to
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                {([
-                  { value: 'user',      emoji: '🎉', title: 'Attend Events', sub: 'Browse & book tickets' },
-                  { value: 'organizer', emoji: '🎤', title: 'Host Events',   sub: 'Create & manage events' },
-                ] as const).map(({ value, emoji, title, sub }) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => setRole(value)}
-                    className="flex flex-col gap-1.5 text-left rounded-xl border-2 transition-all"
-                    style={{
-                      padding: '12px 14px',
-                      minHeight: 88,
-                      borderColor: role === value ? 'var(--accent)' : 'var(--border)',
-                      background: role === value ? 'rgba(var(--accent-rgb),0.06)' : 'transparent',
-                    }}
-                  >
-                    <span className="text-xl leading-none">{emoji}</span>
-                    <span className="text-[13px] font-semibold leading-snug" style={{ color: 'var(--text)' }}>{title}</span>
-                    <span className="text-[11px] leading-snug" style={{ color: 'var(--text-muted)' }}>{sub}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
             {/* Terms */}
             <div className="flex items-start gap-2.5">
               <input
@@ -196,9 +167,7 @@ function SignupContent() {
                 required
               />
               <span className="text-[12px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-                I agree to the{' '}
-                <Link href="#" className="font-medium hover:underline" style={{ color: 'var(--accent)' }}>Terms of Service</Link>
-                {' '}and{' '}
+                I agree to the event booking terms and{' '}
                 <Link href="/privacy-policy" className="font-medium hover:underline" style={{ color: 'var(--accent)' }}>Privacy Policy</Link>
               </span>
             </div>

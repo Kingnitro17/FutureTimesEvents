@@ -86,7 +86,10 @@ export function useEvents() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { fetchEvents(); }, [fetchEvents]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => void fetchEvents(), 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchEvents]);
 
   return { events, loading, error, refetch: fetchEvents };
 }
