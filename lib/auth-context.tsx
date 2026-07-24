@@ -1,5 +1,5 @@
 'use client';
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import type { User, DbProfile } from '@/types';
 
@@ -56,45 +56,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user,      setUser]      = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    let mounted = true;
-
-    const syncAuthState = async (session: { user?: { id: string; email?: string; user_metadata?: Record<string, unknown> } | null } | null) => {
-      if (!mounted) return;
-      if (session?.user) {
-        // Ensure profile row exists first, then load the full profile
-        const email = session.user.email || '';
-        const meta = session.user.user_metadata ?? {};
-        await ensureProfile(session.user.id, email, {
-          name: (meta.name as string) || (meta.full_name as string),
-        });
-        await loadProfile(session.user.id, session.user);
-      } else {
-        setUser(null);
-        setIsLoading(false);
-      }
-    };
-
-    supabase.auth.getSession().then(({ data }: { data: { session: { user?: { id: string; email?: string; user_metadata?: Record<string, unknown> } | null } | null } }) => {
-      if (mounted) void syncAuthState(data.session);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_: string, session: { user?: { id: string; email?: string; user_metadata?: Record<string, unknown> } | null } | null) => {
-      if (!mounted) return;
-      void syncAuthState(session);
-    });
-
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  async function ensureProfile(
+  const ensureProfile = useCallback(async (
     userId: string,
     email: string,
     userData: Partial<User>
-  ) {
+  ) => {
     const display_name = userData.name || email.split('@')[0];
 
     try {
@@ -122,12 +88,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       console.warn('[Auth] profile ensure failed:', err);
     }
-  }
+  }, []);
 
-  async function loadProfile(
+  const loadProfile = useCallback(async (
     userId: string,
     authUser: { id: string; email?: string; user_metadata?: Record<string, unknown> }
-  ) {
+  ) => {
     try {
       const { data, error, status } = await supabase
         .from('profiles')
@@ -164,10 +130,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }
+  }, []);
+
+  const syncAuthState = useCallback(async (session: { user?: { id: string; email?: string; user_metadata?: Record<string, unknown> } | null } | null) => {
+    if (session?.user) {
+      // Ensure profile row exists first, then load the full profile
+      const email = session.user.email || '';
+      const meta = session.user.user_metadata ?? {};
+      await ensureProfile(session.user.id, email, {
+        name: (meta.name as string) || (meta.full_name as string),
+      });
+      await loadProfile(session.user.id, session.user);
+    } else {
+      setUser(null);
+      setIsLoading(false);
+    }
+  }, [ensureProfile, loadProfile]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    supabase.auth.getSession().then(({ data }: { data: { session: { user?: { id: string; email?: string; user_metadata?: Record<string, unknown> } | null } | null } }) => {
+      if (mounted) void syncAuthState(data.session);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_: string, session: { user?: { id: string; email?: string; user_metadata?: Record<string, unknown> } | null } | null) => {
+      if (!mounted) return;
+      void syncAuthState(session);
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [syncAuthState]);
 
   async function signIn(email: string, password: string) {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error, data } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
       setUser(null);
@@ -175,9 +174,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: error as Error | null };
     }
 
-    // Don't manually load profile here — onAuthStateChange will fire
-    // which calls syncAuthState → ensureProfile + loadProfile.
-    // Keep isLoading true until the listener resolves.
+    // If we got a session back, load the profile immediately
+    // This prevents the race where the page redirects before onAuthStateChange fires
+    if (data.session?.user) {
+      const email = data.session.user.email || '';
+      const meta = data.session.user.user_metadata ?? {};
+      await ensureProfile(data.session.user.id, email, {
+        name: (meta.name as string) || (meta.full_name as string),
+      });
+      await loadProfile(data.session.user.id, data.session.user);
+    }
+
     return { error: null };
   }
 
@@ -193,10 +200,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: error as Error | null };
     }
 
-    // For sign-up with email confirmation enabled, Supabase may not
-    // set a session immediately. That's fine — the user will verify email
-    // then sign in. onAuthStateChange will handle it on sign-in.
-    // Keep isLoading true until the listener resolves if session set.
+    // If we got a session back (email confirmation disabled), load the profile immediately
+    if (data.session?.user) {
+      const email = data.session.user.email || '';
+      const meta = data.session.user.user_metadata ?? {};
+      await ensureProfile(data.session.user.id, email, {
+        name: (meta.name as string) || (meta.full_name as string),
+      });
+      await loadProfile(data.session.user.id, data.session.user);
+    }
+
     return { error: null };
   }
 

@@ -7,6 +7,7 @@ import { NextResponse, type NextRequest } from 'next/server';
  * The `code` query parameter is exchanged for a session via PKCE.
  * 
  * IMPORTANT: Uses SSR client to properly set HTTP cookies for server-side auth.
+ * The cookies MUST be forwarded on the redirect so the proxy can read the session.
  */
 export async function GET(request: NextRequest) {
   const url    = new URL(request.url);
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest) {
     const supabaseUrl  = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ecbbmcqwluivbzlaqdsd.supabase.co';
     const supabaseKey  = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVjYmJtY3F3bHVpdmJ6bGFxZHNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc3NjEyNzcsImV4cCI6MjA5MzMzNzI3N30.XTTs7RN-SrZ0YnC20m8mZms8ZfVVeANJgvwg1Key6SQ';
 
-    // Create response with SSR client for proper cookie handling
+    // Create a response that will carry the auth cookies
     const supabaseResponse = NextResponse.next({ request });
 
     const supabase = createServerClient(
@@ -44,10 +45,17 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      // Redirect to the requested path with cookies set
-      return NextResponse.redirect(`${origin}${next}`, {
-        headers: supabaseResponse.headers,
-      });
+      // Redirect to the requested path, carrying the auth cookies from supabaseResponse
+      const redirectUrl = new URL(`${origin}${next}`);
+      const redirectResponse = NextResponse.redirect(redirectUrl);
+
+      // Forward all set-cookie headers from supabaseResponse to the redirect
+      const setCookieHeaders = supabaseResponse.headers.getSetCookie();
+      for (const cookie of setCookieHeaders) {
+        redirectResponse.headers.append('Set-Cookie', cookie);
+      }
+
+      return redirectResponse;
     }
   }
 

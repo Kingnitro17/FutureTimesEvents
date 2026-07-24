@@ -40,8 +40,11 @@ function LoginContent() {
   useEffect(() => {
     if (!authLoading && user && pathname === '/login') {
       const redirectTo = searchParams?.get('next') || '/profile';
-      router.replace(redirectTo);
-      return;
+      // Small delay to ensure auth state is fully settled before redirect
+      const timer = setTimeout(() => {
+        router.replace(redirectTo);
+      }, 100);
+      return () => clearTimeout(timer);
     }
   }, [user, authLoading, pathname, router, searchParams]);
 

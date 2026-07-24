@@ -1,0 +1,54 @@
+
+> future-times-events@1.0.0 build
+> next build
+
+▲ Next.js 16.2.4 (Turbopack)
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 59s
+  Running TypeScript ...
+  Finished TypeScript in 52s ...
+  Collecting page data using 3 workers ...
+  Generating static pages using 3 workers (0/21) ...
+  Generating static pages using 3 workers (5/21) 
+  Generating static pages using 3 workers (10/21) 
+  Generating static pages using 3 workers (15/21) 
+✓ Generating static pages using 3 workers (21/21) in 3.5s
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ○ /admin
+├ ○ /analytics
+├ ƒ /api/health
+├ ƒ /api/scan
+├ ƒ /api/tickets/claim
+├ ƒ /auth/callback
+├ ○ /checkin
+├ ƒ /checkout/[id]
+├ ○ /dashboard
+├ ○ /events
+├ ƒ /events/[slug]
+├ ○ /login
+├ ○ /map
+├ ○ /notifications
+├ ○ /privacy-policy
+├ ○ /profile
+├ ○ /settings
+├ ○ /signup
+├ ƒ /ticket/[ticketId]
+└ ○ /tickets
+
+Route (pages)
+┌ ƒ /api/events/[id]/attendees
+├ ƒ /api/events/[id]/rsvp
+├ ƒ /api/events/[id]/verify-phone
+├ ƒ /api/push/send
+└ ƒ /api/push/subscribe
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

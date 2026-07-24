@@ -7,6 +7,11 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: false,
   },
 
+  // Fix Turbopack workspace root detection (suppress lockfile warning)
+  turbopack: {
+    root: process.cwd(),
+  },
+
   // Security headers applied to all responses
   async headers() {
     return [
