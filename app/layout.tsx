@@ -9,6 +9,7 @@ import { Toaster } from 'react-hot-toast';
 import MobileBottomNav from '@/components/layout/MobileBottomNav';
 import CookieConsent from '@/components/CookieConsent';
 import { AuthProvider } from '@/lib/auth-context';
+import HideOnAuthPages from '@/components/layout/HideOnAuthPages';
 
 /* ── Body font: Inter 400/500/600/700 ── */
 const inter = Inter({
@@ -53,7 +54,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <StripeBackground />
           <Navbar />
           <main className="relative z-10 pb-24 md:pb-0">{children}</main>
-          <Footer />
+          <HideOnAuthPages>
+            <Footer />
+          </HideOnAuthPages>
           <MobileBottomNav />
           <Toaster
             position="bottom-right"

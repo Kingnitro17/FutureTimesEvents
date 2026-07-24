@@ -55,6 +55,15 @@ function SignupContent() {
 
 
 
+  // Show full-page spinner during sign-up (same as events page loading)
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-secondary)' }}>
+        <div className="animate-spin w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
   // ── Sign-up form ───────────────────────────────────────────────────
   return (
     <div

@@ -62,7 +62,7 @@ export default function CheckInPage() {
   useEffect(() => {
     const init = async () => {
       const { data: { user: u } } = await supabase.auth.getUser();
-      if (!u) { router.push('/auth/login?next=/checkin'); return; }
+      if (!u) { router.push('/login?next=/checkin'); return; }
 
       setUser({ id: u.id, email: u.email ?? '' });
 
@@ -190,7 +190,7 @@ export default function CheckInPage() {
   // ── Logout ────────────────────────────────────────────────
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    router.push('/auth/login');
+    router.push('/login');
   };
 
   // ── Result icon ───────────────────────────────────────────

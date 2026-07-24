@@ -170,15 +170,15 @@ export default function EventSlugPage() {
       {/* Hero image */}
       <div className="px-4 sm:px-6 lg:px-8 pt-4 sm:pt-5">
         <div className="relative w-full aspect-[16/9] sm:aspect-[21/9] max-h-[260px] sm:max-h-[460px] overflow-hidden rounded-[30px] border border-[var(--border)] shadow-[0_24px_80px_rgba(0,0,0,0.08)]">
-          {event.image_url ? (
+          {/* Desktop: landscape poster, Mobile: original image_url */}
+          <picture>
+            <source media="(min-width: 640px)" srcSet="https://ecbbmcqwluivbzlaqdsd.supabase.co/storage/v1/object/public/events/events/landscape-poster.png" />
             <img
-              src={event.image_url}
+              src={event.image_url || 'https://ecbbmcqwluivbzlaqdsd.supabase.co/storage/v1/object/public/events/events/landscape-poster.png'}
               alt={event.title}
               className="w-full h-full object-cover"
             />
-          ) : (
-            <div className="w-full h-full" style={{ background: grad }} />
-          )}
+          </picture>
           
           {/* Category badge */}
           <div className="absolute top-4 left-4">
@@ -417,7 +417,7 @@ export default function EventSlugPage() {
                 )}
               </div>
               
-              {/* Embedded map */}
+              {/* Embedded map — Google Maps */}
               {(event.lat && event.lng) && (
                 <div className="rounded-2xl overflow-hidden border border-[var(--border)] h-64 sm:h-80">
                   <iframe
@@ -425,9 +425,10 @@ export default function EventSlugPage() {
                     height="100%"
                     frameBorder="0"
                     style={{ border: 0 }}
-                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${event.lng - 0.01}%2C${event.lat - 0.01}%2C${event.lng + 0.01}%2C${event.lat + 0.01}&layer=mapnik&marker=${event.lat}%2C${event.lng}`}
+                    src={`https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d125484.3574096095!2d31.486001194492793!3d-17.279231829121493!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x1930270053325827%3A0xde97b4a1ed0d2193!2sLiquid%20Lounge%20Shamva!5e0!3m2!1sen!2szw!4v1784873732849!5m2!1sen!2szw`}
                     allowFullScreen
                     loading="lazy"
+                    referrerPolicy="strict-origin-when-cross-origin"
                   />
                 </div>
               )}

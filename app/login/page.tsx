@@ -62,9 +62,8 @@ function LoginContent() {
         toast.error(error.message);
       }
       setIsLoading(false);
-    } else {
-      toast.success('Welcome back!');
     }
+    // On success, the auth context will update user state and the redirect effect will fire
   };
 
   const handleGoogle = async () => {
@@ -77,6 +76,15 @@ function LoginContent() {
       setOauthLoading(false);
     }
   };
+
+  // Show full-page spinner during sign-in (same as events page loading)
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-secondary)' }}>
+        <div className="animate-spin w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pt-[calc(var(--nav-h)+2rem)] pb-24 flex items-center justify-center px-4 sm:px-6" style={{ background: 'var(--bg-secondary)' }}>
