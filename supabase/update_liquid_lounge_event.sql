@@ -116,6 +116,12 @@ SET status = 'published'
 WHERE slug = 'alick-macheso-peter-moyo-live'
   AND status = 'sold_out';
 
+-- ── 5. Force reset ticket_types availability ──────────────
+UPDATE public.ticket_types
+SET quantity_available = 2000, quantity_total = 2000, is_active = true
+WHERE event_id = (SELECT id FROM public.events WHERE slug = 'alick-macheso-peter-moyo-live')
+  AND name = 'General Admission';
+
 COMMIT;
 
 -- ── Verification queries ────────────────────────────────────
