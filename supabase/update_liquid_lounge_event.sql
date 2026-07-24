@@ -1,11 +1,13 @@
 -- ============================================================
--- UPDATE LIQUID LOUNGE EVENT — Production Ready v2
+-- UPDATE LIQUID LOUNGE EVENT — Production Ready v3
 -- Run in Supabase SQL Editor
 -- ============================================================
 BEGIN;
 
--- ── 0. Create event_staff table if it doesn't exist ────────
-CREATE TABLE IF NOT EXISTS public.event_staff (
+-- ── 0. Drop and recreate event_staff to ensure correct schema ──
+DROP TABLE IF EXISTS public.event_staff CASCADE;
+
+CREATE TABLE public.event_staff (
   id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   event_id     UUID NOT NULL REFERENCES public.events(id) ON DELETE CASCADE,
   user_id      UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
