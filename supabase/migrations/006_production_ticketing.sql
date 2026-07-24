@@ -37,6 +37,7 @@ $$;
 -- ----------------------------------------------------------------
 
 ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS phone TEXT,
   ADD COLUMN IF NOT EXISTS account_status TEXT NOT NULL DEFAULT 'active';
 
 ALTER TABLE public.profiles
