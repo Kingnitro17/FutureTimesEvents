@@ -292,16 +292,14 @@ SET attendees = GREATEST(COALESCE(attendees, 0), 0),
 
 -- ----------------------------------------------------------------
 -- 3. Converge ticket_tiers -> ticket_types without assuming that the
---    earlier rename completed successfully.
+--    earlier rename completed successfully. If both tables exist, the
+--    legacy rows are merged below and their IDs are mapped before tickets
+--    are repaired.
 -- ----------------------------------------------------------------
 
 DO $$
 BEGIN
-  IF to_regclass('public.ticket_types') IS NOT NULL
-     AND to_regclass('public.ticket_tiers') IS NOT NULL THEN
-    RAISE EXCEPTION
-      'Both public.ticket_types and public.ticket_tiers exist. Reconcile the duplicate tier tables before migration 006.';
-  ELSIF to_regclass('public.ticket_types') IS NULL
+  IF to_regclass('public.ticket_types') IS NULL
      AND to_regclass('public.ticket_tiers') IS NOT NULL THEN
     ALTER TABLE public.ticket_tiers RENAME TO ticket_types;
   END IF;
@@ -327,6 +325,8 @@ CREATE TABLE IF NOT EXISTS public.ticket_types (
 );
 
 ALTER TABLE public.ticket_types
+  ADD COLUMN IF NOT EXISTS description TEXT NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS price NUMERIC(10,2) NOT NULL DEFAULT 0,
   ADD COLUMN IF NOT EXISTS quantity_total INTEGER NOT NULL DEFAULT 0,
   ADD COLUMN IF NOT EXISTS quantity_available INTEGER NOT NULL DEFAULT 0,
   ADD COLUMN IF NOT EXISTS claim_limit_per_contact INTEGER NOT NULL DEFAULT 1,
@@ -335,6 +335,7 @@ ALTER TABLE public.ticket_types
   ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE,
   ADD COLUMN IF NOT EXISTS is_visible BOOLEAN NOT NULL DEFAULT TRUE,
   ADD COLUMN IF NOT EXISTS sort_order INTEGER NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
 
 DO $$
@@ -366,6 +367,219 @@ BEGIN
   END IF;
 END;
 $$;
+
+-- A live project can contain both names when the baseline schema created
+-- ticket_tiers and a later hotfix independently created ticket_types. Merge
+-- legacy rows into the canonical table without losing the IDs referenced by
+-- existing tickets. The temporary map is used during ticket backfill below.
+CREATE TEMP TABLE IF NOT EXISTS ticket_type_legacy_map (
+  legacy_id UUID PRIMARY KEY,
+  canonical_id UUID NOT NULL
+) ON COMMIT DROP;
+
+TRUNCATE TABLE pg_temp.ticket_type_legacy_map;
+
+DO $$
+DECLARE
+  v_backup_name TEXT := 'ticket_tiers_legacy_006';
+BEGIN
+  IF to_regclass('public.ticket_tiers') IS NULL THEN
+    RETURN;
+  END IF;
+
+  EXECUTE $sql$
+    ALTER TABLE public.ticket_tiers
+      ADD COLUMN IF NOT EXISTS description TEXT DEFAULT '',
+      ADD COLUMN IF NOT EXISTS price NUMERIC(10,2) DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS quantity_total INTEGER NOT NULL DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS quantity_available INTEGER NOT NULL DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS claim_limit_per_contact INTEGER NOT NULL DEFAULT 1,
+      ADD COLUMN IF NOT EXISTS claim_opens_at TIMESTAMPTZ,
+      ADD COLUMN IF NOT EXISTS claim_closes_at TIMESTAMPTZ,
+      ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE,
+      ADD COLUMN IF NOT EXISTS is_visible BOOLEAN NOT NULL DEFAULT TRUE,
+      ADD COLUMN IF NOT EXISTS sort_order INTEGER NOT NULL DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW(),
+      ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW()
+  $sql$;
+
+  IF EXISTS (
+    SELECT 1
+    FROM public.ticket_tiers AS duplicate_check
+    GROUP BY
+      duplicate_check.event_id,
+      lower(btrim(duplicate_check.name))
+    HAVING COUNT(*) > 1
+  ) THEN
+    RAISE EXCEPTION
+      'Legacy public.ticket_tiers contains duplicate event/name rows. Merge those duplicates before migration 006 so ticket inventory is not guessed.';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'ticket_tiers'
+      AND column_name = 'total'
+  ) THEN
+    EXECUTE $sql$
+      UPDATE public.ticket_tiers
+      SET quantity_total = GREATEST(
+        COALESCE(quantity_total, 0),
+        COALESCE(total, 0)
+      )
+    $sql$;
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'ticket_tiers'
+      AND column_name = 'available'
+  ) THEN
+    EXECUTE $sql$
+      UPDATE public.ticket_tiers
+      SET quantity_available = GREATEST(
+        COALESCE(quantity_available, 0),
+        COALESCE(available, 0)
+      )
+    $sql$;
+  END IF;
+
+  -- Prefer an existing canonical row for the same event/name. Otherwise
+  -- preserve the legacy UUID unless that UUID is already occupied by a
+  -- different canonical row, in which case allocate a collision-free UUID.
+  INSERT INTO pg_temp.ticket_type_legacy_map (legacy_id, canonical_id)
+  SELECT
+    legacy.id,
+    COALESCE(
+      (
+        SELECT canonical.id
+        FROM public.ticket_types AS canonical
+        WHERE canonical.event_id = legacy.event_id
+          AND lower(btrim(canonical.name)) = lower(btrim(legacy.name))
+        ORDER BY
+          (canonical.id = legacy.id) DESC,
+          canonical.created_at NULLS LAST,
+          canonical.id
+        LIMIT 1
+      ),
+      CASE
+        WHEN EXISTS (
+          SELECT 1
+          FROM public.ticket_types AS occupied
+          WHERE occupied.id = legacy.id
+        ) THEN gen_random_uuid()
+        ELSE legacy.id
+      END
+    )
+  FROM public.ticket_tiers AS legacy
+  ON CONFLICT (legacy_id)
+  DO UPDATE SET canonical_id = EXCLUDED.canonical_id;
+
+  INSERT INTO public.ticket_types (
+    id,
+    event_id,
+    name,
+    description,
+    price,
+    quantity_total,
+    quantity_available,
+    claim_limit_per_contact,
+    claim_opens_at,
+    claim_closes_at,
+    is_active,
+    is_visible,
+    sort_order,
+    created_at,
+    updated_at
+  )
+  SELECT
+    mapping.canonical_id,
+    legacy.event_id,
+    legacy.name,
+    COALESCE(legacy.description, ''),
+    COALESCE(legacy.price, 0),
+    GREATEST(COALESCE(legacy.quantity_total, 0), 0),
+    GREATEST(COALESCE(legacy.quantity_available, 0), 0),
+    GREATEST(COALESCE(legacy.claim_limit_per_contact, 1), 0),
+    legacy.claim_opens_at,
+    legacy.claim_closes_at,
+    COALESCE(legacy.is_active, TRUE),
+    COALESCE(legacy.is_visible, TRUE),
+    COALESCE(legacy.sort_order, 0),
+    COALESCE(legacy.created_at, NOW()),
+    NOW()
+  FROM public.ticket_tiers AS legacy
+  JOIN pg_temp.ticket_type_legacy_map AS mapping
+    ON mapping.legacy_id = legacy.id
+  LEFT JOIN public.ticket_types AS existing
+    ON existing.id = mapping.canonical_id
+  WHERE existing.id IS NULL
+  ON CONFLICT (id) DO NOTHING;
+
+  -- If the logical type already existed in ticket_types, treat that row as
+  -- authoritative for price, claim limit, visibility and active state. Only
+  -- preserve the largest configured inventory and fill blank descriptive or
+  -- claim-window fields from the legacy row.
+  UPDATE public.ticket_types AS canonical
+  SET
+    description = COALESCE(
+      NULLIF(btrim(canonical.description), ''),
+      legacy.description,
+      ''
+    ),
+    quantity_total = GREATEST(
+      COALESCE(canonical.quantity_total, 0),
+      COALESCE(legacy.quantity_total, 0)
+    ),
+    quantity_available = GREATEST(
+      COALESCE(canonical.quantity_available, 0),
+      COALESCE(legacy.quantity_available, 0)
+    ),
+    claim_opens_at = COALESCE(canonical.claim_opens_at, legacy.claim_opens_at),
+    claim_closes_at = COALESCE(canonical.claim_closes_at, legacy.claim_closes_at),
+    updated_at = NOW()
+  FROM public.ticket_tiers AS legacy
+  JOIN pg_temp.ticket_type_legacy_map AS mapping
+    ON mapping.legacy_id = legacy.id
+  WHERE canonical.id = mapping.canonical_id;
+
+  -- Preserve the reconciled source as a locked-down rollback aid while
+  -- removing the duplicate public table name that caused this migration to
+  -- stop. A unique suffix is used only if a prior backup already exists.
+  IF to_regclass('public.ticket_tiers_legacy_006') IS NOT NULL THEN
+    v_backup_name := 'ticket_tiers_legacy_006_' || txid_current()::TEXT;
+  END IF;
+
+  EXECUTE format(
+    'ALTER TABLE public.ticket_tiers RENAME TO %I',
+    v_backup_name
+  );
+  EXECUTE format(
+    'REVOKE ALL PRIVILEGES ON TABLE public.%I FROM PUBLIC, anon, authenticated',
+    v_backup_name
+  );
+  EXECUTE format(
+    'GRANT SELECT ON TABLE public.%I TO service_role',
+    v_backup_name
+  );
+  EXECUTE format(
+    'COMMENT ON TABLE public.%I IS %L',
+    v_backup_name,
+    'Legacy ticket tiers reconciled into public.ticket_types by migration 006.'
+  );
+END;
+$$;
+
+-- Identity entries cover projects where ticket_tiers was already renamed, as
+-- well as canonical types that had no legacy counterpart. A reconciled
+-- legacy mapping always wins on conflict.
+INSERT INTO pg_temp.ticket_type_legacy_map (legacy_id, canonical_id)
+SELECT id, id
+FROM public.ticket_types
+ON CONFLICT (legacy_id) DO NOTHING;
 
 -- ----------------------------------------------------------------
 -- 4. Ensure claims exist and can be bound to an authenticated user.
@@ -424,17 +638,103 @@ ALTER TABLE public.tickets
   ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW(),
   ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
 
+-- Remove every pre-existing FK that involves ticket_type_id before remapping.
+-- A partially applied legacy migration can leave a correctly named constraint
+-- pointing at the renamed legacy table; checking the name alone is unsafe.
 DO $$
+DECLARE
+  v_constraint RECORD;
+BEGIN
+  FOR v_constraint IN
+    SELECT constraint_row.conname
+    FROM pg_constraint AS constraint_row
+    JOIN pg_attribute AS constrained_column
+      ON constrained_column.attrelid = constraint_row.conrelid
+     AND constrained_column.attname = 'ticket_type_id'
+     AND constrained_column.attnum = ANY(constraint_row.conkey)
+    WHERE constraint_row.conrelid = 'public.tickets'::regclass
+      AND constraint_row.contype = 'f'
+  LOOP
+    EXECUTE format(
+      'ALTER TABLE public.tickets DROP CONSTRAINT %I',
+      v_constraint.conname
+    );
+  END LOOP;
+END;
+$$;
+
+DO $$
+DECLARE
+  v_conflicting_links INTEGER := 0;
+  v_cross_event_links INTEGER := 0;
 BEGIN
   IF EXISTS (
     SELECT 1 FROM information_schema.columns
     WHERE table_schema = 'public' AND table_name = 'tickets' AND column_name = 'tier_id'
   ) THEN
     EXECUTE $sql$
-      UPDATE public.tickets
-      SET ticket_type_id = tier_id
-      WHERE ticket_type_id IS NULL AND tier_id IS NOT NULL
+      SELECT COUNT(*)::INTEGER
+      FROM public.tickets AS ticket
+      JOIN pg_temp.ticket_type_legacy_map AS mapping
+        ON mapping.legacy_id = ticket.tier_id
+      WHERE ticket.ticket_type_id IS NOT NULL
+        AND ticket.ticket_type_id <> ticket.tier_id
+        AND ticket.ticket_type_id <> mapping.canonical_id
+    $sql$
+    INTO v_conflicting_links;
+
+    IF v_conflicting_links > 0 THEN
+      RAISE EXCEPTION
+        'Found % tickets with conflicting tier_id and ticket_type_id values. Reconcile those ticket rows before migration 006.',
+        v_conflicting_links;
+    END IF;
+
+    EXECUTE $sql$
+      SELECT COUNT(*)::INTEGER
+      FROM public.tickets AS ticket
+      JOIN pg_temp.ticket_type_legacy_map AS mapping
+        ON mapping.legacy_id = ticket.tier_id
+      JOIN public.ticket_types AS canonical
+        ON canonical.id = mapping.canonical_id
+      WHERE canonical.event_id <> ticket.event_id
+    $sql$
+    INTO v_cross_event_links;
+
+    IF v_cross_event_links > 0 THEN
+      RAISE EXCEPTION
+        'Found % tickets whose legacy tier belongs to a different event. Reconcile those ticket rows before migration 006.',
+        v_cross_event_links;
+    END IF;
+
+    EXECUTE $sql$
+      UPDATE public.tickets AS ticket
+      SET ticket_type_id = COALESCE(
+        (
+          SELECT mapping.canonical_id
+          FROM pg_temp.ticket_type_legacy_map AS mapping
+          WHERE mapping.legacy_id = ticket.tier_id
+        ),
+        ticket.tier_id
+      )
+      WHERE (
+          ticket.ticket_type_id IS NULL
+          OR ticket.ticket_type_id = ticket.tier_id
+        )
+        AND ticket.tier_id IS NOT NULL
     $sql$;
+  END IF;
+
+  SELECT COUNT(*)::INTEGER
+  INTO v_cross_event_links
+  FROM public.tickets AS ticket
+  JOIN public.ticket_types AS canonical
+    ON canonical.id = ticket.ticket_type_id
+  WHERE canonical.event_id <> ticket.event_id;
+
+  IF v_cross_event_links > 0 THEN
+    RAISE EXCEPTION
+      'Found % tickets whose ticket type belongs to a different event. Reconcile those ticket rows before migration 006.',
+      v_cross_event_links;
   END IF;
 
   IF EXISTS (
@@ -485,31 +785,46 @@ END;
 $$;
 
 -- ticket_type_id is the canonical relationship. Keep the legacy tier_id
--- value for audit/rollback, but remove its second relationship so PostgREST
--- embeds cannot become ambiguous.
+-- value for audit/rollback, but remove every FK involving that column so
+-- PostgREST embeds cannot become ambiguous even when a legacy constraint
+-- used a non-standard name.
 ALTER TABLE public.tickets
   DROP CONSTRAINT IF EXISTS tickets_tier_id_fkey;
 
 DO $$
+DECLARE
+  v_constraint RECORD;
 BEGIN
-  IF NOT EXISTS (
-    SELECT 1
-    FROM pg_constraint
-    WHERE conname = 'tickets_ticket_type_id_fkey'
-      AND conrelid = 'public.tickets'::regclass
-  ) THEN
-    ALTER TABLE public.tickets
-      ADD CONSTRAINT tickets_ticket_type_id_fkey
-      FOREIGN KEY (ticket_type_id)
-      REFERENCES public.ticket_types(id)
-      ON DELETE RESTRICT
-      NOT VALID;
-
-    ALTER TABLE public.tickets
-      VALIDATE CONSTRAINT tickets_ticket_type_id_fkey;
-  END IF;
+  FOR v_constraint IN
+    SELECT constraint_row.conname
+    FROM pg_constraint AS constraint_row
+    JOIN pg_attribute AS constrained_column
+      ON constrained_column.attrelid = constraint_row.conrelid
+     AND constrained_column.attname = 'tier_id'
+     AND constrained_column.attnum = ANY(constraint_row.conkey)
+    WHERE constraint_row.conrelid = 'public.tickets'::regclass
+      AND constraint_row.contype = 'f'
+  LOOP
+    EXECUTE format(
+      'ALTER TABLE public.tickets DROP CONSTRAINT %I',
+      v_constraint.conname
+    );
+  END LOOP;
 END;
 $$;
+
+ALTER TABLE public.tickets
+  DROP CONSTRAINT IF EXISTS tickets_ticket_type_id_fkey;
+
+ALTER TABLE public.tickets
+  ADD CONSTRAINT tickets_ticket_type_id_fkey
+  FOREIGN KEY (ticket_type_id)
+  REFERENCES public.ticket_types(id)
+  ON DELETE RESTRICT
+  NOT VALID;
+
+ALTER TABLE public.tickets
+  VALIDATE CONSTRAINT tickets_ticket_type_id_fkey;
 
 ALTER TABLE public.tickets
   DROP CONSTRAINT IF EXISTS tickets_status_check;
@@ -1011,6 +1326,7 @@ ALTER TABLE public.event_staff ENABLE ROW LEVEL SECURITY;
 
 -- Re-establish the minimum production read policies in case an earlier
 -- migration stopped before policy creation.
+DROP POLICY IF EXISTS "Ticket types viewable by everyone" ON public.ticket_types;
 DROP POLICY IF EXISTS "ticket_types_public_read" ON public.ticket_types;
 CREATE POLICY "ticket_types_public_read"
   ON public.ticket_types
