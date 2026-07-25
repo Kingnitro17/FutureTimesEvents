@@ -20,29 +20,37 @@ export async function proxy(request: NextRequest) {
   // Create a mutable response — Supabase SSR will set/refresh auth cookies on it
   let supabaseResponse = NextResponse.next({ request });
 
-  const { url, anonKey } = getPublicSupabaseConfig();
+  let supabase;
+  try {
+    const { url, anonKey } = getPublicSupabaseConfig();
 
-  const supabase = createServerClient(
-    url,
-    anonKey,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
+    supabase = createServerClient(
+      url,
+      anonKey,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll();
+          },
+          setAll(cookiesToSet) {
+            // Propagate cookie changes to the outgoing response
+            cookiesToSet.forEach(({ name, value }) =>
+              request.cookies.set(name, value)
+            );
+            supabaseResponse = NextResponse.next({ request });
+            cookiesToSet.forEach(({ name, value, options }) =>
+              supabaseResponse.cookies.set(name, value, options)
+            );
+          },
         },
-        setAll(cookiesToSet) {
-          // Propagate cookie changes to the outgoing response
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
-          supabaseResponse = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          );
-        },
-      },
-    }
-  );
+      }
+    );
+  } catch {
+    // Supabase env vars are not configured yet — skip auth completely.
+    // The site still renders for public pages. Protected routes will show
+    // a sign-in prompt via the client-side auth context.
+    return supabaseResponse;
+  }
 
   // IMPORTANT: Do not run any code between createServerClient and getUser()
   // that might cause the session refresh to be lost.
@@ -72,8 +80,6 @@ export async function proxy(request: NextRequest) {
     } | null;
 
     // Fallback: if the RPC returns nothing, try a direct profile query.
-    // The 007 RLS policy (profiles_own_read) allows the authenticated
-    // user to read their own row directly.
     if (!profile) {
       const { data: directProfile } = await supabase
         .from('profiles')
