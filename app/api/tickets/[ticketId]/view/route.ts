@@ -116,7 +116,6 @@ export async function POST(
           venue_name,
           address,
           image_url,
-          cover_image_url,
           category
         ),
         ticket_type:ticket_types!tickets_ticket_type_id_fkey (
@@ -188,7 +187,7 @@ export async function POST(
           time,
           venue: event?.venue_name ?? event?.venue ?? '',
           address: event?.address ?? '',
-          image: event?.cover_image_url ?? event?.image_url ?? '',
+          image: event?.image_url ?? '',
           category: event?.category ?? 'lounge',
         },
         ticketType: {

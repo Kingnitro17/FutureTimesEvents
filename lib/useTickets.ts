@@ -95,7 +95,7 @@ function mapTicket(row: TicketJoinRow): WalletTicket {
       time,
       venue: event?.venue_name ?? event?.venue ?? '',
       address: event?.address ?? '',
-      image: event?.cover_image_url ?? event?.image_url ?? '',
+      image: event?.image_url ?? event?.cover_image_url ?? '',
       category: event?.category ?? 'lounge',
     },
     ticketType: {

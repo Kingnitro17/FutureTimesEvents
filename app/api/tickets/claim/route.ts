@@ -147,7 +147,20 @@ export async function POST(req: NextRequest) {
     }
 
     const input = parsed.data;
-    const adminClient = getSupabaseAdminClient();
+
+    let adminClient: ReturnType<typeof getSupabaseAdminClient>;
+    try {
+      adminClient = getSupabaseAdminClient();
+    } catch (adminError) {
+      console.error(
+        '[ticket-claim] Admin client init failed:',
+        adminError instanceof Error ? adminError.message : 'unknown',
+      );
+      return noStoreJson(
+        { error: 'Ticket claim is not available. The server is missing the required service credentials.' },
+        500,
+      );
+    }
 
     let userId: string | null = null;
     let attendeeEmail = input.attendeeEmail;
@@ -163,26 +176,34 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      const { data: profile, error: profileError } = await adminClient
-        .from('profiles')
-        .select('id, account_status')
-        .eq('id', user.id)
-        .maybeSingle();
+      // Use the authenticated server client for profile read (no service key needed)
+      // rather than the admin client, so a missing SUPABASE_SERVICE_ROLE_KEY does
+      // not prevent the profile check from succeeding.
+      try {
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('id, account_status')
+          .eq('id', user.id)
+          .maybeSingle();
 
-      if (profileError) {
-        console.error('[ticket-claim] Profile lookup failed:', profileError.message);
+        if (profileError) {
+          console.error('[ticket-claim] Profile lookup failed:', profileError.message);
+          return noStoreJson({ error: 'Unable to verify your account.' }, 500);
+        }
+
+        if (!profile) {
+          return noStoreJson(
+            { error: 'Your account profile is not ready. Sign out and sign in again.' },
+            409,
+          );
+        }
+
+        if (profile.account_status !== 'active') {
+          return noStoreJson({ error: 'This account cannot claim tickets.' }, 403);
+        }
+      } catch (profileError) {
+        console.error('[ticket-claim] Profile lookup threw:', profileError instanceof Error ? profileError.message : 'unknown');
         return noStoreJson({ error: 'Unable to verify your account.' }, 500);
-      }
-
-      if (!profile) {
-        return noStoreJson(
-          { error: 'Your account profile is not ready. Sign out and sign in again.' },
-          409,
-        );
-      }
-
-      if (profile.account_status !== 'active') {
-        return noStoreJson({ error: 'This account cannot claim tickets.' }, 403);
       }
 
       userId = user.id;
