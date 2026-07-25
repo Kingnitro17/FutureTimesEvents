@@ -79,7 +79,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [profileError, setProfileError] = useState<string | null>(null);
 
-  const supabase = getClient();
+  // The Supabase client can't be created at module level because that would
+  // trigger getPublicSupabaseConfig() eagerly. It must be created lazily so
+  // that static pages can compile without env vars (Vercel sets them only
+  // at runtime in production). In local dev without .env.local, we show a
+  // friendly message instead of crashing the whole page.
+  let supabase: ReturnType<typeof getSupabaseBrowserClient>;
+  try {
+    supabase = getClient();
+  } catch {
+    // During local development without .env.local, the env var validation
+    // throws. On Vercel production the env vars ARE set in the environment,
+    // so this catch block never executes there. We render a placeholder so
+    // the page doesn't come up blank.
+    return (
+      <div className="page-offset flex min-h-screen items-center justify-center px-4">
+        <div className="max-w-md rounded-[var(--r-3xl)] border border-amber-500/30 bg-[var(--bg-card)] p-8 text-center shadow-[var(--shadow-card)]">
+          <h1 className="text-2xl font-bold text-[var(--text)]">
+            Supabase configuration needed
+          </h1>
+          <p className="mt-3 text-[var(--text-muted)] text-sm leading-relaxed">
+            NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY must be
+            set in your .env.local file. Copy .env.example to .env.local and
+            fill in your Supabase project values.
+          </p>
+          <p className="mt-4 text-xs text-[var(--text-muted)]">
+            This only affects local development — on Vercel production these
+            values are set via the project environment variables dashboard.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const ensureProfile = useCallback(async (
     userId: string,

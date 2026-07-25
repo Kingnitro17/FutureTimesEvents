@@ -26,7 +26,6 @@ DECLARE
   v_event_status       TEXT;
   v_event_organizer_id UUID;
   v_staff_exists       BOOLEAN;
-  v_rpc_result         JSONB;
 BEGIN
   -- 1. Locate the auth user
   SELECT
@@ -133,18 +132,26 @@ BEGIN
     RAISE NOTICE 'Updated event_staff entry';
   END IF;
 
-  -- 5. Test get_my_profile() for this user
-  -- We can't call it as another user from here, but we can verify the profiles row is sound
-  RAISE NOTICE 'Profile row for %: event_manager with active status confirmed', v_organizer_email;
+  -- 5. Ensure Data API grants are correct for event detail content tables.
+  --    Use dynamic SQL with existence checks so this does not fail when a
+  --    table was not created by an earlier migration.
+  IF to_regclass('public.events') IS NOT NULL THEN
+    GRANT SELECT ON public.events TO anon, authenticated;
+  END IF;
+  IF to_regclass('public.ticket_types') IS NOT NULL THEN
+    GRANT SELECT ON public.ticket_types TO anon, authenticated;
+  END IF;
+  IF to_regclass('public.event_faqs') IS NOT NULL THEN
+    GRANT SELECT ON public.event_faqs TO anon, authenticated;
+  END IF;
+  IF to_regclass('public.event_sponsors') IS NOT NULL THEN
+    GRANT SELECT ON public.event_sponsors TO anon, authenticated;
+  END IF;
+  IF to_regclass('public.event_schedule_items') IS NOT NULL THEN
+    GRANT SELECT ON public.event_schedule_items TO anon, authenticated;
+  END IF;
 
-  -- 6. Ensure Data API grants are correct for event detail content tables
-  GRANT SELECT ON public.events TO anon, authenticated;
-  GRANT SELECT ON public.ticket_types TO anon, authenticated;
-  GRANT SELECT ON public.event_faqs TO anon, authenticated;
-  GRANT SELECT ON public.event_sponsors TO anon, authenticated;
-  GRANT SELECT ON public.event_schedule_items TO anon, authenticated;
-
-  -- 7. Ensure ticket_type exists and has available inventory
+  -- 6. Ensure ticket_type exists and has available inventory
   IF NOT EXISTS (
     SELECT 1 FROM public.ticket_types
     WHERE event_id = v_event_id AND lower(name) = 'general admission'
@@ -175,7 +182,9 @@ $$;
 
 COMMIT;
 
--- Verification: paste these into SQL Editor after COMMIT
+-- ============================================================
+-- Verification queries (run manually after COMMIT in SQL Editor)
+-- ============================================================
 -- SELECT id, email, role, account_status
 -- FROM public.profiles
 -- WHERE lower(email) = 'liquidlounge216@gmail.com';
