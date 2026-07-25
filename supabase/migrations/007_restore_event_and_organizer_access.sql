@@ -19,16 +19,53 @@ SET LOCAL lock_timeout = '15s';
 SET LOCAL statement_timeout = '120s';
 SET LOCAL search_path = public, extensions, pg_catalog;
 
+-- Ensure platform event-content tables exist. Historical migration 003 may not
+-- have been run on this project, so create any missing tables defensively.
+CREATE TABLE IF NOT EXISTS public.event_faqs (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  event_id   UUID NOT NULL REFERENCES public.events(id) ON DELETE CASCADE,
+  question   TEXT NOT NULL,
+  answer     TEXT NOT NULL,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.event_sponsors (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  event_id    UUID NOT NULL REFERENCES public.events(id) ON DELETE CASCADE,
+  name        TEXT NOT NULL,
+  logo_url    TEXT DEFAULT NULL,
+  website_url TEXT DEFAULT NULL,
+  tier        TEXT NOT NULL DEFAULT 'partner'
+    CHECK (tier IN ('title', 'gold', 'silver', 'bronze', 'partner')),
+  sort_order  INTEGER NOT NULL DEFAULT 0,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.event_schedule_items (
+  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  event_id     UUID NOT NULL REFERENCES public.events(id) ON DELETE CASCADE,
+  title        TEXT NOT NULL,
+  description  TEXT DEFAULT NULL,
+  performer    TEXT DEFAULT NULL,
+  starts_at    TIMESTAMPTZ NOT NULL,
+  ends_at      TIMESTAMPTZ DEFAULT NULL,
+  stage        TEXT DEFAULT NULL,
+  sort_order   INTEGER NOT NULL DEFAULT 0,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.event_faqs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.event_sponsors ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.event_schedule_items ENABLE ROW LEVEL SECURITY;
+
 DO $$
 BEGIN
   IF to_regclass('public.profiles') IS NULL
      OR to_regclass('public.events') IS NULL
-     OR to_regclass('public.event_staff') IS NULL
-     OR to_regclass('public.event_faqs') IS NULL
-     OR to_regclass('public.event_sponsors') IS NULL
-     OR to_regclass('public.event_schedule_items') IS NULL THEN
+     OR to_regclass('public.event_staff') IS NULL THEN
     RAISE EXCEPTION
-      'Migration 007 requires migration 006 and the platform event-content tables.';
+      'Migration 007 requires migration 006 and the core tables (profiles, events, event_staff).';
   END IF;
 END;
 $$;

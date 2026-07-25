@@ -118,7 +118,7 @@ test('raw credentials stay in session storage and never enter ticket URLs', () =
 });
 
 test('Liquid Lounge setup grants scoped management and multi-ticket capacity', () => {
-  assert.match(liquidSetup, /lower\(p\.email\) = 'liquidlounge216@gmail\.com'/);
+  assert.match(liquidSetup, /lower\(auth_user\.email\) = 'liquidlounge216@gmail\.com'/);
   assert.match(liquidSetup, /SET role = 'event_manager'/);
   assert.match(liquidSetup, /'event_manager',\s+'Main Gate'/);
   assert.match(liquidSetup, /claim_limit_per_contact = 10/);
