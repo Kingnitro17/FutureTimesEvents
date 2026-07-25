@@ -63,12 +63,31 @@ export async function proxy(request: NextRequest) {
 
   // ── Role-based checks for admin/host routes ───────────────────────────────
   if (user && (isAdminRoute || isHostRoute)) {
-    // Fetch both authorization role and suspension state from profiles.
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role, account_status')
-      .eq('id', user.id)
-      .single();
+    // Read only the signed-in user's authorization profile through the
+    // migration-007 RPC. No caller-controlled profile ID is accepted.
+    let { data: profileData } = await supabase.rpc('get_my_profile');
+    let profile = profileData as {
+      role?: string;
+      account_status?: string;
+    } | null;
+
+    // Fallback: if the RPC returns nothing, try a direct profile query.
+    // The 007 RLS policy (profiles_own_read) allows the authenticated
+    // user to read their own row directly.
+    if (!profile) {
+      const { data: directProfile } = await supabase
+        .from('profiles')
+        .select('role, account_status')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (directProfile) {
+        profile = directProfile as {
+          role?: string;
+          account_status?: string;
+        } | null;
+      }
+    }
 
     const role = profile?.role ?? 'attendee';
     const accountStatus = profile?.account_status ?? 'suspended';

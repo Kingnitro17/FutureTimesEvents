@@ -11,6 +11,7 @@ export interface DbProfile {
   id: string;
   display_name: string;
   email: string;
+  phone?: string | null;
   avatar_url?: string;
   avatar_color?: string;
   initials?: string;
@@ -20,6 +21,7 @@ export interface DbProfile {
   is_vip?: boolean;
   /** Legacy values are accepted only while the production migration normalises existing rows. */
   role?: UserRole | 'user' | 'organizer';
+  account_status?: 'active' | 'suspended' | 'deleted';
   total_spent?: number;
   events_attended?: number;
   created_at?: string;

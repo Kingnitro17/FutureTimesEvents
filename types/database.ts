@@ -58,6 +58,7 @@ export interface Database {
           account_status: AccountStatus;
           loyalty_points: number;
           is_vip: boolean;
+          total_spent: number;
           events_attended: number;
           created_at: string;
           updated_at: string;
@@ -550,6 +551,10 @@ export interface Database {
         Args: {
           p_event_id: string;
         };
+        Returns: Json;
+      };
+      get_my_profile: {
+        Args: Record<never, never>;
         Returns: Json;
       };
       is_active_platform_admin: {

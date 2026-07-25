@@ -41,7 +41,7 @@ function ChartTooltip({ active, payload, label }: TooltipProps) {
 }
 
 export default function DashboardPage() {
-  const { user, isLoading, isOrganizer, isAdmin } = useAuth();
+  const { user, isLoading, profileError, isOrganizer, isAdmin } = useAuth();
   const { events } = useEvents();
   const { analytics, loading: analyticsLoading } = useAnalytics(user?.id);
   const [activeTab, setActiveTab] = useState<'overview' | 'events' | 'analytics' | 'create'>('overview');
@@ -120,6 +120,33 @@ export default function DashboardPage() {
         <p className="text-4xl">🔐</p>
         <h2 className="type-h2 text-[var(--text)]">Sign in to access Dashboard</h2>
         <Link href="/login" className="btn btn-lg btn-grad text-white">Sign In</Link>
+      </div>
+    </div>
+  );
+
+  if (profileError) return (
+    <div className="min-h-screen page-offset flex items-center justify-center px-4 pb-nav">
+      <div
+        className="w-full max-w-md rounded-[var(--r-3xl)] border border-amber-500/30 bg-[var(--bg-card)] p-6 text-center shadow-[var(--shadow-card)] sm:p-8"
+        role="alert"
+      >
+        <p className="type-overline text-amber-500">Account verification</p>
+        <h2 className="mt-2 type-h2 text-[var(--text)]">Organizer access is temporarily unavailable</h2>
+        <p className="mt-3 text-sm leading-relaxed text-[var(--text-muted)]">
+          {profileError}
+        </p>
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="btn btn-lg btn-grad flex-1 text-white"
+          >
+            Retry verification
+          </button>
+          <Link href="/profile" className="btn btn-lg btn-outline flex-1">
+            View profile
+          </Link>
+        </div>
       </div>
     </div>
   );

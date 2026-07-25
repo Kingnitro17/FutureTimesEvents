@@ -169,12 +169,12 @@ export default function HomePage() {
       {/* ── CITY OVALS — horizontal scroll, TravelPerk-style capsules ── */}
       <CityOvalsSection />
 
-      {/* ── BENTO CTA ── */}
+      {/* ── HOST YOUR EVENT + VIP CLUB CARDS ── */}
       <section className="section-pad-sm" style={{ background: 'var(--bg-secondary)' }}>
         <div className="container">
           <div className="grid md:grid-cols-2 gap-4 md:gap-6 max-w-5xl mx-auto">
 
-            <div className="card rounded-2xl md:rounded-3xl p-6 md:p-8 overflow-hidden relative group">
+            <div className="rounded-[var(--r-3xl)] border border-[var(--border)] bg-[var(--bg-card)] p-6 shadow-[var(--shadow-card)] sm:p-8 overflow-hidden relative group">
               <div
                 className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
                 style={{ background: 'radial-gradient(1200px 600px at 20% 0%, rgba(255,85,194,0.10), transparent 60%), radial-gradient(1200px 600px at 80% 100%, rgba(114,34,227,0.10), transparent 55%)' }}
@@ -191,7 +191,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="card rounded-2xl md:rounded-3xl p-6 md:p-8 overflow-hidden relative group">
+            <div className="rounded-[var(--r-3xl)] border border-[var(--border)] bg-[var(--bg-card)] p-6 shadow-[var(--shadow-card)] sm:p-8 overflow-hidden relative group">
               <div
                 className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
                 style={{ background: 'radial-gradient(1200px 600px at 25% 0%, rgba(44,196,234,0.10), transparent 60%), radial-gradient(1200px 600px at 75% 100%, rgba(29,91,255,0.10), transparent 55%)' }}

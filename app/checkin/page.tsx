@@ -116,13 +116,21 @@ export default function CheckInPage() {
         if (cancelled) return;
 
         setUser({ id: authUser.id, email: authUser.email ?? '' });
-        const { data: userProfile, error: profileError } = await supabase
-          .from('profiles')
-          .select('display_name, role, account_status')
-          .eq('id', authUser.id)
-          .maybeSingle();
+        const { data: profileData, error: profileError } = await supabase
+          .rpc('get_my_profile');
+        const userProfile = profileData as {
+          id?: string;
+          display_name?: string;
+          role?: string;
+          account_status?: string;
+        } | null;
 
-        if (profileError || !userProfile || userProfile.account_status !== 'active') {
+        if (
+          profileError
+          || !userProfile
+          || userProfile.id !== authUser.id
+          || userProfile.account_status !== 'active'
+        ) {
           if (!cancelled) {
             setSetupError('Your active staff profile could not be verified.');
             setLoadingData(false);
@@ -130,7 +138,10 @@ export default function CheckInPage() {
           return;
         }
         if (cancelled) return;
-        setProfile({ display_name: userProfile.display_name, role: userProfile.role });
+        setProfile({
+          display_name: userProfile.display_name || authUser.email || 'Event staff',
+          role: userProfile.role || 'attendee',
+        });
 
         const { data: staffRows } = await supabase
           .from('event_staff')
@@ -178,7 +189,7 @@ export default function CheckInPage() {
           event = availableEvents.find(
             assigned => assigned.slug === 'alick-macheso-peter-moyo-live',
           ) ?? availableEvents[0];
-        } else if (['admin', 'super_admin'].includes(userProfile.role)) {
+        } else if (['admin', 'super_admin'].includes(userProfile.role || '')) {
           const { data: latestEvent } = await supabase
             .from('events')
             .select('id, slug, title, starts_at, venue, venue_name, status')

@@ -2,7 +2,8 @@
 -- Liquid Lounge production configuration
 --
 -- Prerequisite:
---   Review and run migrations/006_production_ticketing.sql first.
+--   Review and run migrations/006_production_ticketing.sql and
+--   migrations/007_restore_event_and_organizer_access.sql first.
 --
 -- Run this file manually in the Supabase SQL Editor after reviewing it.
 -- It is non-destructive and idempotent: no tables, policies, assignments,
@@ -18,6 +19,8 @@ SET LOCAL search_path = public, extensions, pg_catalog;
 DO $$
 DECLARE
   v_organizer_id       UUID;
+  v_organizer_email    TEXT;
+  v_organizer_name     TEXT;
   v_event_id           UUID;
   v_ticket_type_id     UUID;
   v_event_issued       INTEGER := 0;
@@ -27,17 +30,51 @@ DECLARE
   v_type_available     INTEGER := 0;
   v_general_type_count INTEGER := 0;
 BEGIN
-  SELECT p.id
-  INTO v_organizer_id
-  FROM public.profiles AS p
-  WHERE lower(p.email) = 'liquidlounge216@gmail.com'
-  ORDER BY p.created_at
+  SELECT
+    auth_user.id,
+    lower(auth_user.email),
+    COALESCE(
+      NULLIF(auth_user.raw_user_meta_data ->> 'full_name', ''),
+      NULLIF(auth_user.raw_user_meta_data ->> 'name', ''),
+      'Liquid Lounge'
+    )
+  INTO
+    v_organizer_id,
+    v_organizer_email,
+    v_organizer_name
+  FROM auth.users AS auth_user
+  WHERE lower(auth_user.email) = 'liquidlounge216@gmail.com'
+  ORDER BY auth_user.created_at
   LIMIT 1;
 
   IF v_organizer_id IS NULL THEN
     RAISE EXCEPTION
-      'No profile exists for liquidlounge216@gmail.com. Create/sign in to that account first.';
+      'No Supabase Auth user exists for liquidlounge216@gmail.com. Create/sign in to that account first.';
   END IF;
+
+  INSERT INTO public.profiles (
+    id,
+    email,
+    display_name,
+    initials,
+    role,
+    account_status
+  ) VALUES (
+    v_organizer_id,
+    v_organizer_email,
+    v_organizer_name,
+    upper(left(v_organizer_name, 2)),
+    'attendee',
+    'active'
+  )
+  ON CONFLICT (id)
+  DO UPDATE SET
+    email = EXCLUDED.email,
+    display_name = COALESCE(
+      NULLIF(public.profiles.display_name, ''),
+      EXCLUDED.display_name
+    ),
+    updated_at = NOW();
 
   -- This account is scoped to its assigned event. Do not preserve a legacy
   -- admin promotion that may have originated from the old organizer mapping.

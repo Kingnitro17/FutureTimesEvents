@@ -96,6 +96,18 @@ interface ClaimedTicketReference {
   ticketNumber: string;
 }
 
+interface EventFetchResult {
+  event: EventData | null;
+  relatedDataErrors: string[];
+}
+
+class EventLoadError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'EventLoadError';
+  }
+}
+
 interface BookingPanelProps {
   event: EventData;
   ticketTypes: ClaimableTicketType[];
@@ -235,27 +247,73 @@ function normalizeEventData(value: unknown): EventData | null {
   };
 }
 
-async function fetchEvent(slug: string): Promise<EventData | null> {
+async function fetchEvent(slug: string): Promise<EventFetchResult> {
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug);
   const supabase = getSupabaseBrowserClient();
 
   let query = supabase
     .from('events')
-    .select(`
-      *,
-      ticket_types(*),
-      event_faqs(*),
-      event_sponsors(*),
-      event_schedule_items(*)
-    `)
+    .select('*')
     .in('status', ['published', 'sold_out', 'completed', 'postponed']);
 
   query = isUuid ? query.eq('id', slug) : query.eq('slug', slug);
 
-  const { data, error } = await query.single();
-  if (error) return null;
+  const { data: eventRow, error: eventError } = await query.maybeSingle();
+  if (eventError) {
+    throw new EventLoadError(eventError.message);
+  }
+  if (!eventRow) {
+    return { event: null, relatedDataErrors: [] };
+  }
 
-  return normalizeEventData(data);
+  const [
+    ticketTypesResult,
+    faqsResult,
+    sponsorsResult,
+    scheduleResult,
+  ] = await Promise.all([
+    supabase
+      .from('ticket_types')
+      .select('*')
+      .eq('event_id', eventRow.id)
+      .order('sort_order', { ascending: true }),
+    supabase
+      .from('event_faqs')
+      .select('*')
+      .eq('event_id', eventRow.id)
+      .order('sort_order', { ascending: true }),
+    supabase
+      .from('event_sponsors')
+      .select('*')
+      .eq('event_id', eventRow.id)
+      .order('sort_order', { ascending: true }),
+    supabase
+      .from('event_schedule_items')
+      .select('*')
+      .eq('event_id', eventRow.id)
+      .order('sort_order', { ascending: true }),
+  ]);
+
+  const relatedDataErrors = [
+    ticketTypesResult.error ? 'ticket availability' : null,
+    faqsResult.error ? 'frequently asked questions' : null,
+    sponsorsResult.error ? 'event partners' : null,
+    scheduleResult.error ? 'event schedule' : null,
+  ].filter((label): label is string => Boolean(label));
+
+  const event = normalizeEventData({
+    ...eventRow,
+    ticket_types: ticketTypesResult.data ?? [],
+    event_faqs: faqsResult.data ?? [],
+    event_sponsors: sponsorsResult.data ?? [],
+    event_schedule_items: scheduleResult.data ?? [],
+  });
+
+  if (!event) {
+    throw new EventLoadError('The event response was incomplete.');
+  }
+
+  return { event, relatedDataErrors };
 }
 
 function BookingPanel({
@@ -347,11 +405,11 @@ function BookingPanel({
       ) : (
         <>
           <div className="mb-6 grid grid-cols-2 gap-3">
-            <div className="rounded-[var(--r-lg)] bg-[var(--bg-secondary)] p-3">
+            <div className="rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--bg-secondary)] p-3">
               <p className="type-overline text-[var(--text-muted)]">Price</p>
               <p className="mt-1 font-black text-[var(--text)]">{priceLabel}</p>
             </div>
-            <div className="rounded-[var(--r-lg)] bg-[var(--bg-secondary)] p-3">
+            <div className="rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--bg-secondary)] p-3">
               <p className="type-overline text-[var(--text-muted)]">
                 Availability
               </p>
@@ -359,7 +417,7 @@ function BookingPanel({
                 {availabilityLabel}
               </p>
             </div>
-            <div className="col-span-2 rounded-[var(--r-lg)] bg-[var(--bg-secondary)] p-3">
+            <div className="col-span-2 rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--bg-secondary)] p-3">
               <p className="type-overline text-[var(--text-muted)]">When</p>
               <p className="mt-1 text-sm font-semibold text-[var(--text)]">
                 {dateTimeRange}
@@ -384,6 +442,9 @@ export default function EventSlugPage() {
   const [event, setEvent] = useState<EventData | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [relatedDataErrors, setRelatedDataErrors] = useState<string[]>([]);
+  const [reloadKey, setReloadKey] = useState(0);
   const [openFaqId, setOpenFaqId] = useState<string | null>(null);
   const [shareStatus, setShareStatus] = useState('');
   const [claimedTickets, setClaimedTickets] = useState<ClaimedTicketReference[]>([]);
@@ -393,9 +454,13 @@ export default function EventSlugPage() {
     if (!slug) return;
 
     let ignore = false;
+    setLoading(true);
+    setNotFound(false);
+    setLoadError(null);
+    setRelatedDataErrors([]);
 
     void fetchEvent(slug)
-      .then((loadedEvent) => {
+      .then(({ event: loadedEvent, relatedDataErrors: relatedErrors }) => {
         if (ignore) return;
 
         if (!loadedEvent) {
@@ -408,26 +473,30 @@ export default function EventSlugPage() {
         setClaimedTickets([]);
         setClaimRequiresQrReissue(false);
         setNotFound(false);
+        setRelatedDataErrors(relatedErrors);
         setEvent(loadedEvent);
         setLoading(false);
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         if (ignore) return;
+        console.error('[Event detail] load failed:', error);
         setEvent(null);
-        setNotFound(true);
+        setNotFound(false);
+        setLoadError(
+          'We could not load this event right now. Check your connection and try again.',
+        );
         setLoading(false);
       });
 
     return () => {
       ignore = true;
     };
-  }, [slug]);
+  }, [slug, reloadKey]);
 
   if (loading) {
     return (
       <div
-        className="flex min-h-screen items-center justify-center"
-        style={{ paddingTop: 'var(--nav-h)' }}
+        className="page-offset flex min-h-screen items-center justify-center"
       >
         <div className="flex flex-col items-center gap-3" role="status">
           <div className="h-9 w-9 animate-spin rounded-full border-4 border-[var(--accent)] border-t-transparent" />
@@ -437,11 +506,44 @@ export default function EventSlugPage() {
     );
   }
 
+  if (loadError) {
+    return (
+      <div className="page-offset flex min-h-screen items-center justify-center px-4">
+        <div
+          className="w-full max-w-md rounded-[var(--r-3xl)] border border-amber-500/30 bg-[var(--bg-card)] p-6 text-center shadow-[var(--shadow-card)] sm:p-8"
+          role="alert"
+        >
+          <Ticket
+            className="mx-auto text-amber-500"
+            size={44}
+            aria-hidden="true"
+          />
+          <p className="mt-4 type-overline text-amber-500">Temporary issue</p>
+          <h1 className="mt-2 text-2xl font-bold text-[var(--text)]">
+            Event details are unavailable
+          </h1>
+          <p className="mt-3 text-[var(--text-muted)]">{loadError}</p>
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+            <button
+              type="button"
+              onClick={() => setReloadKey((current) => current + 1)}
+              className="btn btn-md btn-primary flex-1"
+            >
+              Try again
+            </button>
+            <Link href="/events" className="btn btn-md btn-outline flex-1">
+              Browse events
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (notFound || !event) {
     return (
       <div
-        className="flex min-h-screen items-center justify-center px-4"
-        style={{ paddingTop: 'var(--nav-h)' }}
+        className="page-offset flex min-h-screen items-center justify-center px-4"
       >
         <div className="max-w-md rounded-[var(--r-3xl)] border border-[var(--border)] bg-[var(--bg-card)] p-8 text-center shadow-[var(--shadow-card)]">
           <Ticket
@@ -615,11 +717,30 @@ export default function EventSlugPage() {
   };
 
   return (
-    <div
-      className="min-h-screen bg-[var(--bg)] pb-28 lg:pb-16"
-      style={{ paddingTop: 'var(--nav-h)' }}
-    >
-      <article>
+    <div className="page-offset relative min-h-screen overflow-x-clip bg-[var(--bg)] pb-28 lg:pb-16">
+      {desktopHeroImage && (
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 h-[min(76vh,760px)] overflow-hidden"
+          aria-hidden="true"
+        >
+          <Image
+            src={desktopHeroImage}
+            alt=""
+            fill
+            sizes="100vw"
+            className="scale-110 object-cover opacity-50 blur-3xl saturate-125"
+          />
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                'radial-gradient(900px 520px at 82% 18%, rgba(114,34,227,0.22), transparent 58%), linear-gradient(180deg, rgba(0,0,0,0.20) 0%, var(--bg) 96%)',
+            }}
+          />
+        </div>
+      )}
+
+      <article className="relative z-10">
         <div className="container pt-4 sm:pt-6">
           <div className="relative aspect-[4/5] max-h-[680px] overflow-hidden rounded-[var(--r-3xl)] border border-[var(--border)] bg-[var(--bg-secondary)] shadow-[var(--shadow-lg)] sm:aspect-[16/9] lg:aspect-[21/9] lg:max-h-[500px]">
             {mobileHeroImage && desktopHeroImage ? (
@@ -709,13 +830,13 @@ export default function EventSlugPage() {
                   {event.title}
                 </h1>
                 {event.subtitle && (
-                  <p className="mt-3 max-w-3xl text-base leading-relaxed text-[var(--text-secondary)] sm:text-lg">
+                  <p className="mt-4 max-w-3xl rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)] p-4 text-base leading-relaxed text-[var(--text-secondary)] sm:text-lg">
                     {event.subtitle}
                   </p>
                 )}
               </div>
 
-              <div className="flex items-center gap-3 rounded-[var(--r-xl)] bg-[var(--bg-secondary)] p-3 sm:min-w-64">
+              <div className="flex items-center gap-3 rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)] p-3 sm:min-w-64">
                 <div
                   className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
                   style={{ background: gradient }}
@@ -738,6 +859,16 @@ export default function EventSlugPage() {
             </div>
           </header>
 
+          {relatedDataErrors.length > 0 && (
+            <div
+              className="mt-4 rounded-[var(--r-xl)] border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-[var(--text-secondary)] sm:mt-6"
+              role="status"
+            >
+              Some sections are temporarily unavailable: {relatedDataErrors.join(', ')}.
+              The main event information is still available.
+            </div>
+          )}
+
           <div className="mt-6 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-8">
             <div className="min-w-0 space-y-6">
               <section
@@ -749,8 +880,8 @@ export default function EventSlugPage() {
                   Event details
                 </h2>
 
-                <dl className="mt-5 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-[var(--r-xl)] bg-[var(--bg-secondary)] p-4">
+                <dl className="mt-5 grid gap-4 sm:grid-cols-2">
+                  <div className="rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)] p-4">
                     <dt className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
                       <CalendarDays size={16} aria-hidden="true" />
                       Date
@@ -759,7 +890,7 @@ export default function EventSlugPage() {
                       {formattedDate}
                     </dd>
                   </div>
-                  <div className="rounded-[var(--r-xl)] bg-[var(--bg-secondary)] p-4">
+                  <div className="rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)] p-4">
                     <dt className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
                       <Clock3 size={16} aria-hidden="true" />
                       Time
@@ -774,7 +905,7 @@ export default function EventSlugPage() {
                       {event.timezone}
                     </p>
                   </div>
-                  <div className="rounded-[var(--r-xl)] bg-[var(--bg-secondary)] p-4 sm:col-span-2">
+                  <div className="rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)] p-4 sm:col-span-2">
                     <dt className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
                       <MapPin size={16} aria-hidden="true" />
                       Venue
@@ -792,14 +923,14 @@ export default function EventSlugPage() {
                         href={directionsUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="btn btn-sm btn-outline mt-4"
+                        className="btn btn-sm btn-outline mt-4 w-full sm:w-auto"
                       >
                         <Navigation size={15} aria-hidden="true" />
                         Get directions
                       </a>
                     )}
                   </div>
-                  <div className="rounded-[var(--r-xl)] bg-[var(--bg-secondary)] p-4">
+                  <div className="rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)] p-4">
                     <dt className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
                       <Ticket size={16} aria-hidden="true" />
                       Tickets
@@ -813,7 +944,7 @@ export default function EventSlugPage() {
                       </p>
                     )}
                   </div>
-                  <div className="rounded-[var(--r-xl)] bg-[var(--bg-secondary)] p-4">
+                  <div className="rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)] p-4">
                     <dt className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
                       <Users size={16} aria-hidden="true" />
                       Attendance
@@ -856,12 +987,12 @@ export default function EventSlugPage() {
                 <h2 id="about-event-heading" className="mt-1 text-2xl font-bold text-[var(--text)]">
                   About this event
                 </h2>
-                <p className="mt-4 whitespace-pre-line text-base leading-relaxed text-[var(--text-secondary)]">
+                <p className="mt-4 whitespace-pre-line rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)] p-4 text-base leading-relaxed text-[var(--text-secondary)]">
                   {event.long_description || event.description || 'More event details will be announced soon.'}
                 </p>
 
                 {goodToKnow.length > 0 && (
-                  <dl className="mt-6 grid gap-3 sm:grid-cols-2">
+                  <dl className="mt-6 grid gap-4 sm:grid-cols-2">
                     {goodToKnow.map((item) => (
                       <div
                         key={item.label}
@@ -888,11 +1019,11 @@ export default function EventSlugPage() {
                   <h2 id="event-schedule-heading" className="mt-1 text-2xl font-bold text-[var(--text)]">
                     Event schedule
                   </h2>
-                  <ol className="mt-5 space-y-3">
+                  <ol className="mt-5 space-y-4">
                     {sortedSchedule.map((item) => (
                       <li
                         key={item.id}
-                        className="grid grid-cols-[72px_minmax(0,1fr)] gap-4 rounded-[var(--r-xl)] bg-[var(--bg-secondary)] p-4"
+                        className="grid grid-cols-[72px_minmax(0,1fr)] gap-4 rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)] p-4"
                       >
                         <time
                           dateTime={item.starts_at}
@@ -942,7 +1073,7 @@ export default function EventSlugPage() {
                         href={directionsUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="btn btn-md btn-outline mt-5"
+                        className="btn btn-md btn-outline mt-5 w-full sm:w-auto"
                       >
                         <Navigation size={16} aria-hidden="true" />
                         Open directions

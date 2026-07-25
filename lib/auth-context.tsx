@@ -6,6 +6,7 @@ import type { User, DbProfile, UserRole } from '@/types';
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
+  profileError: string | null;
   signIn:  (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp:  (email: string, password: string, userData: Partial<User>) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -14,7 +15,19 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-const supabase = getSupabaseBrowserClient();
+
+/** Lazy singleton for the Supabase browser client.
+ *  Calling getSupabaseBrowserClient() at module level would trigger
+ *  getPublicSupabaseConfig() eagerly, failing at build time or when
+ *  .env.local is missing during static prerendering.
+ */
+let _supabaseClient: ReturnType<typeof getSupabaseBrowserClient> | null = null;
+function getClient() {
+  if (!_supabaseClient) {
+    _supabaseClient = getSupabaseBrowserClient();
+  }
+  return _supabaseClient;
+}
 
 function normaliseRole(role: DbProfile['role'] | string | undefined): UserRole {
   if (role === 'organizer') return 'event_manager';
@@ -39,7 +52,7 @@ function mapProfile(p: DbProfile): User {
     joinedAt:       p.created_at  || new Date().toISOString(),
     loyaltyPoints:  p.loyalty_points  ?? 0,
     eventsAttended: p.events_attended ?? 0,
-    totalSpent:     Number(p.total_spent)  ?? 0,
+    totalSpent:     Number(p.total_spent) || 0,
     isVip:          p.is_vip      ?? false,
     role:           normaliseRole(p.role),
     badges:         [],
@@ -64,6 +77,9 @@ function userFromAuth(authUser: { id: string; email?: string; user_metadata?: Re
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user,      setUser]      = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [profileError, setProfileError] = useState<string | null>(null);
+
+  const supabase = getClient();
 
   const ensureProfile = useCallback(async (
     userId: string,
@@ -71,31 +87,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     userData: Partial<User>
   ) => {
     const display_name = userData.name || email.split('@')[0];
+    const sb = getClient();
 
     try {
-      const { data: existing } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', userId)
-        .maybeSingle();
+      const { data: existing, error: profileLookupError } = await sb
+        .rpc('get_my_profile');
 
       if (existing) return;
+      if (profileLookupError) {
+        throw new Error(profileLookupError.message);
+      }
 
-      const { error } = await supabase.from('profiles').insert({
+      const { error } = await sb.from('profiles').insert({
         id:           userId,
         email,
         display_name,
         initials:     display_name.slice(0, 2).toUpperCase(),
-        role:         normaliseRole(userData.role),
         avatar_url:   '',
         avatar_color: '#7B61FF',
-      }).select().single();
+      });
 
       if (error && error.code !== '23505') {
-        console.warn('[Auth] profile insert failed:', error.message);
+        throw new Error(error.message);
       }
     } catch (err) {
-      console.warn('[Auth] profile ensure failed:', err);
+      console.error('[Auth] profile bootstrap failed:', err);
+      setProfileError(
+        'Your account profile could not be verified. Refresh after the database access migration is applied.',
+      );
     }
   }, []);
 
@@ -103,15 +122,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     userId: string,
     authUser: { id: string; email?: string; user_metadata?: Record<string, unknown> }
   ) => {
+    const sb = getClient();
+
     try {
-      const { data, error, status } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
+      const { data, error } = await sb.rpc('get_my_profile');
 
       if (data && !error) {
-        const p = data as DbProfile;
+        const p = data as unknown as DbProfile;
+        if (p.id !== userId) {
+          throw new Error('The profile response did not match the authenticated user.');
+        }
+        if (p.account_status && p.account_status !== 'active') {
+          setUser(userFromAuth(authUser));
+          setProfileError('This account is not active. Contact a platform administrator.');
+          return;
+        }
         const meta = authUser.user_metadata ?? {};
         const realName = (meta.full_name as string) || (meta.name as string);
 
@@ -119,22 +144,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (realName && p.display_name === authUser.email?.split('@')[0]) {
           p.display_name = realName;
           // Fire-and-forget update to fix it permanently in the DB
-          supabase.from('profiles').update({ display_name: realName }).eq('id', userId).then();
+          sb.from('profiles').update({ display_name: realName }).eq('id', userId).then();
         }
 
         setUser(mapProfile(p));
+        setProfileError(null);
       } else {
-        // 404 = table missing, 406 / PGRST116 = no row yet — both are fine
-        if (status !== 404 && status !== 406 && error?.code !== 'PGRST116') {
-          console.warn('[Auth] profiles fetch:', error?.message);
+        // RPC returned null/error — fall back to a direct profile query.
+        // The RPC may not return data if migration 007's function signature
+        // is slightly different, but the RLS "profiles_own_read" policy
+        // (from 007) allows the user to read their own row directly.
+        const { data: directProfile, error: directError } = await sb
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .maybeSingle();
+
+        if (directProfile && !directError) {
+          const p = directProfile as unknown as DbProfile;
+          if (p.account_status && p.account_status !== 'active') {
+            setUser(userFromAuth(authUser));
+            setProfileError('This account is not active. Contact a platform administrator.');
+            return;
+          }
+          setUser(mapProfile(p));
+          setProfileError(null);
+          return;
         }
+
+        // Both RPC and direct query failed — emit a clear error
+        const rpcMessage = error?.message || 'RPC returned no data.';
+        const directMessage = directError?.message || 'Direct profile query returned no data.';
+        console.error('[Auth] profile verification failed. RPC:', rpcMessage, 'Direct:', directMessage);
+        setProfileError(
+          'Your account is signed in, but its organizer permissions could not be verified.',
+        );
 
         // Fallback: use auth metadata if profile fetch fails
         setUser(userFromAuth(authUser));
       }
     } catch (err) {
       console.error('[Auth] Error loading profile:', err);
-      // Fallback to user from auth metadata even if profile fetch fails
+      setProfileError(
+        'Your account is signed in, but its organizer permissions could not be verified.',
+      );
       setUser(userFromAuth(authUser));
     } finally {
       setIsLoading(false);
@@ -152,6 +205,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await loadProfile(session.user.id, session.user);
     } else {
       setUser(null);
+      setProfileError(null);
       setIsLoading(false);
     }
   }, [ensureProfile, loadProfile]);
@@ -179,6 +233,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (error) {
       setUser(null);
+      setProfileError(null);
       setIsLoading(false);
       return { error: error as Error | null };
     }
@@ -207,6 +262,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (error) {
       setUser(null);
+      setProfileError(null);
       setIsLoading(false);
       return { error: error as Error | null };
     }
@@ -227,6 +283,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function signOut() {
     await supabase.auth.signOut();
     setUser(null);
+    setProfileError(null);
     setIsLoading(false);
   }
 
@@ -234,7 +291,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isOrganizer = user?.role === 'event_manager' || isAdmin;
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, signIn, signUp, signOut, isAdmin, isOrganizer }}>
+    <AuthContext.Provider value={{
+      user,
+      isLoading,
+      profileError,
+      signIn,
+      signUp,
+      signOut,
+      isAdmin,
+      isOrganizer,
+    }}>
       {children}
     </AuthContext.Provider>
   );
