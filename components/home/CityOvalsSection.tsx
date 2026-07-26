@@ -7,7 +7,7 @@ import { motion } from 'framer-motion';
 
 // ─── Dataset ──────────────────────────────────────────────────────────────────
 const CITIES = [
-  { name: 'Shamva',         subtitle: 'Mashonaland North',      status: '1 event',     emoji: '🌿',  image: '/cities/Shamva.jpeg' },
+  { name: 'Mashonaland Central', subtitle: 'The Corn-Belt of Zimbabwe', status: '1 event',     emoji: '🌿',  image: '/cities/Shamva.jpeg' },
   { name: 'Harare',         subtitle: 'The Sunshine City',      status: 'Coming soon', emoji: '🏙️', image: '/cities/Harare.jpg' },
   { name: 'Bulawayo',       subtitle: 'City of Kings',          status: 'Coming soon', emoji: '🦏',  image: '/cities/Bulawayo.jpg' },
   { name: 'Mutare',         subtitle: 'Gateway to the East',    status: 'Coming soon', emoji: '⛰️', image: '/cities/Mutare.jpeg' },
@@ -44,8 +44,7 @@ function CityCard({ city, index }: { city: typeof CITIES[0]; index: number }) {
       >
         {/* Outer oval wrapper — clips everything to pill shape */}
         <div
-          className="relative overflow-hidden transition-shadow duration-300 ease-out shadow-[0_8px_24px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_24px_rgba(0,0,0,0.4)] border border-gray-100 dark:border-white/5 hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] dark:hover:shadow-[0_12px_40px_rgba(0,0,0,0.6)]"
-          style={{ width: 190, height: 280, borderRadius: 9999 }}
+          className="relative overflow-hidden transition-shadow duration-300 ease-out shadow-[0_8px_24px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_24px_rgba(0,0,0,0.4)] border border-gray-100 dark:border-white/5 hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] dark:hover:shadow-[0_12px_40px_rgba(0,0,0,0.6)] rounded-full w-[150px] h-[240px] sm:w-[190px] sm:h-[280px]"
         >
           {/* ── Full-cover background image ── */}
           <Image

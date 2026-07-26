@@ -23,7 +23,7 @@ export default function AboutSection() {
           whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.25 }}
           transition={{ duration: 0.5, ease: 'easeOut' }}
-          className="relative mx-auto max-w-6xl overflow-hidden rounded-[var(--r-3xl)] border border-[var(--border)] bg-[var(--bg-card)] shadow-[var(--shadow-card)]"
+          className="relative mx-auto max-w-7xl overflow-hidden rounded-[var(--r-3xl)] border border-[var(--border)] bg-[var(--bg-card)] shadow-[var(--shadow-card)]"
         >
           <div
             aria-hidden="true"

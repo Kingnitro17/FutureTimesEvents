@@ -16,6 +16,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getSupabaseAdminClient } from '@/lib/supabase/admin';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { normalizeZimbabweanPhoneNumber } from '@/lib/phone';
 
 export const runtime = 'nodejs';
 
@@ -152,13 +153,14 @@ export async function POST(req: NextRequest) {
     try {
       adminClient = getSupabaseAdminClient();
     } catch (adminError) {
-      console.error(
-        '[ticket-claim] Admin client init failed:',
-        adminError instanceof Error ? adminError.message : 'unknown',
-      );
+      const errorMessage = adminError instanceof Error ? adminError.message : 'Unknown error';
+      console.error('[ticket-claim] Supabase admin client initialization failed:', errorMessage);
       return noStoreJson(
-        { error: 'Ticket claim is not available. The server is missing the required service credentials.' },
-        500,
+        {
+          error: 'Ticket claim is temporarily unavailable due to a server configuration issue.',
+          details: 'The service credentials required for this operation are missing or invalid.'
+        },
+        503, // Service Unavailable
       );
     }
 
@@ -215,6 +217,9 @@ export async function POST(req: NextRequest) {
       () => generateSecureToken(),
     );
     const tokenHashes = rawTokens.map(hashToken);
+    const normalizedPhone = input.attendeePhone
+      ? normalizeZimbabweanPhoneNumber(input.attendeePhone)
+      : null;
 
     const { data: rpcData, error: rpcError } = await adminClient.rpc(
       'claim_tickets_batch_atomic',
@@ -224,7 +229,7 @@ export async function POST(req: NextRequest) {
         p_user_id: userId,
         p_attendee_name: input.attendeeName,
         p_attendee_email: attendeeEmail,
-        p_attendee_phone: input.attendeePhone || null,
+        p_attendee_phone: normalizedPhone,
         p_quantity: input.quantity,
         p_idempotency_key: input.idempotencyKey,
         p_show_in_whos_going: input.showInWhosGoing,

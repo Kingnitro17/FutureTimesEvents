@@ -172,7 +172,7 @@ export default function HomePage() {
       {/* ── HOST YOUR EVENT + VIP CLUB CARDS ── */}
       <section className="section-pad-sm" style={{ background: 'var(--bg-secondary)' }}>
         <div className="container">
-          <div className="grid md:grid-cols-2 gap-4 md:gap-6 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-4 md:gap-6 max-w-7xl mx-auto">
 
             <div className="rounded-[var(--r-3xl)] border border-[var(--border)] bg-[var(--bg-card)] p-6 shadow-[var(--shadow-card)] sm:p-8 overflow-hidden relative group">
               <div
