@@ -36,8 +36,8 @@ export default function AboutSection() {
             style={{ background: 'var(--grad-ocean)' }}
           />
 
-          <div className="relative grid gap-8 p-6 sm:p-8 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-12 lg:p-12">
-            <div className="flex flex-col items-start">
+          <div className="relative grid gap-8 p-[var(--sp-4)] sm:p-[var(--sp-5)] lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-12 lg:p-[var(--sp-6)]">
+            <div className="flex flex-col items-center lg:items-start">
               <span
                 className="type-overline inline-flex items-center rounded-full border border-[var(--border)] bg-[var(--bg-secondary)] px-3 py-2"
                 style={{ color: 'var(--accent)' }}
@@ -51,22 +51,22 @@ export default function AboutSection() {
               />
               <h2
                 id="about-heading"
-                className="mt-4 font-display text-3xl font-bold leading-tight tracking-tight text-[var(--text)] sm:text-4xl lg:text-5xl"
+                className="mt-4 font-display text-3xl font-bold leading-tight tracking-tight text-[var(--text)] sm:text-4xl lg:text-5xl text-center lg:text-left"
               >
                 Our identity, vision and values
               </h2>
             </div>
 
-            <div className="border-t border-[var(--border)] pt-8 lg:border-l lg:border-t-0 lg:pl-12 lg:pt-0">
+            <div className="border-t border-[var(--border)] pt-[var(--sp-5)] lg:border-l lg:border-t-0 lg:pl-[var(--sp-6)] lg:pt-0">
               <p className="text-base leading-relaxed text-[var(--text-secondary)] sm:text-lg">
                 Future Times Events connects people with unforgettable entertainment, cultural experiences and community moments across Zimbabwe. We make it easy to discover events, reserve tickets and create lasting memories.
               </p>
 
-              <dl className="mt-6 grid gap-3 sm:grid-cols-3">
+              <dl className="mt-[var(--sp-5)] grid gap-[var(--sp-2)] sm:grid-cols-3">
                 {values.map(({ label, value }) => (
                   <div
                     key={label}
-                    className="rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)] p-4"
+                    className="rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)] p-[var(--sp-3)]"
                   >
                     <dt className="type-overline text-[var(--text-muted)]">{label}</dt>
                     <dd className="mt-2 text-sm font-semibold leading-snug text-[var(--text)]">

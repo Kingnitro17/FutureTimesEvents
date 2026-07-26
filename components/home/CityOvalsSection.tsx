@@ -44,7 +44,7 @@ function CityCard({ city, index }: { city: typeof CITIES[0]; index: number }) {
       >
         {/* Outer oval wrapper — clips everything to pill shape */}
         <div
-          className="relative overflow-hidden transition-shadow duration-300 ease-out shadow-[0_8px_24px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_24px_rgba(0,0,0,0.4)] border border-gray-100 dark:border-white/5 hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] dark:hover:shadow-[0_12px_40px_rgba(0,0,0,0.6)] rounded-full w-[150px] h-[240px] sm:w-[190px] sm:h-[280px]"
+          className="relative overflow-hidden transition-shadow duration-300 ease-out shadow-[0_8px_24px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_24px_rgba(0,0,0,0.4)] border border-gray-100 dark:border-white/5 hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] dark:hover:shadow-[0_12px_40px_rgba(0,0,0,0.6)] rounded-full w-[140px] h-[224px] sm:w-[190px] sm:h-[280px]"
         >
           {/* ── Full-cover background image ── */}
           <Image
@@ -124,10 +124,10 @@ export default function CityOvalsSection() {
             <span className="w-2 h-2 rounded-full bg-gray-400" />
             Top Destinations
           </span>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-gray-900 dark:text-white max-w-2xl leading-tight tracking-tight mb-4">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-gray-900 dark:text-white max-w-2xl leading-tight tracking-tight mb-4 mx-auto">
             Explore Zimbabwe’s Most Loved Places.
           </h2>
-          <p className="text-base text-gray-500 max-w-md">
+          <p className="text-base text-gray-500 max-w-md mx-auto">
             Tap a city to discover what’s happening near you.
           </p>
         </motion.div>

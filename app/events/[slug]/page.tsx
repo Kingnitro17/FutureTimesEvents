@@ -329,7 +329,7 @@ function BookingPanel({
   onSuccess,
 }: BookingPanelProps) {
   return (
-    <div className="rounded-[var(--r-3xl)] border border-[var(--border)] bg-[var(--bg-card)] p-5 shadow-[var(--shadow-card)] sm:p-6">
+    <div className="rounded-[var(--r-3xl)] border border-[var(--border)] bg-[var(--bg-card)] p-[var(--sp-4)] shadow-[var(--shadow-card)] sm:p-[var(--sp-5)]">
       {isCompleted ? (
         <div className="py-6 text-center" role="status">
           <CheckCircle2
@@ -404,12 +404,12 @@ function BookingPanel({
         </div>
       ) : (
         <>
-          <div className="mb-6 grid grid-cols-2 gap-3">
-            <div className="rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--bg-secondary)] p-3">
+          <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-[var(--sp-3)]">
+            <div className="rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--bg-secondary)] p-[var(--sp-3)]">
               <p className="type-overline text-[var(--text-muted)]">Price</p>
               <p className="mt-1 font-black text-[var(--text)]">{priceLabel}</p>
             </div>
-            <div className="rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--bg-secondary)] p-3">
+            <div className="rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--bg-secondary)] p-[var(--sp-3)]">
               <p className="type-overline text-[var(--text-muted)]">
                 Availability
               </p>
@@ -417,7 +417,7 @@ function BookingPanel({
                 {availabilityLabel}
               </p>
             </div>
-            <div className="col-span-2 rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--bg-secondary)] p-3">
+            <div className="col-span-2 rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--bg-secondary)] p-[var(--sp-3)]">
               <p className="type-overline text-[var(--text-muted)]">When</p>
               <p className="mt-1 text-sm font-semibold text-[var(--text)]">
                 {dateTimeRange}
@@ -454,39 +454,41 @@ export default function EventSlugPage() {
     if (!slug) return;
 
     let ignore = false;
-    setLoading(true);
-    setNotFound(false);
-    setLoadError(null);
-    setRelatedDataErrors([]);
 
-    void fetchEvent(slug)
-      .then(({ event: loadedEvent, relatedDataErrors: relatedErrors }) => {
+    async function fetchData() {
+      setLoading(true);
+      setNotFound(false);
+      setLoadError(null);
+      setRelatedDataErrors([]);
+
+      try {
+        const { event: loadedEvent, relatedDataErrors: relatedErrors } = await fetchEvent(slug);
         if (ignore) return;
 
         if (!loadedEvent) {
           setEvent(null);
           setNotFound(true);
-          setLoading(false);
-          return;
+        } else {
+          setClaimedTickets([]);
+          setClaimRequiresQrReissue(false);
+          setNotFound(false);
+          setRelatedDataErrors(relatedErrors);
+          setEvent(loadedEvent);
         }
-
-        setClaimedTickets([]);
-        setClaimRequiresQrReissue(false);
-        setNotFound(false);
-        setRelatedDataErrors(relatedErrors);
-        setEvent(loadedEvent);
-        setLoading(false);
-      })
-      .catch((error: unknown) => {
+      } catch (error: unknown) {
         if (ignore) return;
         console.error('[Event detail] load failed:', error);
         setEvent(null);
         setNotFound(false);
-        setLoadError(
-          'We could not load this event right now. Check your connection and try again.',
-        );
-        setLoading(false);
-      });
+        setLoadError('We could not load this event right now. Check your connection and try again.');
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void fetchData();
 
     return () => {
       ignore = true;
@@ -717,7 +719,7 @@ export default function EventSlugPage() {
   };
 
   return (
-    <div className="page-offset relative min-h-screen overflow-x-clip bg-[var(--bg)] pb-28 lg:pb-16">
+    <div className="page-offset relative min-h-screen overflow-x-clip bg-[var(--bg)] pb-action-bar lg:pb-16">
       {desktopHeroImage && (
         <div
           className="pointer-events-none absolute inset-x-0 top-0 h-[min(76vh,760px)] overflow-hidden"
@@ -812,7 +814,7 @@ export default function EventSlugPage() {
             <span className="sr-only" aria-live="polite">{shareStatus}</span>
           </div>
 
-          <header className="mt-4 rounded-[var(--r-3xl)] border border-[var(--border)] bg-[var(--bg-card)] p-5 shadow-[var(--shadow-card)] sm:mt-6 sm:p-8">
+          <header className="mt-4 rounded-[var(--r-3xl)] border border-[var(--border)] bg-[var(--bg-card)] p-[var(--sp-4)] shadow-[var(--shadow-card)] sm:mt-6 sm:p-[var(--sp-5)]">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
               <div className="min-w-0">
                 <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -826,7 +828,7 @@ export default function EventSlugPage() {
                     <span className="badge badge-error">No tickets available</span>
                   )}
                 </div>
-                <h1 className="max-w-4xl text-3xl font-bold leading-tight text-[var(--text)] sm:text-4xl lg:text-5xl">
+                <h1 className="text-3xl font-bold leading-tight text-[var(--text)] sm:text-4xl lg:text-5xl">
                   {event.title}
                 </h1>
                 {event.subtitle && (
@@ -836,7 +838,7 @@ export default function EventSlugPage() {
                 )}
               </div>
 
-              <div className="flex items-center gap-3 rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)] p-3 sm:min-w-64">
+              <div className="flex items-center gap-3 rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)] p-[var(--sp-3)] sm:min-w-64">
                 <div
                   className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
                   style={{ background: gradient }}
@@ -872,7 +874,7 @@ export default function EventSlugPage() {
           <div className="mt-6 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-8">
             <div className="min-w-0 space-y-6">
               <section
-                className="rounded-[var(--r-3xl)] border border-[var(--border)] bg-[var(--bg-card)] p-5 shadow-[var(--shadow-card)] sm:p-8"
+                className="rounded-[var(--r-3xl)] border border-[var(--border)] bg-[var(--bg-card)] p-[var(--sp-4)] shadow-[var(--shadow-card)] sm:p-[var(--sp-5)]"
                 aria-labelledby="event-details-heading"
               >
                 <p className="type-overline text-[var(--text-muted)]">Plan your visit</p>
@@ -880,8 +882,8 @@ export default function EventSlugPage() {
                   Event details
                 </h2>
 
-                <dl className="mt-5 grid gap-4 sm:grid-cols-2">
-                  <div className="rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)] p-4">
+                <dl className="mt-5 grid gap-[var(--sp-3)] sm:grid-cols-2">
+                  <div className="rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)] p-[var(--sp-3)]">
                     <dt className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
                       <CalendarDays size={16} aria-hidden="true" />
                       Date
@@ -890,7 +892,7 @@ export default function EventSlugPage() {
                       {formattedDate}
                     </dd>
                   </div>
-                  <div className="rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)] p-4">
+                  <div className="rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)] p-[var(--sp-3)]">
                     <dt className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
                       <Clock3 size={16} aria-hidden="true" />
                       Time
@@ -905,7 +907,7 @@ export default function EventSlugPage() {
                       {event.timezone}
                     </p>
                   </div>
-                  <div className="rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)] p-4 sm:col-span-2">
+                  <div className="rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)] p-[var(--sp-3)] sm:col-span-2">
                     <dt className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
                       <MapPin size={16} aria-hidden="true" />
                       Venue
@@ -930,7 +932,7 @@ export default function EventSlugPage() {
                       </a>
                     )}
                   </div>
-                  <div className="rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)] p-4">
+                  <div className="rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)] p-[var(--sp-3)]">
                     <dt className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
                       <Ticket size={16} aria-hidden="true" />
                       Tickets
@@ -944,7 +946,7 @@ export default function EventSlugPage() {
                       </p>
                     )}
                   </div>
-                  <div className="rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)] p-4">
+                  <div className="rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)] p-[var(--sp-3)]">
                     <dt className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
                       <Users size={16} aria-hidden="true" />
                       Attendance
@@ -980,7 +982,7 @@ export default function EventSlugPage() {
               </div>
 
               <section
-                className="rounded-[var(--r-3xl)] border border-[var(--border)] bg-[var(--bg-card)] p-5 shadow-[var(--shadow-card)] sm:p-8"
+                className="rounded-[var(--r-3xl)] border border-[var(--border)] bg-[var(--bg-card)] p-[var(--sp-4)] shadow-[var(--shadow-card)] sm:p-[var(--sp-5)]"
                 aria-labelledby="about-event-heading"
               >
                 <p className="type-overline text-[var(--text-muted)]">About</p>
@@ -1012,7 +1014,7 @@ export default function EventSlugPage() {
 
               {sortedSchedule.length > 0 && (
                 <section
-                  className="rounded-[var(--r-3xl)] border border-[var(--border)] bg-[var(--bg-card)] p-5 shadow-[var(--shadow-card)] sm:p-8"
+                  className="rounded-[var(--r-3xl)] border border-[var(--border)] bg-[var(--bg-card)] p-[var(--sp-4)] shadow-[var(--shadow-card)] sm:p-[var(--sp-5)]"
                   aria-labelledby="event-schedule-heading"
                 >
                   <p className="type-overline text-[var(--text-muted)]">Programme</p>
@@ -1058,7 +1060,7 @@ export default function EventSlugPage() {
                   className="overflow-hidden rounded-[var(--r-3xl)] border border-[var(--border)] bg-[var(--bg-card)] shadow-[var(--shadow-card)]"
                   aria-labelledby="event-location-heading"
                 >
-                  <div className="p-5 sm:p-8">
+                  <div className="p-[var(--sp-4)] sm:p-[var(--sp-5)]">
                     <p className="type-overline text-[var(--text-muted)]">Location</p>
                     <h2 id="event-location-heading" className="mt-1 text-2xl font-bold text-[var(--text)]">
                       {event.venue_name}
@@ -1098,7 +1100,7 @@ export default function EventSlugPage() {
 
               {sortedFaqs.length > 0 && (
                 <section
-                  className="rounded-[var(--r-3xl)] border border-[var(--border)] bg-[var(--bg-card)] p-5 shadow-[var(--shadow-card)] sm:p-8"
+                  className="rounded-[var(--r-3xl)] border border-[var(--border)] bg-[var(--bg-card)] p-[var(--sp-4)] shadow-[var(--shadow-card)] sm:p-[var(--sp-5)]"
                   aria-labelledby="event-faq-heading"
                 >
                   <p className="type-overline text-[var(--text-muted)]">Need to know</p>
@@ -1147,7 +1149,7 @@ export default function EventSlugPage() {
 
               {sortedSponsors.length > 0 && (
                 <section
-                  className="rounded-[var(--r-3xl)] border border-[var(--border)] bg-[var(--bg-card)] p-5 shadow-[var(--shadow-card)] sm:p-8"
+                  className="rounded-[var(--r-3xl)] border border-[var(--border)] bg-[var(--bg-card)] p-[var(--sp-4)] shadow-[var(--shadow-card)] sm:p-[var(--sp-5)]"
                   aria-labelledby="event-sponsors-heading"
                 >
                   <p className="type-overline text-[var(--text-muted)]">Partners</p>
@@ -1201,7 +1203,11 @@ export default function EventSlugPage() {
 
       <div
         className="fixed inset-x-0 bottom-0 z-[60] border-t border-[var(--border)] bg-[var(--bg-card)]/95 px-4 pt-3 shadow-[0_-12px_40px_rgba(0,0,0,0.10)] backdrop-blur-xl lg:hidden"
-        style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}
+        style={{
+          paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))',
+          paddingLeft: 'calc(1rem + env(safe-area-inset-left, 0px))',
+          paddingRight: 'calc(1rem + env(safe-area-inset-right, 0px))',
+        }}
       >
         <div className="mx-auto max-w-2xl">
           {isCompleted ? (

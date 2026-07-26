@@ -17,7 +17,7 @@ const ZIM_CITIES = [
   { name: 'Chinhoyi',   emoji: '💎',  grad: 'linear-gradient(135deg, #00D2FF, #3A7BD5)',  tagline: 'Chinhoyi Caves' },
   { name: 'Marondera',  emoji: '🍊',  grad: 'linear-gradient(135deg, #F7971E, #FFD200)',  tagline: 'Orchard Country' },
   { name: 'Kadoma',     emoji: '⛏️', grad: 'linear-gradient(135deg, #C471ED, #12CBC4)',  tagline: 'Golden City' },
-  { name: 'Shamva',     emoji: '🌿',  grad: 'linear-gradient(135deg, #11998E, #38EF7D)',  tagline: 'Heart of Mashonaland' },
+  { name: 'Mashonaland Central',     emoji: '🌿',  grad: 'linear-gradient(135deg, #11998E, #38EF7D)',  tagline: 'Heart of Mashonaland' },
   { name: 'Bindura',    emoji: '🍃',  grad: 'linear-gradient(135deg, #5C258D, #4389A2)',  tagline: 'Nickel City' },
   { name: 'Kwekwe',     emoji: '🔩',  grad: 'linear-gradient(135deg, #E44D26, #F16529)',  tagline: 'Steel Town' },
   { name: 'Victoria Falls', emoji: '🌊', grad: 'linear-gradient(135deg, #667EEA, #764BA2)', tagline: 'Smoke That Thunders' },

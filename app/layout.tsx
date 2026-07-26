@@ -44,12 +44,17 @@ export const metadata: Metadata = {
     description: 'The premier event discovery platform.',
     type: 'website',
   },
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    viewportFit: 'cover',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} ${spaceGrotesk.variable} ${raleway.variable} relative overflow-x-hidden`}>
+      <body className={`${inter.variable} ${spaceGrotesk.variable} ${raleway.variable} relative`}>
         <AuthProvider>
           <StripeBackground />
           <Navbar />

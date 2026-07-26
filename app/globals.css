@@ -163,6 +163,7 @@ html {
   scroll-behavior: smooth;
   text-rendering: optimizeLegibility;
   -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
@@ -172,7 +173,6 @@ body {
   font-weight: var(--fw-body);        /* 400 */
   background: var(--bg);
   color: var(--text);
-  overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   transition: background 0.3s ease, color 0.3s ease;
@@ -679,11 +679,32 @@ h5, h6 {
   .section-pad-xs { padding-block: var(--sp-5); } /* 32px */
 }
 
-/* Bottom nav clearance — add to page wrapper when bottom nav is present */
-.pb-nav { padding-bottom: 96px; }
-
 /* Nav offset */
 .page-offset { padding-top: var(--nav-h); }
+
+/* ═══════════════════════════════════════════════
+   MOBILE BOTTOM NAV & ACTION BAR CLEARANCE
+   Use on any page wrapper that has a fixed bottom element on mobile
+   to prevent it from covering the last piece of content.
+═══════════════════════════════════════════════ */
+
+/* For the main MobileBottomNav (height ~64px) */
+.pb-nav {
+  padding-bottom: calc(64px + 16px + env(safe-area-inset-bottom, 16px)); /* 80px + safe area */
+}
+
+/* For the taller Event Details "Choose Tickets" bar (height ~72px) */
+.pb-action-bar {
+  padding-bottom: calc(72px + 24px + env(safe-area-inset-bottom, 24px)); /* 96px + safe area */
+}
+
+/* Disable these clearances on desktop where the bars are hidden */
+@media (min-width: 768px) {
+  .pb-nav,
+  .pb-action-bar {
+    padding-bottom: 0;
+  }
+}
 
 /* Category pill scroll-snap container */
 .pill-scroll {
@@ -762,18 +783,26 @@ h5, h6 {
 .card-hover:hover { transform: translateY(-6px); box-shadow: var(--shadow-hover); }
 
 /* ═══════════════════════════════════════════════
-   MOBILE BOTTOM NAV CLEARANCE
-   64px nav height + safe-area-inset-bottom (notch support)
-   Use pb-nav on any page that has a scrollable content area
-   on mobile to prevent the fixed bottom nav from covering content.
+   MOBILE BOTTOM NAV & ACTION BAR CLEARANCE
+   Use on any page wrapper that has a fixed bottom element on mobile
+   to prevent it from covering the last piece of content.
 ═══════════════════════════════════════════════ */
+
+/* For the main MobileBottomNav (height ~64px) */
 .pb-nav {
-  padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(64px + 16px + env(safe-area-inset-bottom, 16px)); /* 80px + safe area */
 }
 
-/* Only apply on mobile (nav is md:hidden) */
+/* For the taller Event Details "Choose Tickets" bar (height ~72px) */
+.pb-action-bar {
+  padding-bottom: calc(72px + 24px + env(safe-area-inset-bottom, 24px)); /* 96px + safe area */
+}
+
+/* Disable these clearances on desktop where the bars are hidden */
 @media (min-width: 768px) {
-  .pb-nav {
+  .pb-nav,
+  .pb-action-bar {
     padding-bottom: 0;
   }
 }
+
