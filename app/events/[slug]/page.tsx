@@ -404,7 +404,7 @@ function BookingPanel({
         </div>
       ) : (
         <>
-          <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-[var(--sp-3)]">
+          <div className="event-details-grid">
             <div className="rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--bg-secondary)] p-[var(--sp-3)]">
               <p className="type-overline text-[var(--text-muted)]">Price</p>
               <p className="mt-1 font-black text-[var(--text)]">{priceLabel}</p>
@@ -417,7 +417,7 @@ function BookingPanel({
                 {availabilityLabel}
               </p>
             </div>
-            <div className="col-span-2 rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--bg-secondary)] p-[var(--sp-3)]">
+            <div className="rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--bg-secondary)] p-[var(--sp-3)]" style={{ gridColumn: '1 / -1' }}>
               <p className="type-overline text-[var(--text-muted)]">When</p>
               <p className="mt-1 text-sm font-semibold text-[var(--text)]">
                 {dateTimeRange}

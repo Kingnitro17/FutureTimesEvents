@@ -129,29 +129,6 @@
   --radius-2xl: var(--r-2xl);
 }
 
-/* ── DARK MODE ── */
-.dark {
-  --bg:           #08080f;
-  --bg-secondary: #0e0e1b;
-  --bg-tertiary:  #131324;
-  --bg-card:      rgba(255,255,255,0.038);
-  --bg-city-oval: var(--bg);
-  --bg-glass:     rgba(255,255,255,0.048);
-  --text:         #f0f0fa;
-  --text-secondary:#c0c0d5;
-  --text-muted:   #86869e;
-  --border:       rgba(255,255,255,0.07);
-  --border-hover: rgba(155,94,255,0.38);
-  --shadow-sm:    0 2px 8px rgba(0,0,0,0.32);
-  --shadow:       0 8px 32px rgba(0,0,0,0.42);
-  --shadow-md:    0 12px 40px rgba(0,0,0,0.52);
-  --shadow-lg:    0 24px 64px rgba(0,0,0,0.56);
-  --shadow-card:  0 4px 24px rgba(0,0,0,0.28);
-  --shadow-hover: 0 16px 48px rgba(0,0,0,0.5), 0 4px 16px rgba(155,94,255,0.14);
-  --accent:       #9B5EFF;
-  --accent-light: #b580ff;
-  --accent-rgb:   155,94,255;
-}
 
 /* ═══════════════════════════════════════════════
    RESET & BASE
@@ -175,7 +152,6 @@ body {
   color: var(--text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  transition: background 0.3s ease, color 0.3s ease;
   max-inline-size: 100%;
 }
 
@@ -352,6 +328,13 @@ h5, h6 {
   position: relative;
   overflow: hidden;
   padding: var(--sp-4);
+  /* Layout safety — prevent overflow, allow children to shrink */
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  box-sizing: border-box;
 }
 .card:hover {
   border-color: var(--border-hover);
@@ -492,10 +475,6 @@ h5, h6 {
   background: linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.14) 50%,transparent 100%);
   background-size: 200% 100%;
   animation: shimmer 1.5s ease-in-out infinite;
-}
-.dark .skeleton::after {
-  background: linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.06) 50%,transparent 100%);
-  background-size: 200% 100%;
 }
 
 /* ═══════════════════════════════════════════════
@@ -682,28 +661,49 @@ h5, h6 {
 /* Nav offset */
 .page-offset { padding-top: var(--nav-h); }
 
+
 /* ═══════════════════════════════════════════════
-   MOBILE BOTTOM NAV & ACTION BAR CLEARANCE
-   Use on any page wrapper that has a fixed bottom element on mobile
-   to prevent it from covering the last piece of content.
+   OVERFLOW & CONTAINMENT SAFETY UTILITIES
 ═══════════════════════════════════════════════ */
-
-/* For the main MobileBottomNav (height ~64px) */
-.pb-nav {
-  padding-bottom: calc(64px + 16px + env(safe-area-inset-bottom, 16px)); /* 80px + safe area */
+/* Force images to never exceed their container */
+img {
+  max-width: 100%;
+  height: auto;
 }
 
-/* For the taller Event Details "Choose Tickets" bar (height ~72px) */
-.pb-action-bar {
-  padding-bottom: calc(72px + 24px + env(safe-area-inset-bottom, 24px)); /* 96px + safe area */
+/* Safe min-width for flex/grid children so they can shrink */
+.shrink-safe {
+  min-width: 0;
 }
 
-/* Disable these clearances on desktop where the bars are hidden */
-@media (min-width: 768px) {
-  .pb-nav,
-  .pb-action-bar {
-    padding-bottom: 0;
+/* Ensure grid children respect container width */
+@supports (display: grid) {
+  .grid {
+    min-width: 0;
   }
+}
+
+/* Safe overflow-wrap for all text-containing elements */
+.text-safe {
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+/* Prevent long unbroken strings from causing horizontal overflow */
+.card p,
+.card h1,
+.card h2,
+.card h3,
+.card h4,
+.card h5,
+.card h6,
+.card span:not(.badge),
+.card div:not(.skeleton) {
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
 }
 
 /* Category pill scroll-snap container */
@@ -804,5 +804,46 @@ h5, h6 {
   .pb-action-bar {
     padding-bottom: 0;
   }
+}
+
+/* ═══════════════════════════════════════════════
+   EVENT DETAILS PAGE — CARD CONTAINMENT
+   Ensure side-by-side price/availability cards don't overflow at 320px
+═══════════════════════════════════════════════ */
+
+/* Dynamic grid: two columns only when there's enough space */
+.event-details-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--sp-3, 16px);
+  width: 100%;
+  min-width: 0;
+}
+
+@media (min-width: 400px) {
+  .event-details-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Side-by-side cards — safe shrink behavior */
+.event-details-grid > * {
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
+
+/* Fixed bottom action bar safe area support */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.safe-left {
+  padding-left: env(safe-area-inset-left, 0px);
+}
+.safe-right {
+  padding-right: env(safe-area-inset-right, 0px);
 }
 

@@ -109,7 +109,7 @@ export default function EventsInCitySection({
             })}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 min-w-0">
             {shown.map((ev, idx) => (
               <EventbriteCard key={`${tab}-${ev.id}-${idx}`} event={ev} index={idx} />
             ))}
