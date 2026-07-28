@@ -6,8 +6,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/lib/auth-context';
 import { useEvents } from '@/lib/useEvents';
 import {
-  Bell, User, Settings, Ticket, Shield, Sun, Moon,
-  Search, Heart, Home, Map, Menu, X, LogOut, LogIn,
+  Bell, User, Settings, Ticket, Shield,
+  Search, Home, Map, Menu, X, LogOut, LogIn,
   Calendar, Compass, MapPin, UserPlus, ChevronDown, X as CloseIcon
 } from 'lucide-react';
 
@@ -47,39 +47,27 @@ const menuVariants = {
 };
 
 export default function Navbar() {
-  const [scrolled,     setScrolled]     = useState(false);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [scrolled,       setScrolled]       = useState(false);
+  const [dropdownOpen,   setDropdownOpen]   = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [dark,         setDark]         = useState(() => {
-    if (typeof window === 'undefined') return false;
-    const saved = localStorage.getItem('ed-theme');
-    if (saved === 'dark') return true;
-    if (saved === 'light') return false;
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
-  });
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery,    setSearchQuery]    = useState('');
+  const [searchOpen,     setSearchOpen]     = useState(false);
   const [selectedLocation, setSelectedLocation] = useState('Zimbabwe');
-  const [locationOpen, setLocationOpen] = useState(false);
-  const dropRef  = useRef<HTMLDivElement>(null);
-  const searchRef = useRef<HTMLDivElement>(null);
+  const [locationOpen,   setLocationOpen]   = useState(false);
+  const dropRef     = useRef<HTMLDivElement>(null);
+  const searchRef   = useRef<HTMLDivElement>(null);
   const locationRef = useRef<HTMLDivElement>(null);
-  const pathname = usePathname();
-  const router = useRouter();
+  const pathname    = usePathname();
+  const router      = useRouter();
   const { user, signOut, isOrganizer, isAdmin } = useAuth();
   const { events } = useEvents();
 
+  /* Remove any stale dark-mode class from previous sessions */
   useEffect(() => {
-    if (dark) {
-      document.documentElement.classList.add('dark');
-      document.documentElement.setAttribute('data-theme', 'dark');
-      localStorage.setItem('ed-theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      document.documentElement.setAttribute('data-theme', 'light');
-      localStorage.setItem('ed-theme', 'light');
-    }
-  }, [dark]);
+    document.documentElement.classList.remove('dark');
+    document.documentElement.removeAttribute('data-theme');
+    localStorage.removeItem('ed-theme');
+  }, []);
 
   /* ── Close dropdowns on outside click ── */
   useEffect(() => {
@@ -112,23 +100,20 @@ export default function Navbar() {
     router.push('/');
   };
 
-  /* ── Mounted state to prevent hydration mismatch ── */
+  const menuItems = isAdmin || isOrganizer 
+    ? [...DROPDOWN_ITEMS, ...ADMIN_ITEMS]
+    : DROPDOWN_ITEMS;
+
+  /* ── Mounted state (hydration guard) ── */
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     const timer = window.setTimeout(() => setMounted(true), 0);
     return () => window.clearTimeout(timer);
   }, []);
+  void mounted; // used by child components that may still reference it
 
-  /* ── Computed nav styles ── */
-  const navBg = mounted ? (dark 
-    ? 'bg-[#0a0a14] border-white/10 shadow-sm' 
-    : 'bg-white border-gray-200 shadow-sm') : 'bg-white border-gray-200 shadow-sm';
-  const textCol = mounted ? (dark ? 'text-white' : 'text-gray-900') : 'text-gray-900';
-  const iconBtnCls = mounted ? `w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 ${dark ? 'text-white hover:bg-white/10' : 'text-gray-700 hover:bg-gray-100'}` : 'w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 text-gray-700 hover:bg-gray-100';
-
-  const menuItems = isAdmin || isOrganizer 
-    ? [...DROPDOWN_ITEMS, ...ADMIN_ITEMS]
-    : DROPDOWN_ITEMS;
+  /* ── Static light-mode nav styles ── */
+  const navBg = 'bg-white border-gray-200 shadow-sm';
 
   return (
     <>
@@ -144,7 +129,7 @@ export default function Navbar() {
             <motion.div
               whileHover={{ scale: 1.05 }}
               transition={{ type: 'spring', stiffness: 400, damping: 14 }}
-              className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center overflow-hidden shrink-0 ${mounted ? (dark ? 'bg-transparent' : 'bg-black') : 'bg-black'}`}
+              className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center overflow-hidden shrink-0 bg-black"
             >
               <img
                 src="/assets/logo.png"
@@ -152,7 +137,7 @@ export default function Navbar() {
                 className="w-full h-full object-contain p-1"
               />
             </motion.div>
-            <span className={`tracking-tight transition-colors duration-300 ${textCol}`}>
+            <span className="tracking-tight text-gray-900">
               Future Times Events
             </span>
           </Link>
@@ -161,8 +146,8 @@ export default function Navbar() {
           <div className="hidden md:flex items-center gap-3 flex-1 max-w-2xl mx-8">
             {/* Search Input */}
             <div className="relative flex-1" ref={searchRef}>
-              <div className={`flex items-center gap-2 px-4 py-2.5 rounded-full border transition-all duration-200 ${mounted ? (dark ? 'bg-white/5 border-white/10 focus-within:bg-white/10 focus-within:border-white/20' : 'bg-gray-100 border-gray-200 focus-within:bg-white focus-within:border-gray-300') : 'bg-gray-100 border-gray-200 focus-within:bg-white focus-within:border-gray-300'}`}>
-                <Search size={18} className={mounted ? (dark ? 'text-gray-400' : 'text-gray-500') : 'text-gray-500'} />
+              <div className="flex items-center gap-2 px-4 py-2.5 rounded-full border border-gray-200 bg-gray-100 focus-within:bg-white focus-within:border-gray-300 transition-all duration-200">
+                <Search size={18} className="text-gray-500" />
                 <input
                   type="text"
                   placeholder="Search events, artists, venues..."
@@ -172,7 +157,7 @@ export default function Navbar() {
                     setSearchOpen(e.target.value.length > 0);
                   }}
                   onFocus={() => setSearchOpen(searchQuery.length > 0)}
-                  className={`flex-1 bg-transparent outline-none text-sm ${mounted ? (dark ? 'text-white placeholder-gray-500' : 'text-gray-900 placeholder-gray-400') : 'text-gray-900 placeholder-gray-400'}`}
+                  className="flex-1 bg-transparent outline-none text-sm text-gray-900 placeholder-gray-400"
                 />
                 {searchQuery && (
                   <button
@@ -180,9 +165,9 @@ export default function Navbar() {
                       setSearchQuery('');
                       setSearchOpen(false);
                     }}
-                    className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-white/20 transition-colors"
+                    className="p-1 rounded-full hover:bg-gray-200 transition-colors"
                   >
-                    <CloseIcon size={14} className={mounted ? (dark ? 'text-gray-400' : 'text-gray-500') : 'text-gray-500'} />
+                    <CloseIcon size={14} className="text-gray-500" />
                   </button>
                 )}
               </div>
@@ -195,7 +180,7 @@ export default function Navbar() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -8 }}
                     transition={{ duration: 0.15 }}
-                    className={`absolute top-full left-0 right-0 mt-2 rounded-2xl border shadow-xl overflow-hidden z-50 ${mounted ? (dark ? 'bg-[#1a1a2e] border-white/10' : 'bg-white border-gray-200') : 'bg-white border-gray-200'}`}
+                    className="absolute top-full left-0 right-0 mt-2 rounded-2xl border border-gray-200 bg-white shadow-xl overflow-hidden z-50"
                   >
                     <div className="p-2">
                       {searchSuggestions.map((ev) => (
@@ -206,14 +191,14 @@ export default function Navbar() {
                             setSearchQuery('');
                             setSearchOpen(false);
                           }}
-                          className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${mounted ? (dark ? 'hover:bg-white/10' : 'hover:bg-gray-100') : 'hover:bg-gray-100'}`}
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors hover:bg-gray-100"
                         >
                           <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
                             <img src={ev.image} alt={ev.title} className="w-full h-full object-cover" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className={`font-medium text-sm truncate ${mounted ? (dark ? 'text-white' : 'text-gray-900') : 'text-gray-900'}`}>{ev.title}</p>
-                            <p className={`text-xs truncate ${mounted ? (dark ? 'text-gray-400' : 'text-gray-500') : 'text-gray-500'}`}>{ev.venue} · {ev.date}</p>
+                            <p className="font-medium text-sm truncate text-gray-900">{ev.title}</p>
+                            <p className="text-xs truncate text-gray-500">{ev.venue} · {ev.date}</p>
                           </div>
                         </Link>
                       ))}
@@ -227,11 +212,11 @@ export default function Navbar() {
             <div className="relative" ref={locationRef}>
               <button
                 onClick={() => setLocationOpen(!locationOpen)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-full border transition-all duration-200 whitespace-nowrap ${mounted ? (dark ? 'bg-white/5 border-white/10 hover:bg-white/10' : 'bg-gray-100 border-gray-200 hover:bg-gray-200') : 'bg-gray-100 border-gray-200 hover:bg-gray-200'}`}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-full border border-gray-200 bg-gray-100 hover:bg-gray-200 transition-all duration-200 whitespace-nowrap"
               >
-                <MapPin size={16} className={mounted ? (dark ? 'text-gray-400' : 'text-gray-500') : 'text-gray-500'} />
-                <span className={`text-sm font-medium ${mounted ? (dark ? 'text-white' : 'text-gray-900') : 'text-gray-900'}`}>{selectedLocation}</span>
-                <ChevronDown size={14} className={mounted ? (dark ? 'text-gray-400' : 'text-gray-500') : 'text-gray-500'} />
+                <MapPin size={16} className="text-gray-500" />
+                <span className="text-sm font-medium text-gray-900">{selectedLocation}</span>
+                <ChevronDown size={14} className="text-gray-500" />
               </button>
 
               {/* Location Suggestions Dropdown */}
@@ -242,7 +227,7 @@ export default function Navbar() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -8 }}
                     transition={{ duration: 0.15 }}
-                    className={`absolute top-full left-0 mt-2 w-64 rounded-2xl border shadow-xl overflow-hidden z-50 ${mounted ? (dark ? 'bg-[#1a1a2e] border-white/10' : 'bg-white border-gray-200') : 'bg-white border-gray-200'}`}
+                    className="absolute top-full left-0 mt-2 w-64 rounded-2xl border border-gray-200 bg-white shadow-xl overflow-hidden z-50"
                   >
                     <div className="p-2">
                       {LOCATIONS.map((loc) => (
@@ -253,12 +238,12 @@ export default function Navbar() {
                             setLocationOpen(false);
                             router.push(`/events?city=${encodeURIComponent(loc.name)}`);
                           }}
-                          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors text-left ${mounted ? (dark ? 'hover:bg-white/10' : 'hover:bg-gray-100') : 'hover:bg-gray-100'}`}
+                          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors text-left hover:bg-gray-100"
                         >
                           <span className="text-xl">{loc.emoji}</span>
                           <div className="flex-1 min-w-0">
-                            <p className={`font-medium text-sm ${mounted ? (dark ? 'text-white' : 'text-gray-900') : 'text-gray-900'}`}>{loc.name}</p>
-                            <p className={`text-xs ${mounted ? (dark ? 'text-gray-400' : 'text-gray-500') : 'text-gray-500'}`}>{loc.country}</p>
+                            <p className="font-medium text-sm text-gray-900">{loc.name}</p>
+                            <p className="text-xs text-gray-500">{loc.country}</p>
                           </div>
                         </button>
                       ))}
@@ -272,8 +257,6 @@ export default function Navbar() {
           {/* ── RIGHT ACTIONS ── */}
           <div className="flex items-center gap-3">
             
-
-
             {/* Desktop Auth */}
             <div className="hidden md:flex items-center gap-4">
               {user ? (
@@ -283,7 +266,7 @@ export default function Navbar() {
                       whileHover={{ scale: 1.05 }} 
                       whileTap={{ scale: 0.95 }}
                       onClick={() => setDropdownOpen(v => !v)}
-                      className="flex items-center gap-2 px-3 py-2 rounded-full bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 transition-colors"
+                      className="flex items-center gap-2 px-3 py-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
                     >
                       <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold"
                         style={{ background: user.avatarColor || 'linear-gradient(135deg,#FF55C2,#7222E3)' }}>
@@ -293,7 +276,7 @@ export default function Navbar() {
                           user.initials || user.name.slice(0, 2).toUpperCase()
                         )}
                       </div>
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{user.name.split(' ')[0]}</span>
+                      <span className="text-sm font-medium text-gray-700">{user.name.split(' ')[0]}</span>
                     </motion.button>
 
                     <AnimatePresence>
@@ -332,21 +315,15 @@ export default function Navbar() {
                       )}
                     </AnimatePresence>
                   </div>
-                  <button onClick={() => setDark(!dark)} className={`transition-colors ${mounted ? (dark ? 'text-gray-500 hover:text-white' : 'text-gray-500 hover:text-gray-900') : 'text-gray-500 hover:text-gray-900'}`}>
-                    {mounted ? (dark ? <Sun size={18} /> : <Moon size={18} />) : <Moon size={18} />}
-                  </button>
                 </div>
               ) : (
                 <>
-                  <Link href="/login" className={`text-sm font-medium transition-colors ${mounted ? (dark ? 'text-gray-300 hover:text-white' : 'text-gray-700 hover:text-gray-900') : 'text-gray-700 hover:text-gray-900'}`}>
+                  <Link href="/login" className="text-sm font-medium transition-colors text-gray-700 hover:text-gray-900">
                     Sign in
                   </Link>
                   <Link href="/signup" className="px-5 py-2.5 rounded-full text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-[0_0_15px_rgba(37,99,235,0.4)]">
                     Sign up
                   </Link>
-                  <button onClick={() => setDark(!dark)} className={`transition-colors ${mounted ? (dark ? 'text-gray-500 hover:text-white' : 'text-gray-500 hover:text-gray-900') : 'text-gray-500 hover:text-gray-900'}`}>
-                    {mounted ? (dark ? <Sun size={18} /> : <Moon size={18} />) : <Moon size={18} />}
-                  </button>
                 </>
               )}
             </div>
@@ -354,7 +331,7 @@ export default function Navbar() {
             {/* Mobile Search Button */}
             <Link
               href="/events"
-              className={`md:hidden w-10 h-10 rounded-full flex items-center justify-center transition-colors ${mounted ? (dark ? 'bg-white/10 text-white' : 'bg-gray-100 text-gray-700') : 'bg-gray-100 text-gray-700'}`}
+              className="md:hidden w-10 h-10 rounded-full flex items-center justify-center transition-colors bg-gray-100 text-gray-700"
             >
               <Search size={20} />
             </Link>
@@ -365,7 +342,7 @@ export default function Navbar() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setMobileMenuOpen(v => !v)}
-                className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${mounted ? (dark ? 'bg-white/10 text-white' : 'bg-gray-100 text-gray-700') : 'bg-gray-100 text-gray-700'}`}
+                className="w-10 h-10 rounded-full flex items-center justify-center transition-colors bg-gray-100 text-gray-700"
               >
                 {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
               </motion.button>
@@ -520,47 +497,16 @@ export default function Navbar() {
                         ))}
                       </div>
 
-                      {/* ── SETTINGS CARD ── */}
-                      <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
-                        {/* Card header */}
-                        <div className="flex items-center gap-2.5 px-4 py-3.5" style={{ borderBottom: '1px solid var(--border)' }}>
-                          <Settings size={15} strokeWidth={2} style={{ color: 'var(--text-muted)' }} />
-                          <span className="font-semibold text-[13px] uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Settings</span>
-                        </div>
-
-                        {/* Dark mode row */}
-                        <button
-                          onClick={() => setDark(!dark)}
-                          className="w-full flex items-center justify-between px-4 transition-colors duration-150 hover:bg-white/5"
-                          style={{ minHeight: '52px' }}
-                        >
-                          <div className="flex items-center gap-3">
-                            {mounted
-                              ? (dark ? <Sun size={16} strokeWidth={2} style={{ color: 'var(--accent)' }} /> : <Moon size={16} strokeWidth={2} className="text-blue-500" />)
-                              : <Moon size={16} strokeWidth={2} className="text-blue-500" />}
-                            <span className="font-medium text-[15px]" style={{ color: 'var(--text)' }}>Dark Mode</span>
+                        {/* Settings Card — Settings header only, no dark mode row */}
+                        <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
+                          {/* Card header */}
+                          <div className="flex items-center gap-2.5 px-4 py-3.5" style={{ borderBottom: '1px solid var(--border)' }}>
+                            <Settings size={15} strokeWidth={2} style={{ color: 'var(--text-muted)' }} />
+                            <span className="font-semibold text-[13px] uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Settings</span>
                           </div>
-                          {/* Toggle pill */}
-                          <div
-                            className="relative flex-shrink-0 transition-colors duration-250"
-                            style={{
-                              width: 44, height: 24,
-                              borderRadius: 12,
-                              background: mounted && dark ? 'var(--accent)' : 'var(--bg-tertiary)',
-                              transition: 'background 0.2s ease',
-                            }}
-                          >
-                            <div
-                              className="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200"
-                              style={{ transform: mounted && dark ? 'translateX(20px)' : 'translateX(0)' }}
-                            />
-                          </div>
-                        </button>
 
-                        {/* Sign out row */}
-                        {user && (
-                          <>
-                            <div style={{ height: 1, background: 'var(--border)' }} />
+                          {/* Sign out row */}
+                          {user && (
                             <button
                               onClick={handleSignOut}
                               className="w-full flex items-center gap-3 px-4 text-red-400 hover:text-red-300 hover:bg-red-500/5 transition-colors duration-150"
@@ -569,9 +515,8 @@ export default function Navbar() {
                               <LogOut size={16} strokeWidth={2} />
                               <span className="font-medium text-[15px]">Sign Out</span>
                             </button>
-                          </>
-                        )}
-                      </div>
+                          )}
+                        </div>
 
                     </div>
                   </motion.div>

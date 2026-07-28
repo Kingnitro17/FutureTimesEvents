@@ -26,20 +26,23 @@
   /* Base scale */
   --base-size:  16px;
 
-  /* Body: 16px → 17px fluid */
-  --body-size:  clamp(1rem, 1rem + 0.2vw, 1.0625rem);
+  /* Body: 14px mobile → 16px desktop (prevents text inflation) */
+  --body-size:  clamp(0.875rem, 0.8rem + 0.5vw, 1rem);
 
-  /* H1: ~32px mobile → 45px desktop (Space Grotesk 700) */
-  --h1-size:    clamp(2rem, 3.5vw + 1.5rem, 2.8125rem);
+  /* H1: ~24px mobile → 40px desktop (Space Grotesk 700) */
+  --h1-size:    clamp(1.5rem, 3vw + 1rem, 2.5rem);
 
-  /* H2: ~22px mobile → 28px desktop (Raleway 600) */
-  --h2-size:    clamp(1.375rem, 2.2vw + 1rem, 1.75rem);
+  /* H2: ~18px mobile → 26px desktop (Raleway 600) */
+  --h2-size:    clamp(1.125rem, 1.8vw + 0.8rem, 1.625rem);
 
-  /* H3: ~20px mobile → 24px desktop */
-  --h3-size:    clamp(1.25rem, 1.5vw + 0.75rem, 1.5rem);
+  /* H3: ~16px mobile → 22px desktop */
+  --h3-size:    clamp(1rem, 1.2vw + 0.7rem, 1.375rem);
 
-  /* Caption / label: 14–16px */
-  --caption-size: clamp(0.875rem, 0.5vw + 0.75rem, 1rem);
+  /* Caption / label: 12–14px mobile */
+  --caption-size: clamp(0.75rem, 0.4vw + 0.65rem, 0.875rem);
+
+  /* App-wide background — single source of truth */
+  --app-bg: #f7f7fa;
 
   /* Weights */
   --fw-body:    400;
@@ -83,16 +86,16 @@
   /* ────────────────────────────────────────────────
      LIGHT MODE PALETTE
   ──────────────────────────────────────────────── */
-  --bg:           #ffffff;
-  --bg-secondary: #f7f7fa;
-  --bg-tertiary:  #efeff5;
-  --bg-card:      rgba(255,255,255,0.92);
+  --bg:           var(--app-bg);   /* unified app background */
+  --bg-secondary: #efeff5;
+  --bg-tertiary:  #e6e6ef;
+  --bg-card:      rgba(255,255,255,0.97);
   --bg-city-oval: var(--bg-card);
-  --bg-glass:     rgba(255,255,255,0.78);
+  --bg-glass:     rgba(255,255,255,0.82);
   --text:         #0a0a14;
   --text-secondary:#38384e;
   --text-muted:   #78788c;
-  --border:       rgba(0,0,0,0.07);
+  --border:       rgba(0,0,0,0.08);
   --border-hover: rgba(114,34,227,0.3);
 
   /* Shadows */
@@ -129,29 +132,8 @@
   --radius-2xl: var(--r-2xl);
 }
 
-/* ── DARK MODE ── */
-.dark {
-  --bg:           #08080f;
-  --bg-secondary: #0e0e1b;
-  --bg-tertiary:  #131324;
-  --bg-card:      rgba(255,255,255,0.038);
-  --bg-city-oval: var(--bg);
-  --bg-glass:     rgba(255,255,255,0.048);
-  --text:         #f0f0fa;
-  --text-secondary:#c0c0d5;
-  --text-muted:   #86869e;
-  --border:       rgba(255,255,255,0.07);
-  --border-hover: rgba(155,94,255,0.38);
-  --shadow-sm:    0 2px 8px rgba(0,0,0,0.32);
-  --shadow:       0 8px 32px rgba(0,0,0,0.42);
-  --shadow-md:    0 12px 40px rgba(0,0,0,0.52);
-  --shadow-lg:    0 24px 64px rgba(0,0,0,0.56);
-  --shadow-card:  0 4px 24px rgba(0,0,0,0.28);
-  --shadow-hover: 0 16px 48px rgba(0,0,0,0.5), 0 4px 16px rgba(155,94,255,0.14);
-  --accent:       #9B5EFF;
-  --accent-light: #b580ff;
-  --accent-rgb:   155,94,255;
-}
+/* Dark mode class is intentionally removed — app uses light theme only */
+/* color-scheme forces light rendering on all platforms */
 
 /* ═══════════════════════════════════════════════
    RESET & BASE
@@ -164,19 +146,21 @@ html {
   text-rendering: optimizeLegibility;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  color-scheme: light;
+  background: var(--app-bg);
 }
 
 body {
   font-family: var(--font-body);
-  font-size: var(--body-size);        /* clamp 16–17px */
+  font-size: var(--body-size);
   line-height: var(--lh-body);        /* 1.5 */
   font-weight: var(--fw-body);        /* 400 */
-  background: var(--bg);
+  background: var(--app-bg);
   color: var(--text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  transition: background 0.3s ease, color 0.3s ease;
   max-inline-size: 100%;
+  min-width: 320px;
 }
 
 /* ── Paragraph default: readable measure ── */
@@ -493,10 +477,7 @@ h5, h6 {
   background-size: 200% 100%;
   animation: shimmer 1.5s ease-in-out infinite;
 }
-.dark .skeleton::after {
-  background: linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.06) 50%,transparent 100%);
-  background-size: 200% 100%;
-}
+/* Dark skeleton variant removed — light theme only */
 
 /* ═══════════════════════════════════════════════
    ANIMATIONS
@@ -783,26 +764,27 @@ h5, h6 {
 .card-hover:hover { transform: translateY(-6px); box-shadow: var(--shadow-hover); }
 
 /* ═══════════════════════════════════════════════
-   MOBILE BOTTOM NAV & ACTION BAR CLEARANCE
-   Use on any page wrapper that has a fixed bottom element on mobile
-   to prevent it from covering the last piece of content.
+   GLOBAL OVERFLOW SAFETY
 ═══════════════════════════════════════════════ */
+/* Prevent any single element from causing horizontal scroll */
+.container, section, article, main {
+  max-width: 100%;
+}
 
-/* For the main MobileBottomNav (height ~64px) */
+/* Safe grid/flex columns — prevent text overflow in grid cells */
+.grid > * { min-width: 0; }
+.flex > * { min-width: 0; }
+
+/* ═══════════════════════════════════════════════
+   MOBILE BOTTOM CLEARANCE
+   Prevents fixed bottom bars from covering content
+═══════════════════════════════════════════════ */
 .pb-nav {
-  padding-bottom: calc(64px + 16px + env(safe-area-inset-bottom, 16px)); /* 80px + safe area */
+  padding-bottom: calc(64px + env(safe-area-inset-bottom, 16px));
 }
-
-/* For the taller Event Details "Choose Tickets" bar (height ~72px) */
 .pb-action-bar {
-  padding-bottom: calc(72px + 24px + env(safe-area-inset-bottom, 24px)); /* 96px + safe area */
+  padding-bottom: calc(80px + env(safe-area-inset-bottom, 24px));
 }
-
-/* Disable these clearances on desktop where the bars are hidden */
 @media (min-width: 768px) {
-  .pb-nav,
-  .pb-action-bar {
-    padding-bottom: 0;
-  }
+  .pb-nav, .pb-action-bar { padding-bottom: 0; }
 }
-
