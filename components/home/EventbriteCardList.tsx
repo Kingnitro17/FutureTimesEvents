@@ -29,7 +29,7 @@ export function EventbriteCardList({ event }: { event: Event }) {
   return (
     <Link
       href={`/events/${event.id}`}
-      className="group flex flex-row items-center gap-4 p-5 sm:p-6 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10 hover:border-gray-300 dark:hover:border-white/20 transition-all duration-300 relative"
+      className="group flex flex-row items-center gap-4 p-5 sm:p-6 rounded-2xl bg-gray-50 border border-gray-200 hover:bg-gray-100 hover:border-gray-300 transition-all duration-300 relative"
     >
       {/* Thumbnail */}
       <div className="relative w-[72px] h-[72px] rounded-xl overflow-hidden shrink-0">
@@ -85,7 +85,7 @@ export function EventbriteCardList({ event }: { event: Event }) {
           className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${
             liked 
               ? 'bg-red-500 text-white shadow-md' 
-              : 'bg-gray-200 dark:bg-white/10 text-gray-500 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-white/20'
+              : 'bg-gray-200 text-gray-500 hover:bg-gray-300'
           }`}
           aria-label={liked ? 'Unlike event' : 'Like event'}
         >

@@ -1,13 +1,13 @@
 import { ReactNode } from 'react';
 
 const CATEGORY_STYLES: Record<string, string> = {
-  music:    'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
-  tech:     'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
-  food:     'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
-  art:      'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300',
-  sports:   'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
-  wellness: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300',
-  family:   'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
+  music:    'bg-purple-100 text-purple-700',
+  tech:     'bg-blue-100 text-blue-700',
+  food:     'bg-orange-100 text-orange-700',
+  art:      'bg-pink-100 text-pink-700',
+  sports:   'bg-green-100 text-green-700',
+  wellness: 'bg-teal-100 text-teal-700',
+  family:   'bg-yellow-100 text-yellow-700',
 };
 
 interface BadgeProps {

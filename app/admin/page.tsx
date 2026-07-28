@@ -105,12 +105,12 @@ export default function AdminPage() {
                       </td>
                       <td className="px-4 py-3 text-xs text-[var(--text-muted)]">{u.email}</td>
                       <td className="px-4 py-3">
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${u.role === 'admin' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' : u.role === 'organizer' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'}`}>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${u.role === 'admin' ? 'bg-purple-100 text-purple-700' : u.role === 'organizer' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>
                           {u.role.toUpperCase()}
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${u.status === 'active' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'}`}>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${u.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
                           {u.status.toUpperCase()}
                         </span>
                       </td>
@@ -120,7 +120,7 @@ export default function AdminPage() {
                       <td className="px-4 py-3">
                         <div className="flex gap-1">
                           <button className="px-2 py-1 rounded-lg text-[10px] border border-[var(--border)] text-[var(--text-muted)] hover:border-blue-400 transition-all">Edit</button>
-                          <button className={`px-2 py-1 rounded-lg text-[10px] border transition-all ${u.status === 'active' ? 'border-red-200 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20' : 'border-green-200 text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20'}`}>
+                          <button className={`px-2 py-1 rounded-lg text-[10px] border transition-all ${u.status === 'active' ? 'border-red-200 text-red-400 hover:bg-red-50' : 'border-green-200 text-green-400 hover:bg-green-50'}`}>
                             {u.status === 'active' ? 'Ban' : 'Unban'}
                           </button>
                         </div>
@@ -148,9 +148,9 @@ export default function AdminPage() {
                   <p className="text-xs text-[var(--text-muted)] line-clamp-1">{ev.date} · {ev.venue} · {ev.attendees} attendees</p>
                 </div>
                 <div className="flex flex-wrap gap-2 shrink-0">
-                  <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">PUBLISHED</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-green-100 text-green-700">PUBLISHED</span>
                   <button className="px-3 py-1.5 rounded-lg text-xs border border-[var(--border)] text-[var(--text-muted)] hover:border-yellow-400 transition-all">⭐ Feature</button>
-                  <button className="px-3 py-1.5 rounded-lg text-xs border border-red-200 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all">🗑️ Remove</button>
+                  <button className="px-3 py-1.5 rounded-lg text-xs border border-red-200 text-red-400 hover:bg-red-50 transition-all">🗑️ Remove</button>
                 </div>
               </div>
             ))}
@@ -214,7 +214,7 @@ export default function AdminPage() {
                   <button key={String(label)} className="p-4 rounded-xl bg-[var(--bg-secondary)] text-left hover:bg-[var(--bg-card)] transition-colors group">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-lg">{icon}</span>
-                      <span className="font-medium text-sm text-[var(--text)] group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">{label}</span>
+                      <span className="font-medium text-sm text-[var(--text)] group-hover:text-purple-600 transition-colors">{label}</span>
                     </div>
                     <p className="text-xs text-[var(--text-muted)]">{desc}</p>
                   </button>
