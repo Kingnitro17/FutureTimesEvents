@@ -100,8 +100,11 @@ export default function AboutSection() {
           whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.15 }}
           transition={{ duration: 0.5, ease: 'easeOut' }}
-          className="relative mx-auto max-w-6xl overflow-hidden rounded-[var(--r-3xl)] border border-[var(--border)] bg-[var(--bg-card)] p-6 sm:p-10 lg:p-14 shadow-[var(--shadow-card)]"
-          style={{ boxSizing: 'border-box' }}
+          className="relative mx-auto max-w-6xl overflow-hidden rounded-[var(--r-3xl)] border border-[var(--border)] bg-[var(--bg-card)] shadow-[var(--shadow-card)]"
+          style={{
+            padding: 'clamp(1.25rem, 4vw, 2.5rem)',
+            boxSizing: 'border-box',
+          }}
         >
           {/* Subtle brand glow behind container */}
           <div
@@ -178,8 +181,12 @@ export default function AboutSection() {
                 return (
                   <div
                     key={card.id}
-                    className={`relative overflow-hidden rounded-[var(--r-2xl)] border ${card.borderColor} ${card.cardBg} p-6 sm:p-7 lg:p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-md`}
-                    style={{ boxSizing: 'border-box', minWidth: 0 }}
+                    className={`relative overflow-hidden rounded-[var(--r-2xl)] border ${card.borderColor} ${card.cardBg} transition-all duration-300 hover:-translate-y-1 hover:shadow-md`}
+                    style={{
+                      padding: 'clamp(1.25rem, 3.5vw, 1.75rem)',
+                      boxSizing: 'border-box',
+                      minWidth: 0,
+                    }}
                   >
                     {/* Decorative Number */}
                     <span
@@ -218,16 +225,26 @@ export default function AboutSection() {
             </div>
 
             {/* ── 4. PLATFORM PURPOSE STRIP (2-column on mobile, 4-column on desktop) ── */}
-            <div className="rounded-[var(--r-2xl)] border border-[var(--border)] bg-[var(--bg-secondary)]/50 p-4 sm:p-6 backdrop-blur-sm">
+            <div
+              className="rounded-[var(--r-2xl)] border border-[var(--border)] bg-[var(--bg-secondary)]/50 backdrop-blur-sm"
+              style={{
+                padding: 'clamp(1rem, 3vw, 1.5rem)',
+                boxSizing: 'border-box',
+              }}
+            >
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-0 sm:divide-x divide-[var(--border)]">
                 {purposeSteps.map((step, idx) => {
                   const StepIcon = step.icon;
                   return (
                     <div
                       key={step.title}
-                      className={`flex flex-col items-center sm:items-start text-center sm:text-left p-3 sm:p-0 rounded-xl sm:rounded-none bg-[var(--bg-card)]/40 sm:bg-transparent border sm:border-0 border-[var(--border)]/60 ${
+                      className={`flex flex-col items-center sm:items-start text-center sm:text-left rounded-xl sm:rounded-none bg-[var(--bg-card)]/40 sm:bg-transparent border sm:border-0 border-[var(--border)]/60 ${
                         idx > 0 ? 'sm:pl-6' : ''
                       }`}
+                      style={{
+                        padding: 'clamp(0.875rem, 2.5vw, 1.25rem)',
+                        boxSizing: 'border-box',
+                      }}
                     >
                       <StepIcon
                         size={22}
