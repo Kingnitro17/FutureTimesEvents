@@ -48,7 +48,7 @@ export default function CategoryMarquee() {
           <div className="flex items-end justify-between gap-6 mb-6">
             <div className="max-w-[640px]">
               <p className="type-caption uppercase tracking-[0.15em] font-bold text-[var(--accent)] mb-2">Categories</p>
-              <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-[var(--text)] mb-4">
+              <h2 className="font-black tracking-tight text-[var(--text)] mb-4" style={{ fontSize: 'clamp(1.25rem, 3vw + 0.8rem, 2.25rem)' }}>
                 Browse by <span style={{ background: 'linear-gradient(135deg,#FF55C2,#7222E3)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>vibe</span>
               </h2>
             </div>

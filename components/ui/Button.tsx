@@ -34,7 +34,7 @@ const VARIANT_STYLES: Record<Variant, string> = {
   primary:  'bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text)] hover:border-[var(--border-hover)]',
   ghost:    'bg-transparent border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text)] hover:border-[var(--border-hover)]',
   outline:  'bg-transparent border-2 border-[var(--accent)] text-[var(--accent)]',
-  danger:   'bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-500',
+  danger:   'bg-red-50 border border-red-200 text-red-500 hover:bg-red-100',
   gradient: '',
 };
 

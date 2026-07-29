@@ -78,7 +78,12 @@ export function useEvents() {
       .order('date', { ascending: true });
 
     if (err) {
-      setError(err.message);
+      const msg = err.message || '';
+      const friendlyError =
+        msg.includes('permission denied') || msg.includes('profiles')
+          ? 'Events could not be loaded. Please refresh the page or try again shortly.'
+          : 'Could not load events. Please check your connection.';
+      setError(friendlyError);
       setEvents([]);
     } else {
       setEvents((data as DbEvent[]).map(mapDbEvent));

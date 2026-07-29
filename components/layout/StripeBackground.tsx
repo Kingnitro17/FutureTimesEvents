@@ -76,7 +76,7 @@ export default function StripeBackground() {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 z-[-1] pointer-events-none opacity-60 dark:opacity-40"
+      className="fixed inset-0 z-[-1] pointer-events-none opacity-50"
       style={{
         filter: 'blur(60px) saturate(150%)',
         transform: 'translate3d(0,0,0)'

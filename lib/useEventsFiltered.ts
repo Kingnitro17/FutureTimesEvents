@@ -100,7 +100,15 @@ export function useEventsFiltered(
     const { data, error: err } = await query;
 
     if (err) {
-      setError(err.message);
+      // Translate raw Supabase/PostgreSQL errors into user-friendly messages
+      const msg = err.message || '';
+      const friendlyError =
+        msg.includes('permission denied') || msg.includes('profiles')
+          ? 'Events could not be loaded. Please refresh the page or try again shortly.'
+          : msg.includes('JWT') || msg.includes('auth')
+          ? 'Session expired. Please refresh the page.'
+          : 'Could not load events. Please check your connection and try again.';
+      setError(friendlyError);
       setEvents([]);
       setDistances({});
     } else {

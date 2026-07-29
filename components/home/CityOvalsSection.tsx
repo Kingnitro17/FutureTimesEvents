@@ -6,25 +6,27 @@ import Image from 'next/image';
 import { motion } from 'framer-motion';
 
 // ─── Dataset ──────────────────────────────────────────────────────────────────
+// subtitle field removed — taglines (Corn-Belt, Sunshine City, City of Kings etc.)
+// are no longer shown in oval cards per production spec.
 const CITIES = [
-  { name: 'Mashonaland Central', subtitle: 'The Corn-Belt of Zimbabwe', status: '1 event',     emoji: '🌿',  image: '/cities/Shamva.jpeg' },
-  { name: 'Harare',         subtitle: 'The Sunshine City',      status: 'Coming soon', emoji: '🏙️', image: '/cities/Harare.jpg' },
-  { name: 'Bulawayo',       subtitle: 'City of Kings',          status: 'Coming soon', emoji: '🦏',  image: '/cities/Bulawayo.jpg' },
-  { name: 'Mutare',         subtitle: 'Gateway to the East',    status: 'Coming soon', emoji: '⛰️', image: '/cities/Mutare.jpeg' },
-  { name: 'Gweru',          subtitle: 'Heart of Midlands',      status: 'Coming soon', emoji: '🌾',  image: '/cities/Gweru.jpeg' },
-  { name: 'Bindura',        subtitle: 'Nickel City',            status: 'Coming soon', emoji: '🍃',  image: '/cities/Bindura.jpeg' },
-  { name: 'Victoria Falls', subtitle: 'Smoke That Thunders',    status: 'Coming soon', emoji: '🌊',  image: '/cities/Victoria_falls.jpg' },
-  { name: 'Chinhoyi',       subtitle: 'Chinhoyi Caves',         status: 'Coming soon', emoji: '💎',  image: '/cities/Chinhoyi.jpeg' },
-  { name: 'Marondera',      subtitle: 'Orchard Country',        status: 'Coming soon', emoji: '🍊',  image: '/cities/Marondera.jpeg' },
-  { name: 'Kadoma',         subtitle: 'Golden City',            status: 'Coming soon', emoji: '⛏️', image: '/cities/Kadoma.jpeg' },
-  { name: 'Kwekwe',         subtitle: 'Steel Town',             status: 'Coming soon', emoji: '🔩',  image: '/cities/Kwekwe.jpg' },
-  { name: 'Kariba',         subtitle: 'Lake Kariba',            status: 'Coming soon', emoji: '🐊',  image: '/cities/Kariba.jpeg' },
-  { name: 'Masvingo',       subtitle: 'Great Zimbabwe',         status: 'Coming soon', emoji: '🏛️', image: '/cities/Masvingo.jpg' },
-  { name: 'Zvishavane',     subtitle: 'Platinum Province',      status: 'Coming soon', emoji: '💠',  image: '/cities/Zvishavane.jpg' },
-  { name: 'Chegutu',        subtitle: 'Cotton Capital',         status: 'Coming soon', emoji: '🌻',  image: '/cities/Chegutu.jpg' },
-  { name: 'Chitungwiza',    subtitle: 'Chi-Town',               status: 'Coming soon', emoji: '🏘️', image: '/cities/Chitungwiza.webp' },
-  { name: 'Glendale',       subtitle: 'Mazowe Valley',          status: 'Coming soon', emoji: '🌄',  image: '/cities/Glandale.png' },
-  { name: 'Mazowe',         subtitle: 'Mazowe Valley',          status: 'Coming soon', emoji: '🍊',  image: '/cities/Mazowe.jpeg' },
+  { name: 'Mashonaland Central', status: '1 event',     emoji: '🌿',  image: '/cities/Shamva.jpeg' },
+  { name: 'Harare',              status: 'Coming soon', emoji: '🏙️', image: '/cities/Harare.jpg' },
+  { name: 'Bulawayo',            status: 'Coming soon', emoji: '🦏',  image: '/cities/Bulawayo.jpg' },
+  { name: 'Mutare',              status: 'Coming soon', emoji: '⛰️', image: '/cities/Mutare.jpeg' },
+  { name: 'Gweru',               status: 'Coming soon', emoji: '🌾',  image: '/cities/Gweru.jpeg' },
+  { name: 'Bindura',             status: 'Coming soon', emoji: '🍃',  image: '/cities/Bindura.jpeg' },
+  { name: 'Victoria Falls',      status: 'Coming soon', emoji: '🌊',  image: '/cities/Victoria_falls.jpg' },
+  { name: 'Chinhoyi',            status: 'Coming soon', emoji: '💎',  image: '/cities/Chinhoyi.jpeg' },
+  { name: 'Marondera',           status: 'Coming soon', emoji: '🍊',  image: '/cities/Marondera.jpeg' },
+  { name: 'Kadoma',              status: 'Coming soon', emoji: '⛏️', image: '/cities/Kadoma.jpeg' },
+  { name: 'Kwekwe',              status: 'Coming soon', emoji: '🔩',  image: '/cities/Kwekwe.jpg' },
+  { name: 'Kariba',              status: 'Coming soon', emoji: '🐊',  image: '/cities/Kariba.jpeg' },
+  { name: 'Masvingo',            status: 'Coming soon', emoji: '🏛️', image: '/cities/Masvingo.jpg' },
+  { name: 'Zvishavane',          status: 'Coming soon', emoji: '💠',  image: '/cities/Zvishavane.jpg' },
+  { name: 'Chegutu',             status: 'Coming soon', emoji: '🌻',  image: '/cities/Chegutu.jpg' },
+  { name: 'Chitungwiza',         status: 'Coming soon', emoji: '🏘️', image: '/cities/Chitungwiza.webp' },
+  { name: 'Glendale',            status: 'Coming soon', emoji: '🌄',  image: '/cities/Glandale.png' },
+  { name: 'Mazowe',              status: 'Coming soon', emoji: '🍊',  image: '/cities/Mazowe.jpeg' },
 ];
 
 // ─── Single card ──────────────────────────────────────────────────────────────
@@ -39,58 +41,64 @@ function CityCard({ city, index }: { city: typeof CITIES[0]; index: number }) {
     >
       <Link
         href={`/events?city=${encodeURIComponent(city.name)}`}
-        className="block focus:outline-none"
+        className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded-full"
         tabIndex={0}
+        aria-label={`Explore events in ${city.name} — ${city.status}`}
       >
-        {/* Outer oval wrapper — clips everything to pill shape */}
+        {/* Outer oval — clips everything to pill shape */}
         <div
-          className="relative overflow-hidden transition-shadow duration-300 ease-out shadow-[0_8px_24px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_24px_rgba(0,0,0,0.4)] border border-gray-100 dark:border-white/5 hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] dark:hover:shadow-[0_12px_40px_rgba(0,0,0,0.6)] rounded-full w-[140px] h-[224px] sm:w-[190px] sm:h-[280px]"
+          className="relative overflow-hidden transition-all duration-300 ease-out
+            shadow-[0_8px_24px_rgba(0,0,0,0.10)]
+            hover:shadow-[0_16px_40px_rgba(0,0,0,0.18)]
+            hover:scale-[1.03]
+            border border-white/20
+            rounded-full
+            w-[136px] h-[218px] sm:w-[180px] sm:h-[272px]"
         >
-          {/* ── Full-cover background image ── */}
+          {/* Full-cover background image */}
           <Image
             src={city.image}
             alt={city.name}
             fill
-            sizes="190px"
-            className="object-cover"
+            sizes="(max-width: 640px) 136px, 180px"
+            className="object-cover object-center"
             priority={index < 4}
             draggable={false}
           />
 
-          {/* ── TravelPerk-style Floating Bottom Box ── */}
+          {/* Dark gradient overlay — bottom two-thirds */}
           <div
-            className="absolute inset-x-3 bottom-3 z-20 dark:bg-[#111] flex flex-col items-center rounded-t-[28px] rounded-b-[9999px]"
-            style={{ height: '48%', backgroundColor: 'var(--bg-city-oval)' }}
-          >
-            {/* Overlapping top badge */}
-            <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-30">
-              <div className="bg-[var(--accent)] text-white text-xs font-bold px-5 py-2 rounded-full uppercase tracking-widest shadow-md whitespace-nowrap flex items-center gap-1.5">
-                <span className="text-sm">{city.emoji}</span>
-                <span>Explore</span>
-              </div>
+            className="absolute inset-0"
+            style={{
+              background: 'linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.35) 52%, transparent 100%)',
+            }}
+          />
+
+          {/* Explore badge — top badge */}
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20">
+            <div
+              className="text-white text-[10px] sm:text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-widest shadow-md whitespace-nowrap flex items-center gap-1"
+              style={{ background: 'var(--accent)' }}
+            >
+              <span className="text-sm" aria-hidden="true">{city.emoji}</span>
+              <span>Explore</span>
             </div>
+          </div>
 
-            {/* Inner Content Padding */}
-            <div className="flex flex-col items-center justify-between w-full h-full pt-6 pb-6 px-3 text-center">
-              
-              <div className="flex flex-col items-center">
-                {/* City name (First, Bigger) */}
-                <p className="font-extrabold text-xl dark:text-white leading-tight truncate w-full mt-2 mb-1" style={{ color: 'var(--text)' }}>
-                  {city.name}
-                </p>
-
-                {/* Event count (Second, Bigger) */}
-                <p className="font-bold text-sm text-[var(--accent)] uppercase tracking-wider mb-2">
-                  {city.status}
-                </p>
-
-                {/* Subtitle */}
-                <p className="text-xs dark:text-gray-400 leading-snug w-full line-clamp-2 px-1" style={{ color: 'var(--text-muted)' }}>
-                  {city.subtitle}
-                </p>
-              </div>
-
-            </div>
+          {/* Bottom text — directly on the image gradient */}
+          <div className="absolute inset-x-0 bottom-0 z-10 flex flex-col items-center text-center px-3 pb-5">
+            <p
+              className="font-extrabold leading-tight text-white w-full"
+              style={{ fontSize: 'clamp(0.75rem, 2vw + 0.5rem, 0.9375rem)', wordBreak: 'break-word' }}
+            >
+              {city.name}
+            </p>
+            <p
+              className="font-semibold uppercase tracking-wider mt-1"
+              style={{ fontSize: '0.625rem', color: 'rgba(255,255,255,0.75)' }}
+            >
+              {city.status}
+            </p>
           </div>
         </div>
       </Link>
@@ -109,32 +117,34 @@ export default function CityOvalsSection() {
   ];
 
   return (
-    <section className="relative py-12 sm:py-16" style={{ background: 'var(--bg)' }}>
+    <section className="relative py-12 sm:py-16">
       <div className="container">
-
-        {/* ── Header (Centered) ── */}
+        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-          className="flex flex-col items-center text-center mb-6 sm:mb-8"
+          className="flex flex-col items-center text-center mb-8 sm:mb-10"
         >
-          <span className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-3 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-gray-400" />
+          <span className="type-overline text-[var(--text-muted)] mb-3 flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--accent)' }} aria-hidden="true" />
             Top Destinations
           </span>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-gray-900 dark:text-white max-w-2xl leading-tight tracking-tight mb-4 mx-auto">
-            Explore Zimbabwe’s Most Loved Places.
+          <h2
+            className="font-display font-extrabold text-[var(--text)] max-w-xl leading-tight tracking-tight mb-3 mx-auto"
+            style={{ fontSize: 'clamp(1.25rem, 2.5vw + 0.8rem, 2rem)' }}
+          >
+            Explore Zimbabwe&apos;s Most Loved Places
           </h2>
-          <p className="text-base text-gray-500 max-w-md mx-auto">
-            Tap a city to discover what’s happening near you.
+          <p className="text-sm text-[var(--text-muted)] max-w-xs mx-auto leading-relaxed">
+            Tap a city to discover what&apos;s happening near you.
           </p>
         </motion.div>
       </div>
 
-      {/* ── Scroll rail — full-bleed with container-padded start ── */}
-      <div className="relative mt-4 sm:mt-6">
+      {/* Scroll rail — full-bleed */}
+      <div className="relative mt-2">
         {/* Left fade */}
         <div
           className="absolute inset-y-0 left-0 w-10 sm:w-16 z-10 pointer-events-none"
@@ -148,10 +158,10 @@ export default function CityOvalsSection() {
 
         <div
           ref={scrollRef}
-          className="flex gap-5 sm:gap-6 overflow-x-auto scrollbar-hide cursor-grab active:cursor-grabbing"
+          className="flex gap-4 sm:gap-5 overflow-x-auto scrollbar-hide cursor-grab active:cursor-grabbing"
           style={{
             paddingInline: 'max(1rem, calc((100vw - 1280px) / 2 + 1rem))',
-            paddingBlock: '8px',
+            paddingBlock: '12px',
           }}
           onMouseDown={(e) => {
             const slider = e.currentTarget;

@@ -318,9 +318,9 @@ export default function TicketClaimForm({
 
   if (event.status === 'cancelled') {
     return (
-      <div className="rounded-[var(--r-xl)] border border-red-200 bg-red-50 p-6 text-center dark:border-red-800 dark:bg-red-900/20">
+      <div className="rounded-[var(--r-xl)] border border-red-200 bg-red-50 p-6 text-center">
         <AlertCircle className="mx-auto mb-2 text-red-500" size={28} aria-hidden="true" />
-        <p className="font-bold text-red-700 dark:text-red-400">
+        <p className="font-bold text-red-700">
           This event has been cancelled.
         </p>
       </div>
@@ -390,10 +390,10 @@ export default function TicketClaimForm({
 
           {isSoldOut && (
             <div
-              className="rounded-[var(--r-lg)] border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/20"
+              className="rounded-[var(--r-lg)] border border-red-200 bg-red-50 p-4"
               role="status"
             >
-              <p className="text-sm font-bold text-red-700 dark:text-red-400">
+              <p className="text-sm font-bold text-red-700">
                 No tickets are currently available.
               </p>
             </div>
@@ -653,10 +653,10 @@ export default function TicketClaimForm({
 
           {serverError && (
             <div
-              className="rounded-[var(--r-lg)] border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-900/20"
+              className="rounded-[var(--r-lg)] border border-red-200 bg-red-50 p-3"
               role="alert"
             >
-              <p className="text-sm text-red-700 dark:text-red-400">{serverError}</p>
+              <p className="text-sm text-red-700">{serverError}</p>
             </div>
           )}
 
@@ -744,10 +744,10 @@ export default function TicketClaimForm({
 
           {serverError && (
             <div
-              className="rounded-[var(--r-lg)] border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-900/20"
+              className="rounded-[var(--r-lg)] border border-red-200 bg-red-50 p-3"
               role="alert"
             >
-              <p className="text-sm text-red-700 dark:text-red-400">{serverError}</p>
+              <p className="text-sm text-red-700">{serverError}</p>
             </div>
           )}
 

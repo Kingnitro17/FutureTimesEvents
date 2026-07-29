@@ -828,7 +828,10 @@ export default function EventSlugPage() {
                     <span className="badge badge-error">No tickets available</span>
                   )}
                 </div>
-                <h1 className="text-3xl font-bold leading-tight text-[var(--text)] sm:text-4xl lg:text-5xl">
+                <h1
+                  className="font-bold leading-tight text-[var(--text)]"
+                  style={{ fontSize: 'clamp(1.375rem, 3.5vw + 0.9rem, 3rem)' }}
+                >
                   {event.title}
                 </h1>
                 {event.subtitle && (
@@ -838,7 +841,7 @@ export default function EventSlugPage() {
                 )}
               </div>
 
-              <div className="flex items-center gap-3 rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)] p-[var(--sp-3)] sm:min-w-64">
+              <div className="flex items-center gap-3 rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)] p-[var(--sp-3)] min-w-0">
                 <div
                   className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
                   style={{ background: gradient }}

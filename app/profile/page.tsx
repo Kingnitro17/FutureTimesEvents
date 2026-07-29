@@ -110,7 +110,7 @@ export default function ProfilePage() {
               <div className="relative shrink-0">
                 <motion.div
                   whileHover={{ scale: 1.02 }}
-                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl border-4 border-white dark:border-[var(--bg)] flex items-center justify-center shadow-lg overflow-hidden cursor-pointer group"
+                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl border-4 border-white flex items-center justify-center shadow-lg overflow-hidden cursor-pointer group"
                   style={{ background: avatar ? 'transparent' : 'linear-gradient(135deg,#FF55C2,#7222E3)' }}
                   onClick={handleAvatarClick}
                 >
@@ -234,7 +234,7 @@ export default function ProfilePage() {
               </div>
             ) : (user.badges ?? []).map((b, i) => (
               <motion.div key={b.id} {...fadeUp(i * 0.06)}
-                className={`card rounded-2xl p-5 text-center transition-all ${b.earned ? 'border-purple-200 dark:border-purple-800/50' : 'border-[var(--border)] opacity-50'}`}>
+                className={`card rounded-2xl p-5 text-center transition-all ${b.earned ? 'border-purple-200' : 'border-[var(--border)] opacity-50'}`}>
                 <div className={`text-3xl mb-3 ${!b.earned ? 'grayscale opacity-40' : ''}`}>{b.icon}</div>
                 <p className="text-sm font-semibold text-[var(--text)] mb-1">{b.name}</p>
                 <p className="type-caption text-[var(--text-muted)]">{b.description}</p>

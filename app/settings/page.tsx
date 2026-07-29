@@ -182,8 +182,8 @@ export default function SettingsPage() {
                   <div className="card rounded-2xl p-6 sm:p-8 border-red-500/20">
                     <h2 className="type-h3 text-red-500 mb-6 flex items-center gap-2"><AlertTriangle size={20} /> Danger Zone</h2>
                     
-                    <div className="p-5 rounded-xl border border-red-500/20 bg-red-50 dark:bg-red-900/10 mb-5">
-                      <h4 className="font-semibold text-red-600 dark:text-red-400 mb-1">Delete Account</h4>
+                    <div className="p-5 rounded-xl border border-red-500/20 bg-red-50 mb-5">
+                      <h4 className="font-semibold text-red-600 mb-1">Delete Account</h4>
                       <p className="text-sm text-red-500/80 mb-4">Once you delete your account, there is no going back. Please be certain.</p>
                       <button className="btn btn-sm btn-danger">Delete Account</button>
                     </div>
