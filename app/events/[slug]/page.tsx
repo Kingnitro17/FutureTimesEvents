@@ -169,6 +169,67 @@ function formatTimeValue(value?: string | null): string {
   }).format(parsed);
 }
 
+function renderFormattedEventDescription(text: string) {
+  if (!text) return null;
+
+  const lines = text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  const elements: React.ReactNode[] = [];
+  let bulletGroup: string[] = [];
+
+  const flushBullets = (keyPrefix: string) => {
+    if (bulletGroup.length > 0) {
+      elements.push(
+        <ul
+          key={`${keyPrefix}-ul`}
+          className="mt-2 mb-4 space-y-2 pl-5 list-disc text-sm sm:text-base leading-relaxed text-[var(--text-secondary)]"
+        >
+          {bulletGroup.map((bullet, idx) => (
+            <li key={`${keyPrefix}-li-${idx}`}>{bullet}</li>
+          ))}
+        </ul>,
+      );
+      bulletGroup = [];
+    }
+  };
+
+  lines.forEach((line, idx) => {
+    if (/^[-*•]\s+/.test(line)) {
+      bulletGroup.push(line.replace(/^[-*•]\s+/, ''));
+      return;
+    }
+
+    flushBullets(`bullets-${idx}`);
+
+    const boldHeadingMatch = line.match(/^\*\*(.+?)\*\*:?$/);
+    if (boldHeadingMatch) {
+      const headingText = boldHeadingMatch[1].trim();
+      elements.push(
+        <h3
+          key={`h3-${idx}`}
+          className="mt-5 mb-2 font-bold text-base sm:text-lg text-[var(--text)] tracking-tight"
+        >
+          {headingText}
+        </h3>,
+      );
+      return;
+    }
+
+    const cleanedLine = line.replace(/\*\*(.*?)\*\*/g, '$1');
+    elements.push(
+      <p
+        key={`p-${idx}`}
+        className="mt-3 text-sm sm:text-base leading-relaxed text-[var(--text-secondary)]"
+      >
+        {cleanedLine}
+      </p>,
+    );
+  });
+
+  flushBullets('final-bullets');
+
+  return <div className="space-y-1">{elements}</div>;
+}
+
 function normalizeTicketType(ticketType: ClaimableTicketType): ClaimableTicketType {
   return {
     ...ticketType,
@@ -814,7 +875,13 @@ export default function EventSlugPage() {
             <span className="sr-only" aria-live="polite">{shareStatus}</span>
           </div>
 
-          <header className="mt-4 rounded-[var(--r-3xl)] border border-[var(--border)] bg-[var(--bg-card)] p-[var(--sp-4)] shadow-[var(--shadow-card)] sm:mt-6 sm:p-[var(--sp-5)]">
+          <header
+            className="mt-4 rounded-[var(--r-3xl)] border border-[var(--border)] bg-[var(--bg-card)] shadow-[var(--shadow-card)] sm:mt-6"
+            style={{
+              padding: 'clamp(1.25rem, 4vw, 2.5rem)',
+              boxSizing: 'border-box',
+            }}
+          >
             <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
               <div className="min-w-0">
                 <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -835,15 +902,27 @@ export default function EventSlugPage() {
                   {event.title}
                 </h1>
                 {event.subtitle && (
-                  <p className="mt-4 max-w-3xl rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)] p-4 text-base leading-relaxed text-[var(--text-secondary)] sm:text-lg">
+                  <p
+                    className="mt-4 max-w-3xl rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)] text-base leading-relaxed text-[var(--text-secondary)] sm:text-lg"
+                    style={{
+                      padding: 'clamp(1rem, 2.8vw, 1.25rem)',
+                      boxSizing: 'border-box',
+                    }}
+                  >
                     {event.subtitle}
                   </p>
                 )}
               </div>
 
-              <div className="flex items-center gap-3 rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)] p-[var(--sp-3)] min-w-0">
+              <div
+                className="flex items-center gap-3.5 rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)] min-w-0"
+                style={{
+                  padding: 'clamp(0.875rem, 2.5vw, 1.25rem)',
+                  boxSizing: 'border-box',
+                }}
+              >
                 <div
-                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
+                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white shadow-sm"
                   style={{ background: gradient }}
                   aria-hidden="true"
                 >
@@ -877,16 +956,27 @@ export default function EventSlugPage() {
           <div className="mt-6 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-8">
             <div className="min-w-0 space-y-6">
               <section
-                className="rounded-[var(--r-3xl)] border border-[var(--border)] bg-[var(--bg-card)] p-[var(--sp-4)] shadow-[var(--shadow-card)] sm:p-[var(--sp-5)]"
+                className="rounded-[var(--r-3xl)] border border-[var(--border)] bg-[var(--bg-card)] shadow-[var(--shadow-card)]"
                 aria-labelledby="event-details-heading"
+                style={{
+                  padding: 'clamp(1.25rem, 4vw, 2.5rem)',
+                  boxSizing: 'border-box',
+                }}
               >
                 <p className="type-overline text-[var(--text-muted)]">Plan your visit</p>
                 <h2 id="event-details-heading" className="mt-1 text-2xl font-bold text-[var(--text)]">
                   Event details
                 </h2>
 
-                <dl className="mt-5 grid gap-[var(--sp-3)] sm:grid-cols-2">
-                  <div className="rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)] p-[var(--sp-3)]">
+                <dl className="mt-5 grid gap-4 sm:grid-cols-2">
+                  <div
+                    className="rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)]"
+                    style={{
+                      padding: 'clamp(1rem, 2.8vw, 1.375rem)',
+                      boxSizing: 'border-box',
+                      minWidth: 0,
+                    }}
+                  >
                     <dt className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
                       <CalendarDays size={16} aria-hidden="true" />
                       Date
@@ -895,7 +985,14 @@ export default function EventSlugPage() {
                       {formattedDate}
                     </dd>
                   </div>
-                  <div className="rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)] p-[var(--sp-3)]">
+                  <div
+                    className="rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)]"
+                    style={{
+                      padding: 'clamp(1rem, 2.8vw, 1.375rem)',
+                      boxSizing: 'border-box',
+                      minWidth: 0,
+                    }}
+                  >
                     <dt className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
                       <Clock3 size={16} aria-hidden="true" />
                       Time
@@ -910,7 +1007,14 @@ export default function EventSlugPage() {
                       {event.timezone}
                     </p>
                   </div>
-                  <div className="rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)] p-[var(--sp-3)] sm:col-span-2">
+                  <div
+                    className="rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)] sm:col-span-2"
+                    style={{
+                      padding: 'clamp(1rem, 2.8vw, 1.375rem)',
+                      boxSizing: 'border-box',
+                      minWidth: 0,
+                    }}
+                  >
                     <dt className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
                       <MapPin size={16} aria-hidden="true" />
                       Venue
@@ -919,7 +1023,7 @@ export default function EventSlugPage() {
                       {event.venue_name}
                     </dd>
                     {(event.address || event.city) && (
-                      <p className="mt-1 text-sm text-[var(--text-muted)]">
+                      <p className="mt-1.5 text-sm text-[var(--text-muted)] leading-relaxed">
                         {[event.address, event.city].filter(Boolean).join(', ')}
                       </p>
                     )}
@@ -935,7 +1039,14 @@ export default function EventSlugPage() {
                       </a>
                     )}
                   </div>
-                  <div className="rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)] p-[var(--sp-3)]">
+                  <div
+                    className="rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)]"
+                    style={{
+                      padding: 'clamp(1rem, 2.8vw, 1.375rem)',
+                      boxSizing: 'border-box',
+                      minWidth: 0,
+                    }}
+                  >
                     <dt className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
                       <Ticket size={16} aria-hidden="true" />
                       Tickets
@@ -949,7 +1060,14 @@ export default function EventSlugPage() {
                       </p>
                     )}
                   </div>
-                  <div className="rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)] p-[var(--sp-3)]">
+                  <div
+                    className="rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)]"
+                    style={{
+                      padding: 'clamp(1rem, 2.8vw, 1.375rem)',
+                      boxSizing: 'border-box',
+                      minWidth: 0,
+                    }}
+                  >
                     <dt className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
                       <Users size={16} aria-hidden="true" />
                       Attendance
@@ -985,23 +1103,40 @@ export default function EventSlugPage() {
               </div>
 
               <section
-                className="rounded-[var(--r-3xl)] border border-[var(--border)] bg-[var(--bg-card)] p-[var(--sp-4)] shadow-[var(--shadow-card)] sm:p-[var(--sp-5)]"
+                className="rounded-[var(--r-3xl)] border border-[var(--border)] bg-[var(--bg-card)] shadow-[var(--shadow-card)]"
                 aria-labelledby="about-event-heading"
+                style={{
+                  padding: 'clamp(1.25rem, 4vw, 2.5rem)',
+                  boxSizing: 'border-box',
+                }}
               >
                 <p className="type-overline text-[var(--text-muted)]">About</p>
                 <h2 id="about-event-heading" className="mt-1 text-2xl font-bold text-[var(--text)]">
                   About this event
                 </h2>
-                <p className="mt-4 whitespace-pre-line rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)] p-4 text-base leading-relaxed text-[var(--text-secondary)]">
-                  {event.long_description || event.description || 'More event details will be announced soon.'}
-                </p>
+                <div
+                  className="mt-4 rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)]"
+                  style={{
+                    padding: 'clamp(1rem, 3vw, 1.5rem)',
+                    boxSizing: 'border-box',
+                  }}
+                >
+                  {renderFormattedEventDescription(
+                    event.long_description || event.description || 'More event details will be announced soon.'
+                  )}
+                </div>
 
                 {goodToKnow.length > 0 && (
                   <dl className="mt-6 grid gap-4 sm:grid-cols-2">
                     {goodToKnow.map((item) => (
                       <div
                         key={item.label}
-                        className="rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)] p-4"
+                        className="rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)]"
+                        style={{
+                          padding: 'clamp(1rem, 2.8vw, 1.375rem)',
+                          boxSizing: 'border-box',
+                          minWidth: 0,
+                        }}
                       >
                         <dt className="type-overline text-[var(--text-muted)]">
                           {item.label}
@@ -1017,8 +1152,12 @@ export default function EventSlugPage() {
 
               {sortedSchedule.length > 0 && (
                 <section
-                  className="rounded-[var(--r-3xl)] border border-[var(--border)] bg-[var(--bg-card)] p-[var(--sp-4)] shadow-[var(--shadow-card)] sm:p-[var(--sp-5)]"
+                  className="rounded-[var(--r-3xl)] border border-[var(--border)] bg-[var(--bg-card)] shadow-[var(--shadow-card)]"
                   aria-labelledby="event-schedule-heading"
+                  style={{
+                    padding: 'clamp(1.25rem, 4vw, 2.5rem)',
+                    boxSizing: 'border-box',
+                  }}
                 >
                   <p className="type-overline text-[var(--text-muted)]">Programme</p>
                   <h2 id="event-schedule-heading" className="mt-1 text-2xl font-bold text-[var(--text)]">
@@ -1028,7 +1167,12 @@ export default function EventSlugPage() {
                     {sortedSchedule.map((item) => (
                       <li
                         key={item.id}
-                        className="grid grid-cols-[72px_minmax(0,1fr)] gap-4 rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)] p-4"
+                        className="grid grid-cols-[72px_minmax(0,1fr)] gap-4 rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)]"
+                        style={{
+                          padding: 'clamp(1rem, 2.8vw, 1.375rem)',
+                          boxSizing: 'border-box',
+                          minWidth: 0,
+                        }}
                       >
                         <time
                           dateTime={item.starts_at}
@@ -1063,13 +1207,18 @@ export default function EventSlugPage() {
                   className="overflow-hidden rounded-[var(--r-3xl)] border border-[var(--border)] bg-[var(--bg-card)] shadow-[var(--shadow-card)]"
                   aria-labelledby="event-location-heading"
                 >
-                  <div className="p-[var(--sp-4)] sm:p-[var(--sp-5)]">
+                  <div
+                    style={{
+                      padding: 'clamp(1.25rem, 4vw, 2.5rem)',
+                      boxSizing: 'border-box',
+                    }}
+                  >
                     <p className="type-overline text-[var(--text-muted)]">Location</p>
                     <h2 id="event-location-heading" className="mt-1 text-2xl font-bold text-[var(--text)]">
                       {event.venue_name}
                     </h2>
                     {(event.address || event.city) && (
-                      <p className="mt-3 text-[var(--text-secondary)]">
+                      <p className="mt-3 text-[var(--text-secondary)] leading-relaxed">
                         {[event.address, event.city].filter(Boolean).join(', ')}
                       </p>
                     )}

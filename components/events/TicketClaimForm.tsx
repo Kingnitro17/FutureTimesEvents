@@ -343,7 +343,11 @@ export default function TicketClaimForm({
     <div className="space-y-4">
       {step !== 'success' && (
         <ol
-          className="flex flex-wrap items-center gap-2 rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)] p-3 text-xs text-[var(--text-muted)]"
+          className="flex flex-wrap items-center gap-2 rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)] text-xs text-[var(--text-muted)]"
+          style={{
+            padding: 'clamp(0.875rem, 2.5vw, 1.125rem)',
+            boxSizing: 'border-box',
+          }}
           aria-label="Ticket reservation progress"
         >
           {(['select', 'details', 'confirm'] as const).map((progressStep, index) => {
@@ -380,10 +384,16 @@ export default function TicketClaimForm({
 
       {step === 'select' && (
         <div className="space-y-3">
-          <div className="rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)] p-4">
+          <div
+            className="rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)]"
+            style={{
+              padding: 'clamp(1rem, 2.8vw, 1.375rem)',
+              boxSizing: 'border-box',
+            }}
+          >
             <p className="type-overline text-[var(--text-muted)]">Reserve your spot</p>
             <h3 className="mt-1 font-bold text-[var(--text)]">Choose a ticket type</h3>
-            <p className="mt-1 text-sm text-[var(--text-muted)]">
+            <p className="mt-1 text-sm text-[var(--text-muted)] leading-relaxed">
               You can reserve up to 10 tickets, subject to availability and the ticket limit.
             </p>
           </div>
@@ -412,7 +422,12 @@ export default function TicketClaimForm({
                   setServerError(null);
                   setStep('details');
                 }}
-                className="w-full rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-card)] p-4 text-left transition hover:border-[var(--border-hover)] focus-visible:border-[var(--accent)]"
+                className="w-full rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-card)] text-left transition hover:border-[var(--border-hover)] focus-visible:border-[var(--accent)]"
+                style={{
+                  padding: 'clamp(1rem, 2.8vw, 1.375rem)',
+                  boxSizing: 'border-box',
+                  minWidth: 0,
+                }}
                 aria-label={`Select ${ticketType.name}, ${formatPrice(ticketType.price)}`}
               >
                 <span className="flex items-start justify-between gap-4">
@@ -446,7 +461,12 @@ export default function TicketClaimForm({
           {soldOutTypes.map((ticketType) => (
             <div
               key={ticketType.id}
-              className="rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-card)] p-4 opacity-60"
+              className="rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-card)] opacity-60"
+              style={{
+                padding: 'clamp(1rem, 2.8vw, 1.375rem)',
+                boxSizing: 'border-box',
+                minWidth: 0,
+              }}
               aria-disabled="true"
             >
               <div className="flex items-center justify-between gap-3">
@@ -477,7 +497,13 @@ export default function TicketClaimForm({
             </button>
           </div>
 
-          <div className="rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)] p-4">
+          <div
+            className="rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)]"
+            style={{
+              padding: 'clamp(1rem, 2.8vw, 1.375rem)',
+              boxSizing: 'border-box',
+            }}
+          >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="font-semibold text-[var(--text)]">{selectedType.name}</p>
