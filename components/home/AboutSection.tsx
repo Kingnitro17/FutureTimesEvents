@@ -148,17 +148,15 @@ export default function AboutSection() {
                 </p>
               </div>
 
-              <div className="md:col-span-5 flex items-center justify-center md:justify-end shrink-0">
-                <div className="relative p-4 sm:p-6 rounded-3xl bg-gradient-to-br from-purple-50/40 via-white/50 to-purple-50/20 border border-purple-100/60 shadow-sm flex items-center justify-center">
-                  <Image
-                    src="/assets/nobglogo.png"
-                    alt="Future Times Events Logo"
-                    width={220}
-                    height={160}
-                    priority={false}
-                    className="w-40 sm:w-48 lg:w-56 h-auto object-contain max-h-44 drop-shadow-sm transition-transform duration-300 hover:scale-[1.02]"
-                  />
-                </div>
+              <div className="md:col-span-5 flex items-center justify-center md:justify-end shrink-0 bg-transparent border-0 shadow-none outline-none">
+                <Image
+                  src="/assets/nobglogo.png"
+                  alt="Future Times Events Logo"
+                  width={240}
+                  height={220}
+                  priority={false}
+                  className="w-44 sm:w-56 lg:w-64 h-auto object-contain max-h-56 bg-transparent border-0 shadow-none outline-none pointer-events-none select-none"
+                />
               </div>
             </div>
 
