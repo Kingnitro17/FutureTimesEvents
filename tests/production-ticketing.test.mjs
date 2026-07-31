@@ -146,3 +146,23 @@ test('Supabase clients have no silent live-production fallback', () => {
   assert.match(configFiles, /requirePublicEnv\('NEXT_PUBLIC_SUPABASE_URL'\)/);
   assert.match(configFiles, /\$\{name\} is required/);
 });
+
+test('event publication is restricted to the server-verified super-admin review route', () => {
+  const reviewRoute = read('app/api/admin/events/review/route.ts');
+  const submitRoute = read('app/api/events/submit/route.ts');
+  const migration = read('supabase/migrations/010_event_review_workflow.sql');
+  assert.match(reviewRoute, /profile\.role !== 'super_admin'/);
+  assert.match(reviewRoute, /eq\('status', 'pending_review'\)/);
+  assert.match(submitRoute, /server\.auth\.getUser\(\)/);
+  assert.match(migration, /protect_event_review_fields/);
+  assert.match(migration, /organizer_id = auth\.uid\(\)/);
+});
+
+test('event review notifications are idempotently queued without browser credentials', () => {
+  const outbox = read('lib/events/review.ts');
+  assert.match(outbox, /notification_jobs/);
+  assert.match(outbox, /ignoreDuplicates: true/);
+  assert.doesNotMatch(outbox, /NEXT_PUBLIC_(?:WHATSAPP|EMAIL|TWILIO)/);
+  assert.match(outbox, /\+263778595480/);
+  assert.match(outbox, /rodelldenga@icloud\.com/);
+});
