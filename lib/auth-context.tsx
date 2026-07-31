@@ -1,5 +1,5 @@
 'use client';
-import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
+import { createContext, useContext, useEffect, useState, useRef, ReactNode, useCallback } from 'react';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import type { User, DbProfile, UserRole } from '@/types';
 
@@ -10,6 +10,7 @@ interface AuthContextType {
   signIn:  (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp:  (email: string, password: string, userData: Partial<User>) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
+  retryProfile: () => Promise<void>;
   isAdmin: boolean;
   isOrganizer: boolean;
 }
@@ -22,6 +23,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
  *  .env.local is missing during static prerendering.
  */
 let _supabaseClient: ReturnType<typeof getSupabaseBrowserClient> | null = null;
+let profileRequest: { userId: string; promise: Promise<DbProfile | null> } | null = null;
 function getClient() {
   if (!_supabaseClient) {
     _supabaseClient = getSupabaseBrowserClient();
@@ -79,9 +81,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [clientError, setClientError] = useState(false);
+  const syncVersion = useRef(0);
 
   const syncAuthState = useCallback(
     async (session: { user?: { id: string; email?: string; user_metadata?: Record<string, unknown> } | null } | null) => {
+      const version = ++syncVersion.current;
       if (!session?.user) {
         setUser(null);
         setProfileError(null);
@@ -99,23 +103,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       try {
         const sb = getClient();
-        let profileRow: DbProfile | null = null;
-
-        // Try single profile fetch via get_my_profile RPC
-        const { data: rpcData, error: rpcError } = await sb.rpc('get_my_profile');
-        if (rpcData && !rpcError) {
-          profileRow = rpcData as unknown as DbProfile;
-        } else {
-          // Direct read fallback if RPC is unconfigured
-          const { data: directData } = await sb
-            .from('profiles')
-            .select('id,email,display_name,avatar_url,avatar_color,initials,bio,location,created_at,loyalty_points,events_attended,total_spent,is_vip,role,account_status')
-            .eq('id', authUser.id)
-            .maybeSingle();
-          if (directData) {
-            profileRow = directData as unknown as DbProfile;
-          }
+        performance.mark?.('fte-profile-request-start');
+        if (!profileRequest || profileRequest.userId !== authUser.id) {
+          profileRequest = {
+            userId: authUser.id,
+            promise: (async () => {
+              const result = await sb.rpc('get_my_profile');
+              if (result.error) throw result.error;
+              return result.data ? result.data as unknown as DbProfile : null;
+            })(),
+          };
         }
+        const profileRow = await profileRequest.promise;
+        if (version !== syncVersion.current) return;
+        performance.mark?.('fte-profile-request-end');
+        performance.measure?.('fte-profile-request', 'fte-profile-request-start', 'fte-profile-request-end');
 
         if (profileRow) {
           if (profileRow.account_status && profileRow.account_status !== 'active') {
@@ -131,31 +133,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(mapProfile(profileRow));
           setProfileError(null);
         } else {
-          // Idempotent bootstrap for newly authenticated user missing a profile row
-          const displayName = (meta.name as string) || (meta.full_name as string) || email.split('@')[0] || 'User';
-          const { error: insertError } = await sb.from('profiles').insert({
+          const displayName = (meta.full_name as string) || (meta.name as string) || email.split('@')[0] || 'User';
+          void sb.from('profiles').insert({
             id: authUser.id,
             email,
             display_name: displayName,
             initials: displayName.slice(0, 2).toUpperCase(),
             avatar_url: '',
             avatar_color: '#7B61FF',
-          });
-
-          if (!insertError || insertError.code === '23505') {
-            const { data: newProfile } = await sb
-              .from('profiles')
-              .select('id,email,display_name,avatar_url,avatar_color,initials,bio,location,created_at,loyalty_points,events_attended,total_spent,is_vip,role,account_status')
-              .eq('id', authUser.id)
-              .maybeSingle();
-            if (newProfile) {
-              setUser(mapProfile(newProfile as unknown as DbProfile));
-              setProfileError(null);
+          }).then((result: { error: { code?: string } | null }) => {
+            if (result.error && result.error.code !== '23505' && process.env.NODE_ENV === 'development') {
+              console.error('[Auth] Profile bootstrap failed:', result.error);
             }
-          }
+          });
+          setProfileError('Your account is ready, but its profile is still being prepared.');
         }
       } catch (err) {
-        console.error('[Auth] Error loading profile:', err);
+        if (process.env.NODE_ENV === 'development') console.error('[Auth] Error loading profile:', err);
+        setProfileError('We could not refresh your profile details. Your session is still active.');
       }
     },
     [],
@@ -166,9 +161,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       const sb = getClient();
+      performance.mark?.('fte-auth-bootstrap-start');
       const { data: { subscription } } = sb.auth.onAuthStateChange(
         (_: string, session: { user?: { id: string; email?: string; user_metadata?: Record<string, unknown> } | null } | null) => {
           if (!mounted) return;
+          performance.mark?.('fte-auth-bootstrap-resolved');
+          try { performance.measure?.('fte-auth-bootstrap', 'fte-auth-bootstrap-start', 'fte-auth-bootstrap-resolved'); } catch { /* mark may already be consumed */ }
           void syncAuthState(session);
         },
       );
@@ -206,7 +204,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function signIn(email: string, password: string) {
-    const { error, data } = await getClient().auth.signInWithPassword({ email, password });
+    const { error } = await getClient().auth.signInWithPassword({ email, password });
 
     if (error) {
       setUser(null);
@@ -215,15 +213,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: error as Error | null };
     }
 
-    if (data.session?.user) {
-      void syncAuthState(data.session);
-    }
-
     return { error: null };
   }
 
   async function signUp(email: string, password: string, userData: Partial<User>) {
-    const { error, data } = await getClient().auth.signUp({
+    const { error } = await getClient().auth.signUp({
       email, password,
       options: { data: { name: userData.name, role: 'attendee' } },
     });
@@ -235,10 +229,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: error as Error | null };
     }
 
-    if (data.session?.user) {
-      void syncAuthState(data.session);
-    }
-
     return { error: null };
   }
 
@@ -247,6 +237,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setProfileError(null);
     setIsLoading(false);
+  }
+
+  async function retryProfile() {
+    profileRequest = null;
+    const { data } = await getClient().auth.getSession();
+    await syncAuthState(data.session);
   }
 
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
@@ -260,6 +256,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signIn,
       signUp,
       signOut,
+      retryProfile,
       isAdmin,
       isOrganizer,
     }}>
