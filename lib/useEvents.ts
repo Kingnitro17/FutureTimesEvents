@@ -73,7 +73,7 @@ export function useEvents() {
 
     const { data, error: err } = await supabase
       .from('events')
-      .select('*')
+      .select('id,title,slug,category,category_label,date,time,end_time,venue,address,city,description,long_description,price,attendees,capacity,image_url,mood,tags,featured,lineup,organizer_name,lat,lng')
       .eq('status', 'published')
       .order('date', { ascending: true });
 

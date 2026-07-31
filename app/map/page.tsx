@@ -40,6 +40,8 @@ const CITIES = [
   { name: 'Bulawayo', lat: -20.1500, lng: 28.5833 },
   { name: 'Mutare', lat: -18.9728, lng: 32.6693 },
   { name: 'Gweru', lat: -19.4500, lng: 29.8167 },
+  { name: 'Shamva', lat: -17.3116, lng: 31.5756 },
+  { name: 'Bindura', lat: -17.3019, lng: 31.3306 },
   { name: 'Victoria Falls', lat: -17.9333, lng: 25.8333 }
 ];
 
@@ -60,6 +62,7 @@ export default function MapPage() {
       return;
     }
 
+    if (isLocating) return;
     setIsLocating(true);
     setLocationError(null);
 
@@ -89,7 +92,7 @@ export default function MapPage() {
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
-  }, []);
+  }, [isLocating]);
 
   useEffect(() => {
     // Defer browser-storage synchronization until after the mount effect.
@@ -120,8 +123,9 @@ export default function MapPage() {
       <div className="relative w-full h-screen">
         {/* City Navigation Header */}
         <div className="fixed top-[calc(var(--nav-h)+12px)] inset-x-0 z-[1000] pointer-events-none">
+          <div className="mx-3 sm:mx-auto sm:max-w-5xl rounded-[var(--r-2xl)] border border-[var(--border)] bg-[var(--bg-card)] shadow-[var(--shadow-card)] p-2 pointer-events-auto">
           <div 
-            className="flex gap-2 overflow-x-auto px-4 sm:px-6 pb-2 pointer-events-auto cursor-grab active:cursor-grabbing after:content-[''] after:w-4 after:shrink-0 items-center justify-start"
+            className="flex gap-2 overflow-x-auto scrollbar-hide cursor-grab active:cursor-grabbing items-center justify-start"
             onMouseDown={(e) => {
               const slider = e.currentTarget;
               slider.dataset.isDown = 'true';
@@ -155,13 +159,15 @@ export default function MapPage() {
                   requestLocation();
                 }
               }}
-              className={`shrink-0 px-8 py-3 rounded-full text-lg font-bold whitespace-nowrap transition-all flex items-center gap-2
+              disabled={isLocating}
+              aria-pressed={selectedCityName === 'My Location'}
+              className={`shrink-0 min-h-11 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-all flex items-center gap-2 disabled:opacity-60
                 ${selectedCityName === 'My Location'
-                  ? 'bg-[#3B5BFF] text-white shadow-md' 
-                  : 'text-gray-500 hover:text-gray-900 bg-transparent'
+                  ? 'btn-grad text-white shadow-[var(--shadow-sm)]'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text)] bg-[var(--bg-secondary)]'
                 }`}
             >
-              <Navigation size={20} className={selectedCityName === 'My Location' ? 'text-white' : 'text-gray-400'} />
+              <Navigation size={16} />
               {isLocating ? 'Locating...' : 'My Location'}
             </button>
             
@@ -172,15 +178,23 @@ export default function MapPage() {
                   setSelectedCityName(city.name);
                   setSelectedCenter([city.lat, city.lng]);
                 }}
-                className={`shrink-0 px-8 py-3 rounded-full text-lg font-bold whitespace-nowrap transition-all
+                aria-pressed={selectedCityName === city.name}
+                className={`shrink-0 min-h-11 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-all
                   ${selectedCityName === city.name 
-                    ? 'bg-[#3B5BFF] text-white shadow-md' 
-                    : 'text-gray-500 hover:text-gray-900 bg-transparent'
+                    ? 'btn-grad text-white shadow-[var(--shadow-sm)]'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text)] bg-[var(--bg-secondary)]'
                   }`}
               >
                 {city.name}
               </button>
             ))}
+          </div>
+          {locationError && (
+            <p className="px-2 pt-1 text-xs text-[var(--text-muted)]" role="status">{locationError}</p>
+          )}
+          {!locationError && selectedCityName === 'My Location' && (
+            <p className="sr-only" role="status">{userCity}</p>
+          )}
           </div>
         </div>
 

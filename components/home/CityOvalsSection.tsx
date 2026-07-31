@@ -4,17 +4,18 @@ import { useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
+import { useEvents } from '@/lib/useEvents';
 
 // ─── Dataset ──────────────────────────────────────────────────────────────────
 // subtitle field removed — taglines (Corn-Belt, Sunshine City, City of Kings etc.)
 // are no longer shown in oval cards per production spec.
 const CITIES = [
-  { name: 'Mashonaland Central', status: '1 event',     emoji: '🌿',  image: '/cities/Shamva.jpeg' },
-  { name: 'Harare',              status: 'Coming soon', emoji: '🏙️', image: '/cities/Harare.jpg' },
+  { slug: 'shamva', name: 'Shamva', emoji: '🌿', image: '/cities/Shamva.jpeg' },
+  { slug: 'bindura', name: 'Bindura', emoji: '🍃', image: '/cities/Bindura.jpeg' },
+  { slug: 'harare', name: 'Harare', emoji: '🏙️', image: '/cities/Harare.jpg' },
   { name: 'Bulawayo',            status: 'Coming soon', emoji: '🦏',  image: '/cities/Bulawayo.jpg' },
   { name: 'Mutare',              status: 'Coming soon', emoji: '⛰️', image: '/cities/Mutare.jpeg' },
   { name: 'Gweru',               status: 'Coming soon', emoji: '🌾',  image: '/cities/Gweru.jpeg' },
-  { name: 'Bindura',             status: 'Coming soon', emoji: '🍃',  image: '/cities/Bindura.jpeg' },
   { name: 'Victoria Falls',      status: 'Coming soon', emoji: '🌊',  image: '/cities/Victoria_falls.jpg' },
   { name: 'Chinhoyi',            status: 'Coming soon', emoji: '💎',  image: '/cities/Chinhoyi.jpeg' },
   { name: 'Marondera',           status: 'Coming soon', emoji: '🍊',  image: '/cities/Marondera.jpeg' },
@@ -27,10 +28,15 @@ const CITIES = [
   { name: 'Chitungwiza',         status: 'Coming soon', emoji: '🏘️', image: '/cities/Chitungwiza.webp' },
   { name: 'Glendale',            status: 'Coming soon', emoji: '🌄',  image: '/cities/Glandale.png' },
   { name: 'Mazowe',              status: 'Coming soon', emoji: '🍊',  image: '/cities/Mazowe.jpeg' },
-];
+].map(city => ({ ...city, slug: 'slug' in city ? city.slug : city.name.toLowerCase().replaceAll(' ', '-') }));
+
+type City = (typeof CITIES)[number] & { eventCount: number };
 
 // ─── Single card ──────────────────────────────────────────────────────────────
-function CityCard({ city, index }: { city: typeof CITIES[0]; index: number }) {
+function CityCard({ city, index }: { city: City; index: number }) {
+  const status = city.eventCount > 0
+    ? `${city.eventCount} event${city.eventCount === 1 ? '' : 's'}`
+    : 'Coming soon';
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -43,7 +49,7 @@ function CityCard({ city, index }: { city: typeof CITIES[0]; index: number }) {
         href={`/events?city=${encodeURIComponent(city.name)}`}
         className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded-full"
         tabIndex={0}
-        aria-label={`Explore events in ${city.name} — ${city.status}`}
+        aria-label={`Explore events in ${city.name} — ${status}`}
       >
         {/* Outer oval — clips everything to pill shape */}
         <div
@@ -97,7 +103,7 @@ function CityCard({ city, index }: { city: typeof CITIES[0]; index: number }) {
               className="font-semibold uppercase tracking-wider mt-1"
               style={{ fontSize: '0.625rem', color: 'rgba(255,255,255,0.75)' }}
             >
-              {city.status}
+              {status}
             </p>
           </div>
         </div>
@@ -109,11 +115,17 @@ function CityCard({ city, index }: { city: typeof CITIES[0]; index: number }) {
 // ─── Main section ─────────────────────────────────────────────────────────────
 export default function CityOvalsSection() {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const { events } = useEvents();
+
+  const cities = CITIES.map(city => ({
+    ...city,
+    eventCount: events.filter(event => event.city.trim().toLowerCase() === city.name.toLowerCase()).length,
+  }));
 
   // Live-event cities first
   const sorted = [
-    ...CITIES.filter(c => c.status !== 'Coming soon'),
-    ...CITIES.filter(c => c.status === 'Coming soon'),
+    ...cities.filter(city => city.eventCount > 0),
+    ...cities.filter(city => city.eventCount === 0),
   ];
 
   return (
