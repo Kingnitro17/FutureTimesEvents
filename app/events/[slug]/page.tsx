@@ -20,6 +20,7 @@ import TicketClaimForm, {
   type ClaimableTicketType,
   type TicketClaimReference,
 } from '@/components/events/TicketClaimForm';
+import WhosGoing from '@/components/events/WhosGoing';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import {
   formatEventDate,
@@ -955,6 +956,8 @@ export default function EventSlugPage() {
 
           <div className="mt-6 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-8">
             <div className="min-w-0 space-y-6">
+              <WhosGoing eventId={event.id} />
+
               <section
                 className="rounded-[var(--r-3xl)] border border-[var(--border)] bg-[var(--bg-card)] shadow-[var(--shadow-card)]"
                 aria-labelledby="event-details-heading"

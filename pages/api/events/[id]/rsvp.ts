@@ -186,6 +186,7 @@ export default async function handler(
         event_id: eventId,
         user_id: userId,
         status,
+        is_public: false,
         phone: phone_e164,
         idempotency_key: idempotency_key ?? null,
         version: 1, // reset; worker tracks actual version
@@ -203,7 +204,7 @@ export default async function handler(
     if (upsertErr.code === '23505') {
       return res.status(200).json({ ok: true, duplicate: true });
     }
-    return res.status(500).json({ error: upsertErr.message });
+    return res.status(500).json({ error: 'Could not update RSVP.' });
   }
 
   // Increment version via RPC-less SQL (Supabase supports rpc or raw SQL via admin)

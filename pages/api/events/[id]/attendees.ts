@@ -43,7 +43,7 @@ export default async function handler(
   }
   const { id: eventId } = queryResult.data;
 
-  const cacheKey = `attendees:${eventId}`;
+  const cacheKey = `public-attendees:v2:${eventId}`;
 
   // ── 1. Try Redis cache ────────────────────────────────────────
   const cached = await getCache(cacheKey);
@@ -54,26 +54,6 @@ export default async function handler(
   }
 
   // ── 2. Try pre-aggregated snapshot table ─────────────────────
-  const { data: snapshot, error: snapErr } = await supabaseAdmin
-    .from('event_attendee_snapshots')
-    .select('going_count, interested_count, preview_attendees, computed_at')
-    .eq('event_id', eventId)
-    .maybeSingle();
-
-  if (!snapErr && snapshot) {
-    const payload = {
-      going_count:      snapshot.going_count,
-      interested_count: snapshot.interested_count,
-      preview_attendees: snapshot.preview_attendees,
-      cached_at: snapshot.computed_at,
-      source: 'snapshot',
-    };
-    await setCache(cacheKey, payload, CACHE_TTL_SECONDS);
-    res.setHeader('Cache-Control', `public, s-maxage=${CACHE_TTL_SECONDS}, stale-while-revalidate=10`);
-    res.setHeader('X-Cache', 'MISS');
-    return res.status(200).json(payload);
-  }
-
   // ── 3. DB fallback — live aggregation ────────────────────────
   // Only reached if snapshot hasn't been computed yet (new events)
   const { data: rsvps, error: rsvpErr } = await supabaseAdmin
@@ -86,10 +66,11 @@ export default async function handler(
       )
     `)
     .eq('event_id', eventId)
+    .eq('is_public', true)
     .in('status', ['going', 'interested']);
 
   if (rsvpErr) {
-    return res.status(500).json({ error: rsvpErr.message });
+    return res.status(500).json({ error: 'Could not load attendees.' });
   }
 
   const rows = (rsvps ?? []) as unknown as RsvpAttendeeRow[];

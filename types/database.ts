@@ -491,6 +491,13 @@ export interface Database {
         ];
       };
 
+      rsvps: {
+        Row: { id: string; event_id: string; user_id: string; status: 'going' | 'interested' | 'not_going'; phone: string | null; phone_verified: boolean; version: number; idempotency_key: string | null; is_public: boolean; created_at: string; updated_at: string };
+        Insert: Partial<Database['public']['Tables']['rsvps']['Row']> & { event_id: string; user_id: string };
+        Update: Partial<Database['public']['Tables']['rsvps']['Row']>;
+        Relationships: [];
+      };
+
       notification_jobs: {
         Row: {
           id: string;
