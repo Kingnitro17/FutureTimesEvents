@@ -2,7 +2,7 @@
 import { useState, useRef } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { MapPin, Calendar, Star, User, Camera, Upload } from 'lucide-react';
+import { MapPin, Calendar, User, Camera, Upload, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase';
 import { useEvents } from '@/lib/useEvents';
@@ -15,7 +15,7 @@ const fadeUp = (delay = 0) => ({
 });
 
 export default function ProfilePage() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, profileError, retryProfile } = useAuth();
   const { events } = useEvents();
   const [activeTab, setActiveTab] = useState<'saved' | 'badges'>('saved');
   const [avatar, setAvatar]       = useState<string>(user?.avatar || '');
@@ -48,8 +48,9 @@ export default function ProfilePage() {
   const loyaltyLevel  = loyaltyPoints >= 3000 ? 'Platinum' : loyaltyPoints >= 1500 ? 'Gold' : 'Silver';
   const loyaltyColor  = loyaltyLevel === 'Platinum' ? '#DD1FFF' : loyaltyLevel === 'Gold' ? '#FFBC73' : '#2CC4EA';
   const nextLevel     = loyaltyLevel === 'Silver' ? 1500 : loyaltyLevel === 'Gold' ? 3000 : 5000;
-  const progress      = Math.min((loyaltyPoints / nextLevel) * 100, 100);
+  void nextLevel;
   const earnedBadges  = (user.badges ?? []).filter(b => b.earned).length;
+  const displayedAvatar = avatar || user.avatar || '';
 
   // ── Avatar upload ──────────────────────────────────────────────────
   const handleAvatarClick = () => fileInputRef.current?.click();
@@ -57,31 +58,41 @@ export default function ProfilePage() {
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith('image/')) { toast.error('Please select an image file'); return; }
+    const extension = file.name.split('.').pop()?.toLowerCase();
+    if (!extension || !['jpg', 'jpeg', 'png', 'webp'].includes(extension) || !['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      toast.error(file.type.includes('heic') ? 'HEIC is not supported yet. Choose a JPG, PNG or WebP image.' : 'Choose a JPG, PNG or WebP image.');
+      return;
+    }
     if (file.size > 5 * 1024 * 1024)    { toast.error('Image must be less than 5MB');  return; }
 
+    const previousAvatar = displayedAvatar;
+    const previewUrl = URL.createObjectURL(file);
+    setAvatar(previewUrl);
     setIsUploading(true);
     try {
-      const ext  = file.name.split('.').pop();
-      const path = `avatars/${user.id}.${ext}`;
+      const path = `${user.id}/${crypto.randomUUID()}.${extension}`;
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(path, file, { upsert: true });
+        .upload(path, file, { upsert: false, contentType: file.type, cacheControl: '31536000' });
 
       if (uploadError) throw uploadError;
 
       const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path);
-      setAvatar(publicUrl);
-
-      await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', user.id);
+      const avatarUrl = `${publicUrl}?v=${Date.now()}`;
+      const { error: updateError } = await supabase.from('profiles').update({ avatar_url: avatarUrl }).eq('id', user.id);
+      if (updateError) {
+        await supabase.storage.from('avatars').remove([path]);
+        throw updateError;
+      }
+      setAvatar(avatarUrl);
       toast.success('Profile picture updated!');
-    } catch {
-      // Fallback: local preview only
-      const reader = new FileReader();
-      reader.onloadend = () => setAvatar(reader.result as string);
-      reader.readAsDataURL(file);
-      toast.success('Profile picture updated (local preview)');
+    } catch (error) {
+      setAvatar(previousAvatar);
+      if (process.env.NODE_ENV === 'development') console.error('[Profile] Avatar upload failed:', error);
+      toast.error('We could not upload that photo. Please try again.');
     } finally {
+      URL.revokeObjectURL(previewUrl);
+      e.target.value = '';
       setIsUploading(false);
     }
   };
@@ -98,11 +109,9 @@ export default function ProfilePage() {
     <div className="min-h-screen page-offset pb-nav" style={{ background: 'var(--bg-secondary)' }}>
 
       {/* ── Cover banner ── */}
-      <div className="relative h-28 sm:h-32 overflow-hidden bg-gradient-to-r from-[var(--accent)] to-purple-600 opacity-20" />
-
-      <div className="container flex flex-col gap-10">
+      <div className="container flex flex-col gap-10 pt-6 sm:pt-8">
         {/* ── Profile card ── */}
-        <div className="-mt-14">
+        <div>
           <motion.div {...fadeUp(0.05)} className="card rounded-2xl p-5 sm:p-8">
             <div className="flex flex-col sm:flex-row sm:items-end gap-5">
 
@@ -111,11 +120,11 @@ export default function ProfilePage() {
                 <motion.div
                   whileHover={{ scale: 1.02 }}
                   className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl border-4 border-white flex items-center justify-center shadow-lg overflow-hidden cursor-pointer group"
-                  style={{ background: avatar ? 'transparent' : 'linear-gradient(135deg,#FF55C2,#7222E3)' }}
+                  style={{ background: displayedAvatar ? 'transparent' : 'linear-gradient(135deg,#FF55C2,#7222E3)' }}
                   onClick={handleAvatarClick}
                 >
-                  {avatar
-                    ? <img src={avatar} alt={user.name} className="w-full h-full object-cover" />
+                  {displayedAvatar
+                    ? <img src={displayedAvatar} alt={user.name} className="w-full h-full object-cover" />
                     : <User size={36} className="text-white" />}
                   <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                     {isUploading
@@ -125,11 +134,13 @@ export default function ProfilePage() {
                 </motion.div>
                 <button
                   onClick={handleAvatarClick}
+                  disabled={isUploading}
+                  aria-label="Upload profile picture"
                   className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-[var(--accent)] text-white flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
                 >
                   <Upload size={14} />
                 </button>
-                <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+                <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handleFileChange} className="hidden" />
               </div>
 
               {/* Info */}
@@ -165,6 +176,15 @@ export default function ProfilePage() {
         </div>
 
         {/* ── Stats row ── */}
+        {profileError && (
+          <div className="card rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center gap-3" role="status">
+            <p className="text-sm text-[var(--text-muted)] flex-1">{profileError}</p>
+            <button className="btn btn-sm btn-ghost" onClick={() => void retryProfile()}>
+              <RefreshCw size={14} /> Retry profile
+            </button>
+          </div>
+        )}
+
         <motion.div {...fadeUp(0.1)} className="grid grid-cols-2 sm:grid-cols-4 gap-5">
           {[
             { icon: '🎟️', val: user.eventsAttended ?? 0,                             label: 'Events Attended' },

@@ -89,23 +89,21 @@ export default function Footer() {
           <span className="text-base font-semibold text-[var(--text-muted)]">Get the app:</span>
           <div className="flex flex-col sm:flex-row gap-5">
             {/* App Store Button */}
-            <a 
-              href="#" 
-              className="flex items-center gap-4 px-8 py-6 rounded-2xl bg-gradient-to-br from-gray-900 to-black text-white hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/20 transition-all duration-300 border border-white/10 min-w-fit whitespace-nowrap h-auto"
+            <button type="button" disabled aria-disabled="true"
+              className="flex items-center gap-4 px-6 py-4 rounded-2xl bg-[var(--bg-tertiary)] text-[var(--text-muted)] border border-[var(--border)] min-w-fit whitespace-nowrap cursor-not-allowed"
             >
               {/* Apple Logo */}
               <svg className="w-12 h-12" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.21-1.98 1.08-3.11-1.05.05-2.31.7-3.06 1.53-.67.74-1.26 1.93-1.1 3.04 1.18.09 2.37-.6 3.08-1.46"/>
               </svg>
               <div className="text-left">
-                <div className="text-sm leading-none opacity-80 mb-1 font-medium">Download on the</div>
-                <div className="text-2xl font-bold leading-tight tracking-tight">App Store</div>
+                <div className="text-sm leading-none opacity-80 mb-1 font-medium">App Store</div>
+                <div className="text-sm font-bold leading-tight tracking-tight motion-safe:animate-pulse">Coming Soon</div>
               </div>
-            </a>
+            </button>
             {/* Google Play Button */}
-            <a 
-              href="#" 
-              className="flex items-center gap-4 px-8 py-7 rounded-2xl bg-gradient-to-br from-gray-900 to-black text-white hover:scale-105 hover:shadow-2xl hover:shadow-green-500/20 transition-all duration-300 border border-white/10 min-w-fit whitespace-nowrap h-auto pb-8"
+            <button type="button" disabled aria-disabled="true"
+              className="flex items-center gap-4 px-6 py-4 rounded-2xl bg-[var(--bg-tertiary)] text-[var(--text-muted)] border border-[var(--border)] min-w-fit whitespace-nowrap cursor-not-allowed"
             >
               {/* Google Play Logo */}
               <svg className="w-12 h-12" viewBox="0 0 24 24" fill="none">
@@ -120,10 +118,10 @@ export default function Footer() {
                 </defs>
               </svg>
               <div className="text-left">
-                <div className="text-sm leading-none opacity-80 mb-1 font-medium">GET IT ON</div>
-                <div className="text-2xl font-bold leading-normal tracking-tight">Google Play</div>
+                <div className="text-sm leading-none opacity-80 mb-1 font-medium">Google Play</div>
+                <div className="text-sm font-bold leading-normal tracking-tight motion-safe:animate-pulse">Coming Soon</div>
               </div>
-            </a>
+            </button>
           </div>
         </div>
 

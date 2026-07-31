@@ -315,7 +315,7 @@ export default function TicketsPage() {
         )}
 
         {loading && (
-          <div className="space-y-4">
+          <div className="space-y-5">
             {[1, 2].map(i => (
               <div key={i} className="card rounded-2xl sm:rounded-3xl p-5 sm:p-6 animate-pulse">
                 <div className="flex items-start gap-4">
@@ -359,7 +359,7 @@ export default function TicketsPage() {
                   transition={{ duration: 0.35, delay: Math.min(index * 0.04, 0.2) }}
                   className="card rounded-2xl sm:rounded-3xl p-0 overflow-hidden w-full max-w-full min-w-0 box-border"
                 >
-                  <div className="p-4 sm:p-6">
+                  <div className="p-5 sm:p-6">
                     <div className="flex items-start gap-3 sm:gap-4 min-w-0">
                       <div
                         className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center shrink-0 text-white"

@@ -92,15 +92,15 @@ function CityCard({ city, index }: { city: City; index: number }) {
           </div>
 
           {/* Bottom text — directly on the image gradient */}
-          <div className="absolute inset-x-0 bottom-0 z-10 flex flex-col items-center text-center px-3 pb-5">
+          <div className="absolute inset-x-0 top-[38%] bottom-[14%] z-10 flex flex-col items-center justify-center text-center px-4 sm:px-5">
             <p
-              className="font-extrabold leading-tight text-white w-full"
+              className="font-extrabold leading-tight text-white w-full drop-shadow-[0_2px_8px_rgba(0,0,0,0.65)]"
               style={{ fontSize: 'clamp(0.75rem, 2vw + 0.5rem, 0.9375rem)', wordBreak: 'break-word' }}
             >
               {city.name}
             </p>
             <p
-              className="font-semibold uppercase tracking-wider mt-1"
+              className="font-semibold uppercase tracking-wider mt-2 leading-4 whitespace-nowrap"
               style={{ fontSize: '0.625rem', color: 'rgba(255,255,255,0.75)' }}
             >
               {status}
