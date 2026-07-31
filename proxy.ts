@@ -73,7 +73,7 @@ export async function proxy(request: NextRequest) {
   if (user && (isAdminRoute || isHostRoute)) {
     // Read only the signed-in user's authorization profile through the
     // migration-007 RPC. No caller-controlled profile ID is accepted.
-    let { data: profileData } = await supabase.rpc('get_my_profile');
+    const { data: profileData } = await supabase.rpc('get_my_profile');
     let profile = profileData as {
       role?: string;
       account_status?: string;

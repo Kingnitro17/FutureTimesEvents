@@ -155,7 +155,6 @@ export async function POST(
       venue_name: string | null;
       address: string | null;
       image_url: string | null;
-      cover_image_url: string | null;
       category: string | null;
     } | null;
     const ticketType = ticket.ticket_type as unknown as {

@@ -27,7 +27,6 @@ interface TicketJoinRow {
     venue_name: string | null;
     address: string | null;
     image_url: string | null;
-    cover_image_url: string | null;
     category: string | null;
   } | null;
   ticket_type: {
@@ -58,7 +57,6 @@ const TICKET_SELECT = `
     venue_name,
     address,
     image_url,
-    cover_image_url,
     category
   ),
   ticket_type:ticket_types!tickets_ticket_type_id_fkey (
@@ -95,7 +93,7 @@ function mapTicket(row: TicketJoinRow): WalletTicket {
       time,
       venue: event?.venue_name ?? event?.venue ?? '',
       address: event?.address ?? '',
-      image: event?.image_url ?? event?.cover_image_url ?? '',
+      image: event?.image_url ?? '',
       category: event?.category ?? 'lounge',
     },
     ticketType: {
@@ -156,6 +154,7 @@ export function useTickets(user: Pick<User, 'id' | 'email'> | null | undefined) 
     try {
       setTickets(await fetchWalletRows(user));
     } catch (err) {
+      console.error('[useTickets] Wallet query failed:', err);
       setTickets([]);
       setError(err instanceof Error ? err.message : 'Could not load tickets.');
     } finally {

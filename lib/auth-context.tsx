@@ -78,20 +78,113 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user,      setUser]      = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [profileError, setProfileError] = useState<string | null>(null);
+  const [clientError, setClientError] = useState(false);
 
-  // The Supabase client can't be created at module level because that would
-  // trigger getPublicSupabaseConfig() eagerly. It must be created lazily so
-  // that static pages can compile without env vars (Vercel sets them only
-  // at runtime in production). In local dev without .env.local, we show a
-  // friendly message instead of crashing the whole page.
-  let supabase: ReturnType<typeof getSupabaseBrowserClient>;
-  try {
-    supabase = getClient();
-  } catch {
-    // During local development without .env.local, the env var validation
-    // throws. On Vercel production the env vars ARE set in the environment,
-    // so this catch block never executes there. We render a placeholder so
-    // the page doesn't come up blank.
+  const syncAuthState = useCallback(
+    async (session: { user?: { id: string; email?: string; user_metadata?: Record<string, unknown> } | null } | null) => {
+      if (!session?.user) {
+        setUser(null);
+        setProfileError(null);
+        setIsLoading(false);
+        return;
+      }
+
+      const authUser = session.user;
+      const email = authUser.email || '';
+      const meta = authUser.user_metadata ?? {};
+
+      // Render profile shell immediately using auth metadata to ensure instant initial loading
+      setUser(current => (current?.id === authUser.id ? current : userFromAuth(authUser)));
+      setIsLoading(false);
+
+      try {
+        const sb = getClient();
+        let profileRow: DbProfile | null = null;
+
+        // Try single profile fetch via get_my_profile RPC
+        const { data: rpcData, error: rpcError } = await sb.rpc('get_my_profile');
+        if (rpcData && !rpcError) {
+          profileRow = rpcData as unknown as DbProfile;
+        } else {
+          // Direct read fallback if RPC is unconfigured
+          const { data: directData } = await sb
+            .from('profiles')
+            .select('id,email,display_name,avatar_url,avatar_color,initials,bio,location,created_at,loyalty_points,events_attended,total_spent,is_vip,role,account_status')
+            .eq('id', authUser.id)
+            .maybeSingle();
+          if (directData) {
+            profileRow = directData as unknown as DbProfile;
+          }
+        }
+
+        if (profileRow) {
+          if (profileRow.account_status && profileRow.account_status !== 'active') {
+            setUser(userFromAuth(authUser));
+            setProfileError('This account is not active. Contact a platform administrator.');
+            return;
+          }
+          const realName = (meta.full_name as string) || (meta.name as string);
+          if (realName && profileRow.display_name === email.split('@')[0]) {
+            profileRow.display_name = realName;
+            void sb.from('profiles').update({ display_name: realName }).eq('id', authUser.id);
+          }
+          setUser(mapProfile(profileRow));
+          setProfileError(null);
+        } else {
+          // Idempotent bootstrap for newly authenticated user missing a profile row
+          const displayName = (meta.name as string) || (meta.full_name as string) || email.split('@')[0] || 'User';
+          const { error: insertError } = await sb.from('profiles').insert({
+            id: authUser.id,
+            email,
+            display_name: displayName,
+            initials: displayName.slice(0, 2).toUpperCase(),
+            avatar_url: '',
+            avatar_color: '#7B61FF',
+          });
+
+          if (!insertError || insertError.code === '23505') {
+            const { data: newProfile } = await sb
+              .from('profiles')
+              .select('id,email,display_name,avatar_url,avatar_color,initials,bio,location,created_at,loyalty_points,events_attended,total_spent,is_vip,role,account_status')
+              .eq('id', authUser.id)
+              .maybeSingle();
+            if (newProfile) {
+              setUser(mapProfile(newProfile as unknown as DbProfile));
+              setProfileError(null);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('[Auth] Error loading profile:', err);
+      }
+    },
+    [],
+  );
+
+  useEffect(() => {
+    let mounted = true;
+
+    try {
+      const sb = getClient();
+      const { data: { subscription } } = sb.auth.onAuthStateChange(
+        (_: string, session: { user?: { id: string; email?: string; user_metadata?: Record<string, unknown> } | null } | null) => {
+          if (!mounted) return;
+          void syncAuthState(session);
+        },
+      );
+
+      return () => {
+        mounted = false;
+        subscription.unsubscribe();
+      };
+    } catch {
+      queueMicrotask(() => {
+        if (mounted) setClientError(true);
+      });
+    }
+  }, [syncAuthState]);
+
+  if (clientError) {
     return (
       <div className="page-offset flex min-h-screen items-center justify-center px-4">
         <div className="max-w-md rounded-[var(--r-3xl)] border border-amber-500/30 bg-[var(--bg-card)] p-8 text-center shadow-[var(--shadow-card)]">
@@ -112,155 +205,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
   }
 
-  const ensureProfile = useCallback(async (
-    userId: string,
-    email: string,
-    userData: Partial<User>
-  ) => {
-    const display_name = userData.name || email.split('@')[0];
-    const sb = getClient();
-
-    try {
-      const { data: existing, error: profileLookupError } = await sb
-        .rpc('get_my_profile');
-
-      if (existing) return;
-      if (profileLookupError) {
-        throw new Error(profileLookupError.message);
-      }
-
-      const { error } = await sb.from('profiles').insert({
-        id:           userId,
-        email,
-        display_name,
-        initials:     display_name.slice(0, 2).toUpperCase(),
-        avatar_url:   '',
-        avatar_color: '#7B61FF',
-      });
-
-      if (error && error.code !== '23505') {
-        throw new Error(error.message);
-      }
-    } catch (err) {
-      console.error('[Auth] profile bootstrap failed:', err);
-      setProfileError(
-        'Your account profile could not be verified. Refresh after the database access migration is applied.',
-      );
-    }
-  }, []);
-
-  const loadProfile = useCallback(async (
-    userId: string,
-    authUser: { id: string; email?: string; user_metadata?: Record<string, unknown> }
-  ) => {
-    const sb = getClient();
-
-    try {
-      const { data, error } = await sb.rpc('get_my_profile');
-
-      if (data && !error) {
-        const p = data as unknown as DbProfile;
-        if (p.id !== userId) {
-          throw new Error('The profile response did not match the authenticated user.');
-        }
-        if (p.account_status && p.account_status !== 'active') {
-          setUser(userFromAuth(authUser));
-          setProfileError('This account is not active. Contact a platform administrator.');
-          return;
-        }
-        const meta = authUser.user_metadata ?? {};
-        const realName = (meta.full_name as string) || (meta.name as string);
-
-        // Self-heal: If the database is stuck with the email prefix as the name, but we have their real name from Google/OAuth, fix it.
-        if (realName && p.display_name === authUser.email?.split('@')[0]) {
-          p.display_name = realName;
-          // Fire-and-forget update to fix it permanently in the DB
-          sb.from('profiles').update({ display_name: realName }).eq('id', userId).then();
-        }
-
-        setUser(mapProfile(p));
-        setProfileError(null);
-      } else {
-        // RPC returned null/error — fall back to a direct profile query.
-        // The RPC may not return data if migration 007's function signature
-        // is slightly different, but the RLS "profiles_own_read" policy
-        // (from 007) allows the user to read their own row directly.
-        const { data: directProfile, error: directError } = await sb
-          .from('profiles')
-          .select('*')
-          .eq('id', userId)
-          .maybeSingle();
-
-        if (directProfile && !directError) {
-          const p = directProfile as unknown as DbProfile;
-          if (p.account_status && p.account_status !== 'active') {
-            setUser(userFromAuth(authUser));
-            setProfileError('This account is not active. Contact a platform administrator.');
-            return;
-          }
-          setUser(mapProfile(p));
-          setProfileError(null);
-          return;
-        }
-
-        // Both RPC and direct query failed — emit a clear error
-        const rpcMessage = error?.message || 'RPC returned no data.';
-        const directMessage = directError?.message || 'Direct profile query returned no data.';
-        console.error('[Auth] profile verification failed. RPC:', rpcMessage, 'Direct:', directMessage);
-        setProfileError(
-          'Your account is signed in, but its organizer permissions could not be verified.',
-        );
-
-        // Fallback: use auth metadata if profile fetch fails
-        setUser(userFromAuth(authUser));
-      }
-    } catch (err) {
-      console.error('[Auth] Error loading profile:', err);
-      setProfileError(
-        'Your account is signed in, but its organizer permissions could not be verified.',
-      );
-      setUser(userFromAuth(authUser));
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  const syncAuthState = useCallback(async (session: { user?: { id: string; email?: string; user_metadata?: Record<string, unknown> } | null } | null) => {
-    if (session?.user) {
-      // Ensure profile row exists first, then load the full profile
-      const email = session.user.email || '';
-      const meta = session.user.user_metadata ?? {};
-      await ensureProfile(session.user.id, email, {
-        name: (meta.name as string) || (meta.full_name as string),
-      });
-      await loadProfile(session.user.id, session.user);
-    } else {
-      setUser(null);
-      setProfileError(null);
-      setIsLoading(false);
-    }
-  }, [ensureProfile, loadProfile]);
-
-  useEffect(() => {
-    let mounted = true;
-
-    supabase.auth.getSession().then(({ data }: { data: { session: { user?: { id: string; email?: string; user_metadata?: Record<string, unknown> } | null } | null } }) => {
-      if (mounted) void syncAuthState(data.session);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_: string, session: { user?: { id: string; email?: string; user_metadata?: Record<string, unknown> } | null } | null) => {
-      if (!mounted) return;
-      void syncAuthState(session);
-    });
-
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
-  }, [syncAuthState]);
-
   async function signIn(email: string, password: string) {
-    const { error, data } = await supabase.auth.signInWithPassword({ email, password });
+    const { error, data } = await getClient().auth.signInWithPassword({ email, password });
 
     if (error) {
       setUser(null);
@@ -269,25 +215,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: error as Error | null };
     }
 
-    // If we got a session back, load the profile immediately
-    // This prevents the race where the page redirects before onAuthStateChange fires
     if (data.session?.user) {
-      const email = data.session.user.email || '';
-      const meta = data.session.user.user_metadata ?? {};
-      await ensureProfile(data.session.user.id, email, {
-        name: (meta.name as string) || (meta.full_name as string),
-      });
-      await loadProfile(data.session.user.id, data.session.user);
+      void syncAuthState(data.session);
     }
 
     return { error: null };
   }
 
   async function signUp(email: string, password: string, userData: Partial<User>) {
-    const { error, data } = await supabase.auth.signUp({
+    const { error, data } = await getClient().auth.signUp({
       email, password,
-      // Role metadata is deliberately fixed for public sign-up. Elevated roles
-      // are granted in the database by an existing administrator.
       options: { data: { name: userData.name, role: 'attendee' } },
     });
 
@@ -298,21 +235,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: error as Error | null };
     }
 
-    // If we got a session back (email confirmation disabled), load the profile immediately
     if (data.session?.user) {
-      const email = data.session.user.email || '';
-      const meta = data.session.user.user_metadata ?? {};
-      await ensureProfile(data.session.user.id, email, {
-        name: (meta.name as string) || (meta.full_name as string),
-      });
-      await loadProfile(data.session.user.id, data.session.user);
+      void syncAuthState(data.session);
     }
 
     return { error: null };
   }
 
   async function signOut() {
-    await supabase.auth.signOut();
+    await getClient().auth.signOut();
     setUser(null);
     setProfileError(null);
     setIsLoading(false);

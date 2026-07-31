@@ -213,7 +213,7 @@ export default function TicketsPage() {
     }
   };
 
-  if (authLoading || loading) {
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div
@@ -262,7 +262,9 @@ export default function TicketsPage() {
               My Tickets
             </h1>
             <p className="text-sm text-[var(--text-muted)]">
-              {tickets.length} individual admission{tickets.length === 1 ? '' : 's'} in your wallet
+              {loading
+                ? 'Loading tickets…'
+                : `${tickets.length} individual admission${tickets.length === 1 ? '' : 's'} in your wallet`}
             </p>
           </motion.div>
         </div>
@@ -292,31 +294,55 @@ export default function TicketsPage() {
         </div>
 
         {error && (
-          <div className="card rounded-2xl p-5 mb-6 flex flex-col sm:flex-row sm:items-center gap-4">
+          <div className="card rounded-2xl p-5 mb-6 flex flex-col sm:flex-row sm:items-center gap-4 border border-red-500/20 bg-red-500/5">
             <AlertCircle className="text-red-500 shrink-0" aria-hidden />
             <div className="flex-1">
-              <p className="font-semibold text-[var(--text)]">Could not load your wallet</p>
-              <p className="text-sm text-[var(--text-muted)]">{error}</p>
+              <p className="font-semibold text-[var(--text)]">Could not load your tickets</p>
+              <p className="text-sm text-[var(--text-muted)]">
+                We could not load your tickets. Please try again.
+              </p>
             </div>
-            <button type="button" className="btn btn-sm btn-outline" onClick={() => void refetch()}>
-              <RefreshCw size={14} aria-hidden />
+            <button
+              type="button"
+              className="btn btn-sm btn-outline"
+              disabled={loading}
+              onClick={() => void refetch()}
+            >
+              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} aria-hidden />
               Retry
             </button>
           </div>
         )}
 
-        {!error && filtered.length === 0 ? (
-          <div className="card rounded-3xl p-10 sm:p-14 text-center max-w-2xl mx-auto">
+        {loading && (
+          <div className="space-y-4">
+            {[1, 2].map(i => (
+              <div key={i} className="card rounded-2xl sm:rounded-3xl p-5 sm:p-6 animate-pulse">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-[var(--bg-tertiary)] shrink-0" />
+                  <div className="flex-1 space-y-3">
+                    <div className="h-4 bg-[var(--bg-tertiary)] rounded w-1/4" />
+                    <div className="h-6 bg-[var(--bg-tertiary)] rounded w-3/4" />
+                    <div className="h-4 bg-[var(--bg-tertiary)] rounded w-1/2" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!loading && !error && filtered.length === 0 ? (
+          <div className="card rounded-3xl p-8 sm:p-14 text-center max-w-2xl mx-auto">
             <TicketIcon className="mx-auto mb-5 text-[var(--accent)]" size={48} aria-hidden />
-            <h2 className="type-h3 text-[var(--text)] mb-2">No tickets here yet</h2>
+            <h2 className="type-h3 text-[var(--text)] mb-2">No tickets in your wallet yet</h2>
             <p className="text-sm text-[var(--text-muted)] mb-6">
               Reserve an event ticket and it will appear here as a real, scannable admission.
             </p>
             <Link href="/events" className="btn btn-md btn-grad text-white">
-              Browse events
+              Get tickets
             </Link>
           </div>
-        ) : (
+        ) : !loading && (
           <div className="space-y-4">
             {filtered.map((ticket, index) => {
               const status = STATUS[ticket.status];
@@ -331,35 +357,35 @@ export default function TicketsPage() {
                   initial={{ opacity: 0, y: 14 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.35, delay: Math.min(index * 0.04, 0.2) }}
-                  className="card rounded-2xl sm:rounded-3xl p-0 overflow-hidden"
+                  className="card rounded-2xl sm:rounded-3xl p-0 overflow-hidden w-full max-w-full min-w-0 box-border"
                 >
-                  <div className="p-5 sm:p-6">
-                    <div className="flex items-start gap-4">
+                  <div className="p-4 sm:p-6">
+                    <div className="flex items-start gap-3 sm:gap-4 min-w-0">
                       <div
-                        className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 text-white"
+                        className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center shrink-0 text-white"
                         style={{ background: 'var(--grad-primary)' }}
                       >
-                        <StatusIcon size={22} aria-hidden />
+                        <StatusIcon size={20} aria-hidden />
                       </div>
 
                       <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                        <div className="flex flex-wrap items-center gap-2 mb-1.5">
                           <span className={`badge ${status.badgeClass}`}>{status.label}</span>
-                          <span className="font-mono text-xs text-[var(--text-muted)]">
+                          <span className="font-mono text-xs text-[var(--text-muted)] truncate max-w-[140px] sm:max-w-none">
                             {ticket.ticketNumber}
                           </span>
                         </div>
-                        <h2 className="text-lg sm:text-xl font-bold text-[var(--text)] leading-tight">
+                        <h2 className="text-base sm:text-xl font-bold text-[var(--text)] leading-tight break-words">
                           {ticket.event.title}
                         </h2>
-                        <div className="mt-3 grid gap-2 text-sm text-[var(--text-muted)] sm:grid-cols-2">
-                          <span className="flex items-start gap-2">
-                            <Calendar size={15} className="mt-0.5 shrink-0" aria-hidden />
-                            {formatEventDate(ticket)}
+                        <div className="mt-2 sm:mt-3 grid gap-1.5 sm:gap-2 text-xs sm:text-sm text-[var(--text-muted)] sm:grid-cols-2">
+                          <span className="flex items-start gap-1.5 min-w-0">
+                            <Calendar size={14} className="mt-0.5 shrink-0" aria-hidden />
+                            <span className="break-words">{formatEventDate(ticket)}</span>
                           </span>
-                          <span className="flex items-start gap-2">
-                            <MapPin size={15} className="mt-0.5 shrink-0" aria-hidden />
-                            {ticket.event.venue || 'Venue to be announced'}
+                          <span className="flex items-start gap-1.5 min-w-0">
+                            <MapPin size={14} className="mt-0.5 shrink-0" aria-hidden />
+                            <span className="truncate">{ticket.event.venue || 'Venue to be announced'}</span>
                           </span>
                         </div>
                       </div>
@@ -367,12 +393,12 @@ export default function TicketsPage() {
                       <button
                         type="button"
                         onClick={() => void openTicket(ticket)}
-                        className="w-11 h-11 rounded-full border border-[var(--border)] flex items-center justify-center text-[var(--text)] hover:bg-[var(--bg-secondary)] shrink-0"
+                        className="w-9 h-9 sm:w-11 sm:h-11 rounded-full border border-[var(--border)] flex items-center justify-center text-[var(--text)] hover:bg-[var(--bg-secondary)] shrink-0"
                         aria-expanded={isOpen}
                         aria-controls={`ticket-${ticket.id}-details`}
                         aria-label={isOpen ? 'Hide ticket details' : 'Show ticket details'}
                       >
-                        {isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                        {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                       </button>
                     </div>
 
