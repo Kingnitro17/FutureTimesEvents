@@ -1,7 +1,5 @@
 'use client';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
 import UpcomingHero from '@/components/home/UpcomingHero';
 import { useEvents } from '@/lib/useEvents';
 import EventsInCitySection from '@/components/home/EventsInCitySection';
@@ -25,7 +23,6 @@ const CATEGORY_ICONS = [
 
 
 export default function HomePage() {
-  const router = useRouter();
   const location = 'Harare, Zimbabwe';
   const { events, loading, error } = useEvents();
 
@@ -54,54 +51,8 @@ export default function HomePage() {
       <UpcomingHero events={events} locationLabel={location.split(',')[0] || 'Zimbabwe'} />
 
       {/* Scroll Animation Section - Centered in empty space */}
-      <div className="relative h-32 sm:h-40 flex items-center justify-center overflow-hidden">
-        {/* Gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[var(--bg-secondary)]/30 to-transparent" />
-        
-        {/* Animated scroll indicator */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 1.5, duration: 0.6, ease: 'easeOut' }}
-          className="relative z-10 flex flex-col items-center gap-4"
-        >
-          {/* Bouncing mouse container */}
-          <motion.div
-            animate={{ y: [0, 16, 0] }}
-            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-            className="relative"
-          >
-            {/* Outer glow ring */}
-            <motion.div
-              animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
-              transition={{ duration: 2, repeat: Infinity }}
-              className="absolute inset-0 rounded-full bg-[var(--accent)]/20 blur-xl"
-            />
-            
-            {/* Mouse icon */}
-            <div className="relative w-10 h-14 sm:w-12 sm:h-16 rounded-[1.5rem] border-[2px] border-[var(--accent)] bg-[var(--bg)]/80 backdrop-blur-sm flex justify-center pt-3 shadow-lg shadow-[var(--accent)]/20">
-              {/* Scroll wheel */}
-              <motion.div
-                animate={{ y: [0, 12, 0], opacity: [1, 0.4, 1] }}
-                transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-                className="w-2.5 h-3 sm:w-3 sm:h-4 rounded-full bg-gradient-to-b from-[var(--accent)] to-[#7222E3]"
-              />
-            </div>
-          </motion.div>
-          
-          {/* Animated text */}
-          <motion.p
-            animate={{ opacity: [0.6, 1, 0.6] }}
-            transition={{ duration: 2, repeat: Infinity }}
-            className="text-xs sm:text-sm font-bold tracking-widest uppercase text-[var(--text-muted)]"
-          >
-            Scroll to explore
-          </motion.p>
-        </motion.div>
-      </div>
-
       {/* ── EVENT CATEGORIES MARQUEE ── */}
-      <section className="relative z-10 section-pad overflow-hidden">
+      <section className="relative z-10 py-8 sm:py-12">
         {/* Subtle gradient background for smooth theme transition */}
         <div className="absolute inset-0 bg-gradient-to-b from-[var(--bg)] via-[var(--bg-secondary)] to-[var(--bg)] opacity-50" />
         
@@ -113,48 +64,35 @@ export default function HomePage() {
         </div>
         
         {/* Marquee Container */}
-        <div className="relative w-full z-10">
+        <div className="container relative z-10">
           {/* Smooth edge gradients - no hard lines */}
-          <div className="absolute inset-y-0 left-0 w-12 sm:w-24 pointer-events-none z-10" style={{ background: 'linear-gradient(90deg, var(--bg) 0%, transparent 70%)' }} />
-          <div className="absolute inset-y-0 right-0 w-12 sm:w-24 pointer-events-none z-10" style={{ background: 'linear-gradient(270deg, var(--bg) 0%, transparent 70%)' }} />
-          
-          <div className="flex w-max animate-marquee gap-5 sm:gap-8 px-6 hover:cursor-pointer">
-            {[...CATEGORY_ICONS, ...CATEGORY_ICONS, ...CATEGORY_ICONS, ...CATEGORY_ICONS].map(({ id, label, icon: Icon, grad }, i) => (
-              <motion.button
-                key={`${id}-${i}`}
-                onClick={() => router.push(`/events?cat=${id}`)}
-                whileHover={{ y: -4 }}
-                whileTap={{ scale: 0.95 }}
-                className="flex flex-col items-center gap-3 shrink-0 group"
-                style={{ minWidth: '88px' }}
+          <div className="grid grid-cols-4 gap-x-2 gap-y-5 sm:gap-4 md:grid-cols-8">
+            {CATEGORY_ICONS.map(({ id, label, icon: Icon, grad }) => (
+              <Link
+                key={id}
+                href={`/events?cat=${id}`}
+                className="group flex min-w-0 flex-col items-center gap-2 rounded-2xl p-1 text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
               >
                 {/* Polished gradient circle - no borders */}
                 <div
-                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl sm:rounded-3xl flex flex-col items-center justify-center transition-all duration-300"
+                  className="flex h-14 w-14 items-center justify-center rounded-2xl transition-transform duration-200 group-hover:-translate-y-0.5 sm:h-20 sm:w-20"
                   style={{ 
                     background: grad,
-                    boxShadow: `0 12px 32px ${grad.split(',')[1].replace(')', '')}, 0.25),
-                                0 4px 8px rgba(0,0,0,0.1)`,
+                    boxShadow: 'var(--shadow-sm)',
                   }}
                 >
                   <Icon 
-                    size={32} 
-                    strokeWidth={1.5} 
-                    className="text-white drop-shadow-lg" 
+                    size={24}
+                    strokeWidth={1.8}
+                    className="text-white sm:h-7 sm:w-7"
                   />
                 </div>
 
                 {/* Label with gradient text effect */}
-                <span
-                  className="text-[13px] font-bold text-center leading-tight whitespace-pre-line tracking-tight transition-all duration-300 group-hover:scale-105"
-                  style={{ 
-                    color: 'var(--text)',
-                    textShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                  }}
-                >
+                <span className="w-full whitespace-pre-line break-words text-[11px] font-extrabold leading-tight text-[var(--text)] sm:text-sm">
                   {label}
                 </span>
-              </motion.button>
+              </Link>
             ))}
           </div>
         </div>

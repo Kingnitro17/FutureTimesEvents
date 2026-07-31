@@ -114,7 +114,7 @@ export default function UpcomingHero({
       <div className="relative z-10 w-full h-4" />
 
       {/* Hero content */}
-      <div className="relative z-10 w-full pb-16 sm:pb-24">
+      <div className="relative z-10 w-full pb-6 sm:pb-12">
         <div className="container">
           <div className="relative">
 
