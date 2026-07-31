@@ -57,10 +57,33 @@ export default function Navbar() {
   const dropRef     = useRef<HTMLDivElement>(null);
   const searchRef   = useRef<HTMLDivElement>(null);
   const locationRef = useRef<HTMLDivElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const menuPanelRef = useRef<HTMLDivElement>(null);
   const pathname    = usePathname();
   const router      = useRouter();
   const { user, signOut, isOrganizer, isAdmin } = useAuth();
   const { events } = useEvents();
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const menuButton = menuButtonRef.current;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const focusTask = window.setTimeout(() => menuPanelRef.current?.querySelector<HTMLElement>('a,button')?.focus(), 0);
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setMobileMenuOpen(false);
+        menuButtonRef.current?.focus();
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.clearTimeout(focusTask);
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', onKeyDown);
+      menuButton?.focus();
+    };
+  }, [mobileMenuOpen]);
 
   /* Remove any stale dark-mode class from previous sessions */
   useEffect(() => {
@@ -339,9 +362,13 @@ export default function Navbar() {
             {/* Mobile Hamburger Menu */}
             <div className="relative md:hidden">
               <motion.button
+                ref={menuButtonRef}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setMobileMenuOpen(v => !v)}
+                aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+                aria-expanded={mobileMenuOpen}
+                aria-controls="mobile-navigation-menu"
                 className="w-10 h-10 rounded-full flex items-center justify-center transition-colors bg-gray-100 text-gray-700"
               >
                 {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
@@ -351,6 +378,11 @@ export default function Navbar() {
               <AnimatePresence>
                 {mobileMenuOpen && (
                   <motion.div
+                    ref={menuPanelRef}
+                    id="mobile-navigation-menu"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="Navigation menu"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
@@ -368,7 +400,7 @@ export default function Navbar() {
                     animate={{ x: 0, opacity: 1 }}
                     exit={{ x: '100%', opacity: 0 }}
                     transition={{ type: 'tween', ease: [0.22, 1, 0.36, 1], duration: 0.28 }}
-                    className="fixed inset-y-0 right-0 z-50 w-[82vw] max-w-[340px] flex flex-col overflow-hidden"
+                    className="fixed inset-y-0 right-0 z-50 w-[min(92vw,380px)] flex flex-col overflow-hidden pb-[env(safe-area-inset-bottom)]"
                     style={{
                       background: 'var(--bg)',
                       borderLeft: '1px solid var(--border)',

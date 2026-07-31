@@ -25,10 +25,10 @@ export default function MobileBottomNav() {
   return (
     <div className="md:hidden fixed left-0 right-0 bottom-0 z-50">
       <div 
-        className="bg-[#11111a]/95 backdrop-blur-xl border-t border-white/5"
+        className="bg-[var(--bg-card)]/95 backdrop-blur-xl border-t border-[var(--border)] shadow-[0_-4px_20px_rgba(0,0,0,0.06)]"
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
-        <div className="flex items-center justify-around px-4 py-4">
+        <nav aria-label="Mobile navigation" className="flex items-stretch justify-around px-2 py-2">
           {ITEMS.map(({ href, label, Icon }) => {
             const isActive =
               href === '/'
@@ -39,14 +39,15 @@ export default function MobileBottomNav() {
               <Link
                 key={href}
                 href={href}
-                className="relative flex flex-col items-center justify-center w-16"
+                aria-current={isActive ? 'page' : undefined}
+                className="relative flex min-h-14 min-w-16 flex-1 flex-col items-center justify-center rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
               >
                 <motion.div
                   className={`relative flex flex-col items-center gap-2 transition-all duration-300 ${
-                    isActive ? 'text-[#3B9CFF]' : 'text-gray-500'
+                    isActive ? 'text-[var(--accent)]' : 'text-[var(--text-muted)]'
                   }`}
                   animate={{
-                    scale: isActive ? 1.1 : 1,
+                    scale: 1,
                   }}
                   transition={{
                     type: "spring",
@@ -56,7 +57,7 @@ export default function MobileBottomNav() {
                 >
                   <motion.div
                     animate={{
-                      y: isActive ? -4 : 0
+                      y: 0
                     }}
                     transition={{
                       type: "spring",
@@ -67,7 +68,7 @@ export default function MobileBottomNav() {
                     <Icon 
                       size={24} 
                       strokeWidth={isActive ? 2.5 : 2}
-                      className={isActive ? 'drop-shadow-[0_0_8px_rgba(59,156,255,0.5)]' : ''}
+                      className=""
                     />
                   </motion.div>
                   <motion.span
@@ -85,7 +86,7 @@ export default function MobileBottomNav() {
                 {isActive && (
                   <motion.div
                     layoutId="nav-indicator"
-                    className="absolute -bottom-2 w-8 h-1 rounded-full bg-[#3B9CFF]"
+                    className="absolute bottom-0 w-7 h-0.5 rounded-full bg-[var(--accent)]"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 10 }}
@@ -99,7 +100,7 @@ export default function MobileBottomNav() {
               </Link>
             );
           })}
-        </div>
+        </nav>
       </div>
     </div>
   );
