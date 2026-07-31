@@ -19,13 +19,17 @@ export type AccountStatus = 'active' | 'suspended' | 'deleted';
 // ─── Event enums ─────────────────────────────────────────────
 export type EventStatus =
   | 'draft'
+  | 'pending_review'
+  | 'changes_requested'
+  | 'approved'
   | 'scheduled'
   | 'published'
   | 'sold_out'
   | 'completed'
   | 'cancelled'
   | 'postponed'
-  | 'archived';
+  | 'archived'
+  | 'rejected';
 
 // ─── Ticket enums ─────────────────────────────────────────────
 export type TicketStatus = 'issued' | 'checked_in' | 'cancelled' | 'revoked';
@@ -83,7 +87,6 @@ export interface Database {
           date: string;
           time: string;
           end_time: string | null;
-          cover_image_url: string | null;
           image_url: string | null;
           starts_at: string;  // timestamptz ISO string
           ends_at: string | null;
@@ -110,6 +113,12 @@ export interface Database {
           created_by: string | null;
           created_at: string;
           updated_at: string;
+          submitted_at: string | null;
+          reviewed_at: string | null;
+          reviewed_by: string | null;
+          review_notes: string | null;
+          organizer_notes: string | null;
+          published_at: string | null;
         };
         Insert: Partial<Database['public']['Tables']['events']['Row']> & {
           title: string; slug: string; category: string; category_label: string;
@@ -496,6 +505,10 @@ export interface Database {
           idempotency_key: string | null;
           created_at: string;
           updated_at: string;
+          channel: 'email' | 'whatsapp';
+          recipient: string | null;
+          last_error: string | null;
+          next_attempt_at: string | null;
         };
         Insert: Partial<Database['public']['Tables']['notification_jobs']['Row']> & {
           type: string; recipient_email: string; payload: Json;

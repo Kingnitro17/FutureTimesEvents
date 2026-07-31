@@ -52,6 +52,7 @@ export default function DashboardPage() {
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [savedDraftId, setSavedDraftId] = useState<string | null>(null);
 
   const handleCreateEvent = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,14 +91,17 @@ export default function DashboardPage() {
         price: Number(newEvent.price) || 0,
         image_url: imageUrl,
         organizer_id: user.id,
+        created_by: user.id,
         organizer_name: user.name,
-        status: 'published'
+        venue_name: newEvent.venue,
+        starts_at: `${newEvent.date}T${newEvent.time}:00+02:00`,
+        status: 'draft'
       }).select().single();
 
       if (error) throw error;
 
-      toast.success('Event created successfully!');
-      setActiveTab('events');
+      toast.success('Draft saved. Submit it for review when it is ready.');
+      setSavedDraftId(data.id);
       router.refresh();
       setNewEvent({ title: '', category: 'Music', date: '', time: '', venue: '', city: '', price: '', capacity: '', description: '' });
       setImageFile(null);
@@ -106,6 +110,26 @@ export default function DashboardPage() {
     } finally {
       setIsCreating(false);
     }
+  };
+
+  const submitDraft = async () => {
+    if (!savedDraftId) return;
+    setIsCreating(true);
+    try {
+      const response = await fetch('/api/events/submit', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventId: savedDraftId }),
+      });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error || 'Could not submit event.');
+      toast.success(body.notificationQueued
+        ? 'Event submitted for super-admin review.'
+        : 'Event submitted; notification delivery is queued for retry.');
+      setSavedDraftId(null);
+      setActiveTab('events');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Could not submit event.');
+    } finally { setIsCreating(false); }
   };
 
   if (isLoading) return (
@@ -515,10 +539,16 @@ export default function DashboardPage() {
                         <label className="text-sm font-medium text-[var(--text)]">Description</label>
                         <textarea placeholder="Describe your event..." className="input mt-1.5 w-full min-h-[100px] py-3" value={newEvent.description} onChange={e => setNewEvent({...newEvent, description: e.target.value})} required />
                       </div>
+                      {savedDraftId && (
+                        <div className="rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div><p className="font-semibold text-[var(--text)]">Draft saved safely</p><p className="text-sm text-[var(--text-muted)]">Review the details, then send it to the super-admin queue.</p></div>
+                          <button type="button" className="btn btn-md btn-grad text-white" disabled={isCreating} onClick={() => void submitDraft()}>Submit for review</button>
+                        </div>
+                      )}
                       <div className="pt-4 border-t border-[var(--border)] flex justify-end gap-3">
                         <button type="button" onClick={() => setActiveTab('overview')} className="btn btn-md btn-ghost">Cancel</button>
                         <button type="submit" disabled={isCreating} className="btn btn-md btn-grad text-white disabled:opacity-50">
-                          {isCreating ? 'Creating...' : 'Create Event'}
+                          {isCreating ? 'Saving...' : 'Save Draft'}
                         </button>
                       </div>
                     </form>
