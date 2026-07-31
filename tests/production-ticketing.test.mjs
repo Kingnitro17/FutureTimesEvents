@@ -166,3 +166,23 @@ test('event review notifications are idempotently queued without browser credent
   assert.match(outbox, /\+263778595480/);
   assert.match(outbox, /rodelldenga@icloud\.com/);
 });
+
+test('public attendance is explicit opt-in and returns only safe profile fields', () => {
+  const route = read('app/api/events/[id]/attendance/route.ts');
+  const migration = read('supabase/migrations/011_social_attendance_and_avatar_security.sql');
+  assert.match(route, /eq\('is_public', true\)/);
+  assert.match(route, /select\('id,display_name,avatar_url,avatar_color,initials'\)/);
+  assert.doesNotMatch(route, /select\([^)]*(?:email|phone|ticket|qr)/);
+  assert.match(route, /user_id: user\.id/);
+  assert.match(migration, /DEFAULT FALSE/);
+  assert.match(migration, /REVOKE ALL ON public\.rsvps FROM anon/);
+});
+
+test('avatar uploads are constrained to the authenticated user folder', () => {
+  const profile = read('app/profile/page.tsx');
+  const migration = read('supabase/migrations/011_social_attendance_and_avatar_security.sql');
+  assert.match(profile, /`\$\{user\.id\}\/\$\{crypto\.randomUUID\(\)\}/);
+  assert.match(profile, /image\/jpeg/);
+  assert.match(migration, /storage\.foldername\(name\)\)\[1\] = auth\.uid\(\)::TEXT/);
+  assert.match(migration, /file_size_limit = EXCLUDED\.file_size_limit/);
+});

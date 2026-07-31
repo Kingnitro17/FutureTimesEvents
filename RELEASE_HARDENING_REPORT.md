@@ -15,6 +15,8 @@
 
 Apply `supabase/migrations/010_event_review_workflow.sql` manually after review. It is additive and was not executed automatically. It adds review timestamps/actors/notes, published timestamp, notification channel/recipient/retry metadata, idempotency and queue indexes, owner-scoped organizer policies, and a trigger that prevents organizers changing protected review fields. Existing public queries remain restricted to published states.
 
+Apply `supabase/migrations/011_social_attendance_and_avatar_security.sql` after migration 010. It makes RSVP visibility private by default, removes anonymous table access, adds the public-attendee partial index, and constrains avatar uploads/updates/deletes to the authenticated user’s own folder. It was not executed automatically.
+
 ## Server environment
 
 Configure the provider variables listed in `.env.example`. For WhatsApp, configure the access token, phone-number ID, business account, and an approved event-review template. Configure the email provider key and verified sender. The outbox recipients are `+263778595480`, `+263787550853`, `nigelmarara0@gmail.com`, and `rodelldenga@icloud.com`.
