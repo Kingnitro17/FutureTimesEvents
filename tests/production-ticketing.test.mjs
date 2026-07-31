@@ -175,6 +175,7 @@ test('public attendance is explicit opt-in and returns only safe profile fields'
   assert.doesNotMatch(route, /select\([^)]*(?:email|phone|ticket|qr)/);
   assert.match(route, /user_id: user\.id/);
   assert.match(migration, /DEFAULT FALSE/);
+  assert.match(migration, /CREATE TABLE IF NOT EXISTS public\.rsvps/);
   assert.match(migration, /REVOKE ALL ON public\.rsvps FROM anon/);
 });
 
