@@ -91,11 +91,14 @@ export default function CategoryMarquee() {
   }, []);
 
   return (
-    <section className="relative z-10" style={{ paddingBlock: 'var(--sp-6)' }}>
+    <section
+      className="relative z-10"
+      style={{ paddingTop: 'var(--sp-6)', paddingBottom: 'var(--sp-4)' }}
+    >
       <div className="absolute inset-0 bg-gradient-to-b from-[var(--bg)] via-[var(--bg-secondary)] to-[var(--bg)] opacity-50" />
 
       <div className="container relative z-10" style={{ marginBottom: 'var(--sp-4)' }}>
-        <div className="section-title">
+        <div className="section-title" style={{ marginBottom: 0 }}>
           <span className="overline">Browse by interest</span>
           <h2>Event Categories</h2>
         </div>
@@ -165,19 +168,19 @@ export default function CategoryMarquee() {
                     className="group flex shrink-0 flex-col items-center gap-2 rounded-2xl text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
                     style={{
                       flex: '0 0 auto',
-                      inlineSize: 'clamp(5.75rem, 24vw, 7.5rem)',
+                      inlineSize: 'clamp(6.5rem, 27vw, 8.5rem)',
                       padding: 'var(--sp-2)',
                     }}
                   >
                     <div
-                      className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl transition-transform duration-200 group-hover:-translate-y-0.5 sm:h-20 sm:w-20"
+                      className="flex h-[4.5rem] w-[4.5rem] shrink-0 items-center justify-center rounded-2xl transition-transform duration-200 group-hover:-translate-y-0.5 sm:h-[5.5rem] sm:w-[5.5rem]"
                       style={{ background: c.gradient, boxShadow: 'var(--shadow-sm)' }}
                     >
                       {c.emoji
-                        ? <span className="text-3xl leading-none" aria-hidden="true">{c.emoji}</span>
-                        : Icon && <Icon size={28} className="text-white" />}
+                        ? <span className="text-4xl leading-none" aria-hidden="true">{c.emoji}</span>
+                        : Icon && <Icon size={32} className="text-white" />}
                     </div>
-                    <span className="w-full text-xs font-extrabold leading-tight text-[var(--text)] sm:text-sm">
+                    <span className="w-full text-sm font-extrabold leading-tight text-[var(--text)] sm:text-base">
                       {c.label}
                     </span>
                   </Link>

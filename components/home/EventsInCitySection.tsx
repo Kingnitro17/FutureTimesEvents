@@ -51,7 +51,7 @@ export default function EventsInCitySection({
   return (
     <section
       className="relative z-10 section-pad"
-      style={{ background: 'var(--bg)' }}
+      style={{ background: 'var(--bg)', paddingTop: 'var(--sp-4)' }}
     >
       <div className="container">
         <div className="flex flex-col gap-6 sm:gap-8">
