@@ -5,21 +5,7 @@ import { useEvents } from '@/lib/useEvents';
 import EventsInCitySection from '@/components/home/EventsInCitySection';
 import CityOvalsSection from '@/components/home/CityOvalsSection';
 import AboutSection from '@/components/home/AboutSection';
-import {
-  Music, Palette, Heart,
-  Sparkles, Plane, Gamepad2, Briefcase, UtensilsCrossed,
-} from 'lucide-react';
-
-const CATEGORY_ICONS = [
-  { id: 'music',    label: 'Music',              icon: Music,   grad: 'linear-gradient(135deg,#FF55C2,#7222E3)' },
-  { id: 'nightlife',label: 'Nightlife',          icon: Sparkles,grad: 'linear-gradient(135deg,#7222E3,#4F46E5)' },
-  { id: 'arts',     label: 'Performing &\nVisual Arts', icon: Palette, grad: 'linear-gradient(135deg,#2CC4EA,#533885)' },
-  { id: 'holidays', label: 'Holidays',           icon: Plane,   grad: 'linear-gradient(135deg,#46FFAB,#2CC4EA)' },
-  { id: 'dating',   label: 'Dating',             icon: Heart,   grad: 'linear-gradient(135deg,#FF6B6B,#FF55C2)' },
-  { id: 'hobbies',  label: 'Hobbies',            icon: Gamepad2,grad: 'linear-gradient(135deg,#FFBC73,#FF6B6B)' },
-  { id: 'business', label: 'Business',           icon: Briefcase,grad:'linear-gradient(135deg,#1D5BFF,#2CC4EA)' },
-  { id: 'food',     label: 'Food & Drink',       icon: UtensilsCrossed, grad: 'linear-gradient(135deg,#46FFAB,#1D5BFF)' },
-];
+import CategoryMarquee from '@/components/home/CategoryMarquee';
 
 
 export default function HomePage() {
@@ -52,51 +38,7 @@ export default function HomePage() {
 
       {/* Scroll Animation Section - Centered in empty space */}
       {/* ── EVENT CATEGORIES MARQUEE ── */}
-      <section className="relative z-10 py-8 sm:py-12">
-        {/* Subtle gradient background for smooth theme transition */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[var(--bg)] via-[var(--bg-secondary)] to-[var(--bg)] opacity-50" />
-        
-        <div className="container mb-6 relative z-10">
-          <div className="section-title">
-            <span className="overline">Browse by interest</span>
-            <h2>Event Categories</h2>
-          </div>
-        </div>
-        
-        {/* Marquee Container */}
-        <div className="container relative z-10">
-          {/* Smooth edge gradients - no hard lines */}
-          <div className="grid grid-cols-4 gap-x-2 gap-y-5 sm:gap-4 md:grid-cols-8">
-            {CATEGORY_ICONS.map(({ id, label, icon: Icon, grad }) => (
-              <Link
-                key={id}
-                href={`/events?cat=${id}`}
-                className="group flex min-w-0 flex-col items-center gap-2 rounded-2xl p-1 text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
-              >
-                {/* Polished gradient circle - no borders */}
-                <div
-                  className="flex h-14 w-14 items-center justify-center rounded-2xl transition-transform duration-200 group-hover:-translate-y-0.5 sm:h-20 sm:w-20"
-                  style={{ 
-                    background: grad,
-                    boxShadow: 'var(--shadow-sm)',
-                  }}
-                >
-                  <Icon 
-                    size={24}
-                    strokeWidth={1.8}
-                    className="text-white sm:h-7 sm:w-7"
-                  />
-                </div>
-
-                {/* Label with gradient text effect */}
-                <span className="w-full whitespace-pre-line break-words text-[11px] font-extrabold leading-tight text-[var(--text)] sm:text-sm">
-                  {label}
-                </span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
+      <CategoryMarquee />
 
       {/* ── EVENTS IN CITY (replaces "What's Hot Right Now") ── */}
       <EventsInCitySection events={events} city="Zimbabwe" country="Zimbabwe" />
