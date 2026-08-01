@@ -212,19 +212,33 @@ export default function TicketViewPage() {
   const isInactive = ticket.status === 'cancelled' || ticket.status === 'revoked';
 
   return (
-    <div className="min-h-screen page-offset pb-16 bg-[var(--bg-secondary)] box-border w-full max-w-full min-w-0">
-      <div className="container py-8 sm:py-10 box-border w-full max-w-full min-w-0">
-        <div className="max-w-lg mx-auto w-full min-w-0">
+    <div
+      className="min-h-screen page-offset bg-[var(--bg-secondary)] box-border w-full max-w-full min-w-0"
+      style={{ paddingBottom: 'var(--sp-7)' }}
+    >
+      <div
+        className="container box-border w-full max-w-full min-w-0"
+        style={{ paddingBlock: 'var(--sp-5)' }}
+      >
+        <div className="max-w-lg w-full min-w-0" style={{ marginInline: 'auto' }}>
           <Link
             href="/tickets"
-            className="inline-flex items-center gap-2 text-sm text-[var(--text-muted)] hover:text-[var(--text)] mb-5"
+            className="inline-flex items-center gap-2 text-sm text-[var(--text-muted)] hover:text-[var(--text)]"
+            style={{ marginBottom: 'var(--sp-3)' }}
           >
             <ArrowLeft size={15} aria-hidden />
             Back to wallet
           </Link>
 
           <article className="overflow-hidden rounded-[32px] border border-[var(--border)] shadow-2xl box-border w-full max-w-full min-w-0">
-            <header className="p-6 sm:p-8 text-white relative overflow-hidden" style={{ background: gradient }}>
+            <header
+              className="text-white relative overflow-hidden"
+              style={{
+                background: gradient,
+                padding: 'clamp(1.25rem, 4vw, 2rem)',
+                boxSizing: 'border-box',
+              }}
+            >
               <div
                 className="absolute inset-0 opacity-20"
                 style={{
@@ -233,29 +247,38 @@ export default function TicketViewPage() {
                 }}
                 aria-hidden
               />
-              <div className="relative">
+              <div className="relative flex min-w-0 flex-col" style={{ gap: 'var(--sp-2)' }}>
                 <p className="text-white/75 text-xs font-bold uppercase tracking-[0.2em]">
                   Future Times Events
                 </p>
-                <h1 className="font-display text-2xl sm:text-3xl font-black mt-2 leading-tight">
+                <h1 className="font-display text-2xl sm:text-3xl font-black leading-tight break-words">
                   {ticket.event.title}
                 </h1>
-                <p className="text-white/85 font-semibold mt-2">{ticket.ticketType.name}</p>
-                <div className="mt-4">
+                <p className="text-white/85 font-semibold break-words">{ticket.ticketType.name}</p>
+                <div style={{ paddingTop: 'var(--sp-2)' }}>
                   {isIssued && (
-                    <span className="inline-flex items-center gap-2 rounded-full bg-white/20 px-3 py-1.5 text-xs font-bold backdrop-blur">
+                    <span
+                      className="inline-flex items-center gap-2 rounded-full bg-white/20 text-xs font-bold backdrop-blur"
+                      style={{ padding: 'var(--sp-2) var(--sp-3)' }}
+                    >
                       <ShieldCheck size={14} aria-hidden />
                       ACTIVE TICKET
                     </span>
                   )}
                   {isCheckedIn && (
-                    <span className="inline-flex items-center gap-2 rounded-full bg-emerald-950/25 px-3 py-1.5 text-xs font-bold backdrop-blur">
+                    <span
+                      className="inline-flex items-center gap-2 rounded-full bg-emerald-950/25 text-xs font-bold backdrop-blur"
+                      style={{ padding: 'var(--sp-2) var(--sp-3)' }}
+                    >
                       <CheckCircle2 size={14} aria-hidden />
                       CHECKED IN · NO LONGER VALID
                     </span>
                   )}
                   {isInactive && (
-                    <span className="inline-flex items-center gap-2 rounded-full bg-red-950/30 px-3 py-1.5 text-xs font-bold backdrop-blur">
+                    <span
+                      className="inline-flex items-center gap-2 rounded-full bg-red-950/30 text-xs font-bold backdrop-blur"
+                      style={{ padding: 'var(--sp-2) var(--sp-3)' }}
+                    >
                       <XCircle size={14} aria-hidden />
                       {ticket.status.toUpperCase()}
                     </span>
@@ -270,8 +293,17 @@ export default function TicketViewPage() {
               <div className="w-6 h-6 rounded-full bg-[var(--bg-secondary)] -mr-3" />
             </div>
 
-            <div className="bg-[var(--bg-card)] p-6 sm:p-8">
-              <div className="flex flex-col items-center min-h-64 justify-center w-full min-w-0">
+            <div
+              className="bg-[var(--bg-card)]"
+              style={{
+                padding: 'clamp(1.25rem, 4vw, 2rem)',
+                boxSizing: 'border-box',
+              }}
+            >
+              <div
+                className="flex flex-col items-center min-h-64 justify-center w-full min-w-0"
+                style={{ gap: 'var(--sp-3)' }}
+              >
                 {isIssued && qrToken ? (
                   <>
                     <QRDisplay
@@ -279,22 +311,26 @@ export default function TicketViewPage() {
                       size={220}
                       label={`Entry QR for ${ticket.ticketNumber}`}
                     />
-                    <p className="text-xs text-[var(--text-muted)] mt-3 text-center">
+                    <p className="text-xs text-[var(--text-muted)] text-center leading-relaxed">
                       Present this QR at the entrance. It can be checked in once.
                     </p>
                   </>
                 ) : isIssued ? (
-                  <div className="rounded-3xl bg-[var(--bg-secondary)] p-7 text-center w-full">
+                  <div
+                    className="rounded-3xl bg-[var(--bg-secondary)] text-center w-full flex flex-col items-center"
+                    style={{ padding: 'var(--sp-4)', gap: 'var(--sp-2)', boxSizing: 'border-box' }}
+                  >
                     <QrCode size={44} className="mx-auto text-[var(--accent)]" aria-hidden />
-                    <h2 className="font-bold text-[var(--text)] mt-3">Secure QR hidden</h2>
-                    <p className="text-sm text-[var(--text-muted)] mt-1">
+                    <h2 className="font-bold text-[var(--text)]">Secure QR hidden</h2>
+                    <p className="text-sm text-[var(--text-muted)] leading-relaxed">
                       Recover a new code on this trusted device. Older QR copies will be invalidated.
                     </p>
                     <button
                       type="button"
                       onClick={() => void recoverQr()}
                       disabled={recovering}
-                      className="btn btn-md btn-primary mt-4"
+                      className="btn btn-md btn-primary"
+                      style={{ marginTop: 'var(--sp-2)' }}
                     >
                       {recovering
                         ? <RefreshCw size={16} className="animate-spin" aria-hidden />
@@ -303,42 +339,48 @@ export default function TicketViewPage() {
                     </button>
                   </div>
                 ) : isCheckedIn ? (
-                  <div className="text-center py-6">
+                  <div
+                    className="text-center flex flex-col items-center"
+                    style={{ paddingBlock: 'var(--sp-4)', gap: 'var(--sp-2)' }}
+                  >
                     <CheckCircle2 size={64} className="mx-auto text-emerald-500" aria-hidden />
-                    <h2 className="font-black text-xl text-emerald-600 dark:text-emerald-300 mt-3">
+                    <h2 className="font-black text-xl text-emerald-600 dark:text-emerald-300">
                       Already checked in
                     </h2>
                     {ticket.checkedInAt && (
-                      <p className="text-sm text-[var(--text-muted)] mt-2">
+                      <p className="text-sm text-[var(--text-muted)]">
                         {new Date(ticket.checkedInAt).toLocaleString('en-ZW')}
                         {ticket.gate ? ` · ${ticket.gate}` : ''}
                       </p>
                     )}
-                    <p className="text-xs text-[var(--text-muted)] mt-2">
+                    <p className="text-xs text-[var(--text-muted)]">
                       This QR is no longer valid for entry.
                     </p>
                   </div>
                 ) : (
-                  <div className="text-center py-6">
+                  <div
+                    className="text-center flex flex-col items-center"
+                    style={{ paddingBlock: 'var(--sp-4)', gap: 'var(--sp-2)' }}
+                  >
                     <XCircle size={64} className="mx-auto text-red-500" aria-hidden />
-                    <h2 className="font-black text-xl text-red-500 mt-3 capitalize">
+                    <h2 className="font-black text-xl text-red-500 capitalize">
                       Ticket {ticket.status}
                     </h2>
-                    <p className="text-xs text-[var(--text-muted)] mt-2">
+                    <p className="text-xs text-[var(--text-muted)]">
                       Entry is not permitted with this ticket.
                     </p>
                   </div>
                 )}
               </div>
 
-              <div className="border-t border-dashed border-[var(--border)] my-6" />
+              <div className="border-t border-dashed border-[var(--border)]" style={{ marginBlock: 'var(--sp-4)' }} />
 
-              <dl className="space-y-3">
-                <div className="flex items-start gap-3 rounded-2xl bg-[var(--bg-secondary)] p-4 sm:p-5 min-w-0">
+              <dl className="flex flex-col" style={{ gap: 'var(--sp-2)' }}>
+                <div className="flex items-start gap-3 min-w-0" style={{ padding: 'var(--sp-3)' }}>
                   <Calendar size={17} className="text-[var(--text-muted)] mt-0.5 shrink-0" aria-hidden />
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex flex-col" style={{ gap: 'var(--sp-1)' }}>
                     <dt className="text-xs text-[var(--text-muted)]">Date</dt>
-                    <dd className="font-semibold text-[var(--text)] text-sm">
+                    <dd className="font-semibold text-[var(--text)] text-sm break-words">
                       {startsAt
                         ? startsAt.toLocaleDateString('en-ZW', {
                             weekday: 'long',
@@ -351,9 +393,9 @@ export default function TicketViewPage() {
                     </dd>
                   </div>
                 </div>
-                <div className="flex items-start gap-3 rounded-2xl bg-[var(--bg-secondary)] p-4 sm:p-5 min-w-0">
+                <div className="flex items-start gap-3 min-w-0" style={{ padding: 'var(--sp-3)' }}>
                   <Clock size={17} className="text-[var(--text-muted)] mt-0.5 shrink-0" aria-hidden />
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex flex-col" style={{ gap: 'var(--sp-1)' }}>
                     <dt className="text-xs text-[var(--text-muted)]">Time</dt>
                     <dd className="font-semibold text-[var(--text)] text-sm">
                       {startsAt
@@ -366,38 +408,41 @@ export default function TicketViewPage() {
                     </dd>
                   </div>
                 </div>
-                <div className="flex items-start gap-3 rounded-2xl bg-[var(--bg-secondary)] p-4 sm:p-5 min-w-0">
+                <div className="flex items-start gap-3 min-w-0" style={{ padding: 'var(--sp-3)' }}>
                   <MapPin size={17} className="text-[var(--text-muted)] mt-0.5 shrink-0" aria-hidden />
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex flex-col" style={{ gap: 'var(--sp-1)' }}>
                     <dt className="text-xs text-[var(--text-muted)]">Venue</dt>
                     <dd className="font-semibold text-[var(--text)] text-sm">
                       {ticket.event.venue || 'To be announced'}
                     </dd>
                     {ticket.event.address && (
-                      <dd className="text-xs text-[var(--text-muted)]">{ticket.event.address}</dd>
+                      <dd className="text-xs text-[var(--text-muted)] break-words">{ticket.event.address}</dd>
                     )}
                   </div>
                 </div>
               </dl>
 
-              <div className="border-t border-dashed border-[var(--border)] my-6" />
+              <div className="border-t border-dashed border-[var(--border)]" style={{ marginBlock: 'var(--sp-4)' }} />
 
               <div className="grid gap-3 sm:grid-cols-2">
-                <div className="rounded-2xl bg-[var(--bg-secondary)] p-5 min-w-0">
+                <div className="min-w-0 flex flex-col" style={{ padding: 'var(--sp-3)', gap: 'var(--sp-1)' }}>
                   <p className="text-xs uppercase tracking-wider text-[var(--text-muted)]">Ticket holder</p>
-                  <p className="font-bold text-[var(--text)] mt-1">{ticket.holderName}</p>
+                  <p className="font-bold text-[var(--text)] break-words">{ticket.holderName}</p>
                   <p className="text-xs text-[var(--text-muted)] break-all">{ticket.holderEmail}</p>
                 </div>
-                <div className="rounded-2xl bg-[var(--bg-secondary)] p-5 min-w-0">
+                <div className="min-w-0 flex flex-col" style={{ padding: 'var(--sp-3)', gap: 'var(--sp-1)' }}>
                   <p className="text-xs uppercase tracking-wider text-[var(--text-muted)]">Ticket number</p>
-                  <p className="font-mono font-bold text-[var(--text)] mt-1 break-all">{ticket.ticketNumber}</p>
+                  <p className="font-mono font-bold text-[var(--text)] break-all">{ticket.ticketNumber}</p>
                   <p className="text-xs text-[var(--text-muted)]">One admission</p>
                 </div>
               </div>
             </div>
           </article>
 
-          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 w-full min-w-0">
+          <div
+            className="grid grid-cols-1 gap-4 sm:grid-cols-2 w-full min-w-0"
+            style={{ marginTop: 'var(--sp-4)' }}
+          >
             <button
               type="button"
               onClick={() => void shareEvent()}
@@ -424,7 +469,10 @@ export default function TicketViewPage() {
             )}
           </div>
 
-          <p className="text-center text-xs text-[var(--text-muted)] leading-relaxed mt-5">
+          <p
+            className="text-center text-xs text-[var(--text-muted)] leading-relaxed"
+            style={{ marginTop: 'var(--sp-3)', paddingInline: 'var(--sp-2)' }}
+          >
             QR verification happens online at the entrance. Never share your ticket QR.
           </p>
         </div>
