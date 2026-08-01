@@ -162,15 +162,30 @@ export default function AboutSection() {
               </div>
 
               {/* Logo — Centered on mobile below intro, right-aligned on desktop */}
-              <div className="md:col-span-5 flex items-center justify-center md:justify-end shrink-0 pt-4 md:pt-0 bg-transparent border-0 shadow-none outline-none">
+              <div
+                className="md:col-span-5 flex min-w-0 items-center justify-center md:justify-end bg-transparent border-0 shadow-none outline-none"
+                style={{ gap: 'var(--sp-3)', paddingTop: 'var(--sp-3)' }}
+              >
                 <Image
                   src="/assets/nobglogo.png"
-                  alt="Future Times Events Logo"
-                  width={250}
-                  height={220}
+                  alt=""
+                  width={136}
+                  height={136}
                   priority={false}
-                  className="w-44 sm:w-56 lg:w-64 h-auto object-contain max-h-56 bg-transparent border-0 shadow-none outline-none pointer-events-none select-none"
+                  aria-hidden="true"
+                  className="h-auto shrink-0 object-contain bg-transparent border-0 shadow-none outline-none pointer-events-none select-none"
+                  style={{ width: 'clamp(4.75rem, 22vw, 8.5rem)' }}
                 />
+                <span
+                  className="font-display font-black leading-[1.05] tracking-[-0.035em] text-left"
+                  style={{
+                    color: '#0a0a0a',
+                    fontSize: 'clamp(1rem, 3.8vw, 1.55rem)',
+                    maxInlineSize: '10ch',
+                  }}
+                >
+                  Future Times Events
+                </span>
               </div>
             </div>
 
