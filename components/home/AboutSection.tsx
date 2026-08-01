@@ -164,28 +164,38 @@ export default function AboutSection() {
               {/* Logo — Centered on mobile below intro, right-aligned on desktop */}
               <div
                 className="md:col-span-5 flex min-w-0 items-center justify-center md:justify-end bg-transparent border-0 shadow-none outline-none"
-                style={{ gap: 'var(--sp-3)', paddingTop: 'var(--sp-3)' }}
+                style={{ gap: 'var(--sp-4)', paddingTop: 'var(--sp-3)' }}
               >
                 <Image
                   src="/assets/nobglogo.png"
                   alt=""
-                  width={136}
-                  height={136}
+                  width={160}
+                  height={160}
                   priority={false}
                   aria-hidden="true"
                   className="h-auto shrink-0 object-contain bg-transparent border-0 shadow-none outline-none pointer-events-none select-none"
-                  style={{ width: 'clamp(4.75rem, 22vw, 8.5rem)' }}
+                  style={{ width: 'clamp(6.25rem, 28vw, 10rem)' }}
                 />
-                <span
-                  className="font-display font-black leading-[1.05] tracking-[-0.035em] text-left"
-                  style={{
-                    color: '#0a0a0a',
-                    fontSize: 'clamp(1rem, 3.8vw, 1.55rem)',
-                    maxInlineSize: '10ch',
-                  }}
-                >
-                  Future Times Events
-                </span>
+                <div className="flex min-w-0 flex-col text-left" style={{ gap: 'var(--sp-1)' }}>
+                  <span
+                    className="font-display font-black leading-[0.95] tracking-[-0.045em]"
+                    style={{
+                      color: '#0a0a0a',
+                      fontSize: 'clamp(1.35rem, 5vw, 2rem)',
+                    }}
+                  >
+                    Future Times
+                  </span>
+                  <span
+                    className="font-display font-bold leading-none tracking-[-0.025em]"
+                    style={{
+                      color: '#0a0a0a',
+                      fontSize: 'clamp(1.05rem, 3.7vw, 1.45rem)',
+                    }}
+                  >
+                    Events
+                  </span>
+                </div>
               </div>
             </div>
 
