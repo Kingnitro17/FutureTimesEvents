@@ -42,8 +42,8 @@ export default function QRDisplay({ token, size = 220, label = 'Your ticket QR c
 
   return (
     <div
-      className="inline-flex w-full flex-col items-center rounded-2xl bg-white p-3 shadow-md"
-      style={{ maxWidth: size + 24 }}
+      className="inline-flex w-full flex-col items-center rounded-2xl bg-white p-4 shadow-md box-border"
+      style={{ maxWidth: size + 32 }}
       role="img"
       aria-label={label}
     >

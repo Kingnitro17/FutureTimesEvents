@@ -1,7 +1,5 @@
 'use client';
 
-import { useMemo } from 'react';
-import { motion } from 'framer-motion';
 import Link from 'next/link';
 import {
   Music2,
@@ -32,9 +30,6 @@ const CATS: Category[] = [
 ];
 
 export default function CategoryMarquee() {
-  const items = useMemo(() => [...CATS, ...CATS], []);
-  const base = 0;
-
   return (
     <section className="relative">
       <div
@@ -58,20 +53,17 @@ export default function CategoryMarquee() {
             <div className="absolute inset-y-0 left-0 w-10 sm:w-16 pointer-events-none z-10" style={{ background: 'linear-gradient(90deg, var(--bg) 0%, transparent 100%)' }} />
             <div className="absolute inset-y-0 right-0 w-10 sm:w-16 pointer-events-none z-10" style={{ background: 'linear-gradient(270deg, var(--bg) 0%, transparent 100%)' }} />
 
-            <motion.div
-              className="flex gap-4"
-              drag="x"
-              dragConstraints={{ left: -260, right: 0 }}
-              whileTap={{ cursor: 'grabbing' }}
-              animate={{ x: [base, -520] }}
-              transition={{ duration: 34, ease: 'linear', repeat: Infinity }}
-              style={{ willChange: 'transform' }}
+            <div
+              className="pill-scroll flex flex-nowrap gap-4 overflow-x-auto overflow-y-hidden scroll-smooth pb-2 pr-10 sm:pr-16"
+              tabIndex={0}
+              role="region"
+              aria-label="Browse event interests. Scroll horizontally for more categories."
             >
-              {items.map((c, idx) => (
+              {CATS.map(c => (
                 <Link
-                  key={`${c.id}-${idx}`}
-                  href={c.href}
-                  className="shrink-0"
+                  key={c.id}
+                  href={c.id === 'all' ? c.href : `${c.href}?cat=${encodeURIComponent(c.id)}`}
+                  className="shrink-0 snap-start"
                 >
                   <div className="card rounded-3xl p-4 sm:p-6 min-w-[210px] sm:min-w-[240px] overflow-hidden">
                     <div className="absolute inset-0 opacity-[0.55]" style={{ background: 'radial-gradient(900px 300px at 50% -20%, rgba(255,255,255,0.10), transparent 60%)' }} />
@@ -90,7 +82,7 @@ export default function CategoryMarquee() {
                   </div>
                 </Link>
               ))}
-            </motion.div>
+            </div>
           </div>
         </div>
       </div>

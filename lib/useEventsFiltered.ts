@@ -2,7 +2,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { mapDbEvent } from '@/lib/useEvents';
+import { haversineKm } from '@/lib/geography';
 import type { DbEvent, Event } from '@/types';
+
+export { haversineKm } from '@/lib/geography';
 
 export type DateFilter = 'all' | 'today' | 'this_week' | 'this_month' | 'upcoming';
 export type SortOption = 'Date' | 'Price: Low' | 'Price: High' | 'Popularity' | 'Nearest';
@@ -27,22 +30,6 @@ export const DEFAULT_FILTERS: EventFilters = {
 
 function toISODate(d: Date): string {
   return d.toISOString().split('T')[0];
-}
-
-/** Haversine distance in km between two lat/lng pairs */
-export function haversineKm(
-  lat1: number, lng1: number,
-  lat2: number, lng2: number,
-): number {
-  const R = 6371; // Earth radius in km
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLng = (lng2 - lng1) * Math.PI / 180;
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(lat1 * Math.PI / 180) *
-    Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLng / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
 export function useEventsFiltered(

@@ -212,9 +212,9 @@ export default function TicketViewPage() {
   const isInactive = ticket.status === 'cancelled' || ticket.status === 'revoked';
 
   return (
-    <div className="min-h-screen page-offset pb-12 bg-[var(--bg-secondary)]">
-      <div className="container py-6">
-        <div className="max-w-lg mx-auto">
+    <div className="min-h-screen page-offset pb-16 bg-[var(--bg-secondary)] box-border w-full max-w-full min-w-0">
+      <div className="container py-8 sm:py-10 box-border w-full max-w-full min-w-0">
+        <div className="max-w-lg mx-auto w-full min-w-0">
           <Link
             href="/tickets"
             className="inline-flex items-center gap-2 text-sm text-[var(--text-muted)] hover:text-[var(--text)] mb-5"
@@ -223,7 +223,7 @@ export default function TicketViewPage() {
             Back to wallet
           </Link>
 
-          <article className="overflow-hidden rounded-[32px] border border-[var(--border)] shadow-2xl">
+          <article className="overflow-hidden rounded-[32px] border border-[var(--border)] shadow-2xl box-border w-full max-w-full min-w-0">
             <header className="p-6 sm:p-8 text-white relative overflow-hidden" style={{ background: gradient }}>
               <div
                 className="absolute inset-0 opacity-20"
@@ -271,7 +271,7 @@ export default function TicketViewPage() {
             </div>
 
             <div className="bg-[var(--bg-card)] p-6 sm:p-8">
-              <div className="flex flex-col items-center min-h-64 justify-center">
+              <div className="flex flex-col items-center min-h-64 justify-center w-full min-w-0">
                 {isIssued && qrToken ? (
                   <>
                     <QRDisplay
@@ -333,10 +333,10 @@ export default function TicketViewPage() {
 
               <div className="border-t border-dashed border-[var(--border)] my-6" />
 
-              <dl className="space-y-4">
-                <div className="flex items-start gap-3">
+              <dl className="space-y-3">
+                <div className="flex items-start gap-3 rounded-2xl bg-[var(--bg-secondary)] p-4 sm:p-5 min-w-0">
                   <Calendar size={17} className="text-[var(--text-muted)] mt-0.5 shrink-0" aria-hidden />
-                  <div>
+                  <div className="min-w-0">
                     <dt className="text-xs text-[var(--text-muted)]">Date</dt>
                     <dd className="font-semibold text-[var(--text)] text-sm">
                       {startsAt
@@ -351,9 +351,9 @@ export default function TicketViewPage() {
                     </dd>
                   </div>
                 </div>
-                <div className="flex items-start gap-3">
+                <div className="flex items-start gap-3 rounded-2xl bg-[var(--bg-secondary)] p-4 sm:p-5 min-w-0">
                   <Clock size={17} className="text-[var(--text-muted)] mt-0.5 shrink-0" aria-hidden />
-                  <div>
+                  <div className="min-w-0">
                     <dt className="text-xs text-[var(--text-muted)]">Time</dt>
                     <dd className="font-semibold text-[var(--text)] text-sm">
                       {startsAt
@@ -366,9 +366,9 @@ export default function TicketViewPage() {
                     </dd>
                   </div>
                 </div>
-                <div className="flex items-start gap-3">
+                <div className="flex items-start gap-3 rounded-2xl bg-[var(--bg-secondary)] p-4 sm:p-5 min-w-0">
                   <MapPin size={17} className="text-[var(--text-muted)] mt-0.5 shrink-0" aria-hidden />
-                  <div>
+                  <div className="min-w-0">
                     <dt className="text-xs text-[var(--text-muted)]">Venue</dt>
                     <dd className="font-semibold text-[var(--text)] text-sm">
                       {ticket.event.venue || 'To be announced'}
@@ -383,21 +383,21 @@ export default function TicketViewPage() {
               <div className="border-t border-dashed border-[var(--border)] my-6" />
 
               <div className="grid gap-3 sm:grid-cols-2">
-                <div className="rounded-2xl bg-[var(--bg-secondary)] p-4">
+                <div className="rounded-2xl bg-[var(--bg-secondary)] p-5 min-w-0">
                   <p className="text-xs uppercase tracking-wider text-[var(--text-muted)]">Ticket holder</p>
                   <p className="font-bold text-[var(--text)] mt-1">{ticket.holderName}</p>
                   <p className="text-xs text-[var(--text-muted)] break-all">{ticket.holderEmail}</p>
                 </div>
-                <div className="rounded-2xl bg-[var(--bg-secondary)] p-4">
+                <div className="rounded-2xl bg-[var(--bg-secondary)] p-5 min-w-0">
                   <p className="text-xs uppercase tracking-wider text-[var(--text-muted)]">Ticket number</p>
-                  <p className="font-mono font-bold text-[var(--text)] mt-1">{ticket.ticketNumber}</p>
+                  <p className="font-mono font-bold text-[var(--text)] mt-1 break-all">{ticket.ticketNumber}</p>
                   <p className="text-xs text-[var(--text-muted)]">One admission</p>
                 </div>
               </div>
             </div>
           </article>
 
-          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 w-full min-w-0">
             <button
               type="button"
               onClick={() => void shareEvent()}

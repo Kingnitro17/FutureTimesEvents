@@ -251,7 +251,7 @@ export default function TicketsPage() {
   return (
     <div className="min-h-screen page-offset pb-nav bg-[var(--bg-secondary)]">
       <header className="border-b border-[var(--border)] bg-[var(--bg)]">
-        <div className="container py-7 sm:py-10">
+        <div className="container py-10 sm:py-14">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
@@ -270,8 +270,8 @@ export default function TicketsPage() {
         </div>
       </header>
 
-      <div className="container py-6 sm:py-8">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+      <div className="container py-10 sm:py-12">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 mb-10">
           <div className="flex gap-2" role="group" aria-label="Filter tickets">
             {(['all', 'active', 'used'] as const).map(value => (
               <button
@@ -294,7 +294,7 @@ export default function TicketsPage() {
         </div>
 
         {error && (
-          <div className="card rounded-2xl p-5 mb-6 flex flex-col sm:flex-row sm:items-center gap-4 border border-red-500/20 bg-red-500/5">
+          <div className="card rounded-2xl p-6 sm:p-8 mb-10 flex flex-col sm:flex-row sm:items-center gap-5 border border-red-500/20 bg-red-500/5">
             <AlertCircle className="text-red-500 shrink-0" aria-hidden />
             <div className="flex-1">
               <p className="font-semibold text-[var(--text)]">Could not load your tickets</p>
@@ -315,9 +315,9 @@ export default function TicketsPage() {
         )}
 
         {loading && (
-          <div className="space-y-5">
+          <div className="space-y-8">
             {[1, 2].map(i => (
-              <div key={i} className="card rounded-2xl sm:rounded-3xl p-5 sm:p-6 animate-pulse">
+              <div key={i} className="card rounded-2xl sm:rounded-3xl p-6 sm:p-8 animate-pulse">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-2xl bg-[var(--bg-tertiary)] shrink-0" />
                   <div className="flex-1 space-y-3">
@@ -343,7 +343,7 @@ export default function TicketsPage() {
             </Link>
           </div>
         ) : !loading && (
-          <div className="space-y-4">
+          <div className="space-y-8">
             {filtered.map((ticket, index) => {
               const status = STATUS[ticket.status];
               const StatusIcon = status.Icon;
@@ -359,7 +359,7 @@ export default function TicketsPage() {
                   transition={{ duration: 0.35, delay: Math.min(index * 0.04, 0.2) }}
                   className="card rounded-2xl sm:rounded-3xl p-0 overflow-hidden w-full max-w-full min-w-0 box-border"
                 >
-                  <div className="p-5 sm:p-6">
+                  <div className="p-6 sm:p-8">
                     <div className="flex items-start gap-3 sm:gap-4 min-w-0">
                       <div
                         className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center shrink-0 text-white"

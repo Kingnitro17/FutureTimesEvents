@@ -1,9 +1,10 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { Navigation } from 'lucide-react';
 import { useEvents } from '@/lib/useEvents';
+import { isValidCoordinates } from '@/lib/geography';
 
 const EventsMap = dynamic(() => import('@/components/events/EventsMap'), { ssr: false });
 
@@ -45,77 +46,63 @@ const CITIES = [
   { name: 'Victoria Falls', lat: -17.9333, lng: 25.8333 }
 ];
 
+type LocationStatus = 'idle' | 'locating' | 'located' | 'denied' | 'unavailable' | 'timeout' | 'unsupported';
+
 export default function MapPage() {
   const { events } = useEvents();
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
-  const [userCity, setUserCity] = useState<string>('Enable location access');
-  const [isLocating, setIsLocating] = useState(false);
-  const [locationError, setLocationError] = useState<string | null>(null);
-  const [selectedCityName, setSelectedCityName] = useState<string>('My Location');
+  const [userCity, setUserCity] = useState<string>('Enable location to calculate distance.');
+  const [locationStatus, setLocationStatus] = useState<LocationStatus>('idle');
+  const [locationAccuracy, setLocationAccuracy] = useState<number | null>(null);
+  const [selectedCityName, setSelectedCityName] = useState<string>('Zimbabwe');
   const [selectedCenter, setSelectedCenter] = useState<[number, number]>(DEFAULT_CENTER);
+  const isLocating = locationStatus === 'locating';
 
   const requestLocation = useCallback(() => {
     if (typeof window === 'undefined') return;
     if (!('geolocation' in navigator)) {
-      setLocationError('Geolocation not supported');
-      setUserCity('Location unavailable');
+      setLocationStatus('unsupported');
+      setUserCity('Location is not supported by this browser.');
       return;
     }
 
     if (isLocating) return;
-    setIsLocating(true);
-    setLocationError(null);
+    setLocationStatus('locating');
 
     navigator.geolocation.getCurrentPosition(
       pos => {
         const { latitude, longitude } = pos.coords;
+        if (!isValidCoordinates(latitude, longitude)) {
+          setLocationStatus('unavailable');
+          setUserCity('Your browser returned an invalid location. Please try again.');
+          return;
+        }
         setUserLocation([latitude, longitude]);
+        setLocationAccuracy(Number.isFinite(pos.coords.accuracy) ? pos.coords.accuracy : null);
         setSelectedCenter([latitude, longitude]);
         setSelectedCityName('My Location');
         const city = detectCity(latitude, longitude);
         setUserCity(`${city}, Zimbabwe`);
-        setIsLocating(false);
-        localStorage.setItem('user_location_cache', JSON.stringify([latitude, longitude]));
+        setLocationStatus('located');
       },
       (error) => {
-        setIsLocating(false);
         if (error.code === 1) {
-          setLocationError('Location permission denied - check browser settings');
+          setLocationStatus('denied');
+          setUserCity('Location permission was denied. Enable it in browser settings to calculate distance.');
         } else if (error.code === 2) {
-          setLocationError('Location unavailable');
+          setLocationStatus('unavailable');
+          setUserCity('Your location is currently unavailable. Please try again.');
         } else if (error.code === 3) {
-          setLocationError('Location request timed out');
+          setLocationStatus('timeout');
+          setUserCity('Location took too long. Please try again.');
         } else {
-          setLocationError('Could not get location');
+          setLocationStatus('unavailable');
+          setUserCity('We could not determine your location. Please try again.');
         }
-        setUserCity('Location unavailable');
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
     );
   }, [isLocating]);
-
-  useEffect(() => {
-    // Defer browser-storage synchronization until after the mount effect.
-    // This avoids a synchronous render cascade while preserving the initial
-    // cached-location lookup and first-visit geolocation prompt.
-    const timeoutId = window.setTimeout(() => {
-      const cached = localStorage.getItem('user_location_cache');
-      if (cached) {
-        try {
-          const [lat, lng] = JSON.parse(cached);
-          setUserLocation([lat, lng]);
-          setSelectedCenter([lat, lng]);
-          setSelectedCityName('My Location');
-        } catch {
-          // Ignore an invalid cache entry and keep the default map position.
-        }
-      } else {
-        requestLocation();
-      }
-    }, 0);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [requestLocation]);
 
   return (
     <div className="min-h-screen pb-nav" style={{ background: 'var(--bg)' }}>
@@ -189,11 +176,12 @@ export default function MapPage() {
               </button>
             ))}
           </div>
-          {locationError && (
-            <p className="px-2 pt-1 text-xs text-[var(--text-muted)]" role="status">{locationError}</p>
-          )}
-          {!locationError && selectedCityName === 'My Location' && (
-            <p className="sr-only" role="status">{userCity}</p>
+          {locationStatus !== 'idle' && (
+            <p className="px-2 pt-1 text-xs text-[var(--text-muted)]" role="status">
+              {isLocating
+                ? 'Requesting your current location…'
+                : `${userCity}${locationStatus === 'located' && locationAccuracy != null ? ` · accurate to about ${Math.round(locationAccuracy)} m` : ''}`}
+            </p>
           )}
           </div>
         </div>

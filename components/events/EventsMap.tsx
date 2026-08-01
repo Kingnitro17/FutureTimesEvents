@@ -6,6 +6,7 @@ import type { MapRef } from 'react-leaflet/MapContainer';
 import L from 'leaflet';
 import { useRouter } from 'next/navigation';
 import { MapPin } from 'lucide-react';
+import { haversineKm } from '@/lib/geography';
 import type { Event } from '@/types';
 
 type LeafletMap = NonNullable<MapRef>;
@@ -28,15 +29,7 @@ interface EventsMapProps {
 
 // Calculate distance between two coordinates
 const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number): string => {
-  const R = 6371; // Radius of the earth in km
-  const dLat = (lat2 - lat1) * (Math.PI / 180);
-  const dLon = (lon2 - lon1) * (Math.PI / 180);
-  const a = 
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * 
-    Math.sin(dLon / 2) * Math.sin(dLon / 2); 
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)); 
-  const d = R * c; // Distance in km
+  const d = haversineKm(lat1, lon1, lat2, lon2);
   if (d < 1) return Math.round(d * 1000) + ' m';
   return d.toFixed(1) + ' km';
 };
