@@ -165,19 +165,19 @@ export default function CategoryMarquee() {
                     className="group flex shrink-0 flex-col items-center gap-2 rounded-2xl text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
                     style={{
                       flex: '0 0 auto',
-                      inlineSize: 'clamp(4.75rem, 21vw, 6.5rem)',
-                      padding: 'var(--sp-1)',
+                      inlineSize: 'clamp(5.75rem, 24vw, 7.5rem)',
+                      padding: 'var(--sp-2)',
                     }}
                   >
                     <div
-                      className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl transition-transform duration-200 group-hover:-translate-y-0.5 sm:h-16 sm:w-16"
+                      className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl transition-transform duration-200 group-hover:-translate-y-0.5 sm:h-20 sm:w-20"
                       style={{ background: c.gradient, boxShadow: 'var(--shadow-sm)' }}
                     >
                       {c.emoji
                         ? <span className="text-3xl leading-none" aria-hidden="true">{c.emoji}</span>
-                        : Icon && <Icon size={25} className="text-white" />}
+                        : Icon && <Icon size={28} className="text-white" />}
                     </div>
-                    <span className="w-full text-[11px] font-extrabold leading-tight text-[var(--text)] sm:text-xs">
+                    <span className="w-full text-xs font-extrabold leading-tight text-[var(--text)] sm:text-sm">
                       {c.label}
                     </span>
                   </Link>
