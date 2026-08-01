@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import {
   Music2,
@@ -16,13 +17,14 @@ type Category = {
   label: string;
   href: string;
   Icon: React.ComponentType<{ size?: number; className?: string }>;
+  emoji?: string;
   gradient: string;
 };
 
 const CATS: Category[] = [
   { id: 'all', label: 'All', href: '/events', Icon: Grid2X2, gradient: 'linear-gradient(135deg, rgba(255,85,194,0.28), rgba(114,34,227,0.22))' },
   { id: 'music', label: 'Music', href: '/events', Icon: Music2, gradient: 'linear-gradient(135deg, rgba(255,85,194,0.34), rgba(114,34,227,0.26))' },
-  { id: 'sports', label: 'Sports', href: '/events', Icon: Trophy, gradient: 'linear-gradient(135deg, rgba(44,196,234,0.30), rgba(83,56,133,0.24))' },
+  { id: 'sports', label: 'Sports', href: '/events', Icon: Trophy, emoji: '⚽', gradient: 'linear-gradient(135deg, rgba(44,196,234,0.30), rgba(83,56,133,0.24))' },
   { id: 'nightlife', label: 'Nightlife', href: '/events', Icon: Sparkles, gradient: 'linear-gradient(135deg, rgba(29,91,255,0.30), rgba(199,254,23,0.16))' },
   { id: 'food', label: 'Food', href: '/events', Icon: Utensils, gradient: 'linear-gradient(135deg, rgba(255,188,115,0.32), rgba(255,0,185,0.20))' },
   { id: 'art', label: 'Art', href: '/events', Icon: Palette, gradient: 'linear-gradient(135deg, rgba(221,31,255,0.26), rgba(36,216,251,0.20))' },
@@ -30,6 +32,60 @@ const CATS: Category[] = [
 ];
 
 export default function CategoryMarquee() {
+  const railRef = useRef<HTMLDivElement>(null);
+  const pausedRef = useRef(false);
+  const hoveredRef = useRef(false);
+  const resumeTimerRef = useRef<number | null>(null);
+
+  const pause = () => {
+    pausedRef.current = true;
+    if (resumeTimerRef.current != null) {
+      window.clearTimeout(resumeTimerRef.current);
+      resumeTimerRef.current = null;
+    }
+  };
+
+  const resumeAfterInteraction = () => {
+    if (resumeTimerRef.current != null) window.clearTimeout(resumeTimerRef.current);
+    resumeTimerRef.current = window.setTimeout(() => {
+      if (!hoveredRef.current && !railRef.current?.matches(':focus-within')) {
+        pausedRef.current = false;
+      }
+    }, 5000);
+  };
+
+  useEffect(() => {
+    const rail = railRef.current;
+    if (!rail) return;
+
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let direction = 1;
+    let frame = 0;
+    let previousTime = performance.now();
+
+    const move = (time: number) => {
+      const elapsed = Math.min(time - previousTime, 50);
+      previousTime = time;
+
+      if (!reducedMotion.matches && !pausedRef.current) {
+        const maxScroll = rail.scrollWidth - rail.clientWidth;
+        if (maxScroll > 0) {
+          rail.scrollLeft += direction * elapsed * 0.018;
+          if (rail.scrollLeft >= maxScroll - 1) direction = -1;
+          if (rail.scrollLeft <= 1) direction = 1;
+        }
+      }
+
+      frame = window.requestAnimationFrame(move);
+    };
+
+    frame = window.requestAnimationFrame(move);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      if (resumeTimerRef.current != null) window.clearTimeout(resumeTimerRef.current);
+    };
+  }, []);
+
   return (
     <section className="relative">
       <div
@@ -54,10 +110,35 @@ export default function CategoryMarquee() {
             <div className="absolute inset-y-0 right-0 w-10 sm:w-16 pointer-events-none z-10" style={{ background: 'linear-gradient(270deg, var(--bg) 0%, transparent 100%)' }} />
 
             <div
+              ref={railRef}
               className="pill-scroll flex flex-nowrap gap-4 overflow-x-auto overflow-y-hidden scroll-smooth pb-2 pr-10 sm:pr-16"
+              style={{
+                WebkitOverflowScrolling: 'touch',
+                overscrollBehaviorInline: 'contain',
+                paddingBottom: 'var(--sp-2)',
+                paddingRight: 'var(--sp-6)',
+                touchAction: 'pan-x',
+              }}
               tabIndex={0}
               role="region"
               aria-label="Browse event interests. Scroll horizontally for more categories."
+              onPointerDown={pause}
+              onPointerUp={resumeAfterInteraction}
+              onPointerCancel={resumeAfterInteraction}
+              onWheel={() => {
+                pause();
+                resumeAfterInteraction();
+              }}
+              onMouseEnter={() => {
+                hoveredRef.current = true;
+                pause();
+              }}
+              onMouseLeave={() => {
+                hoveredRef.current = false;
+                resumeAfterInteraction();
+              }}
+              onFocusCapture={pause}
+              onBlurCapture={resumeAfterInteraction}
             >
               {CATS.map(c => (
                 <Link
@@ -72,7 +153,9 @@ export default function CategoryMarquee() {
                         className="w-11 h-11 rounded-2xl flex items-center justify-center border border-white/10"
                         style={{ background: c.gradient, boxShadow: '0 10px 30px rgba(0,0,0,0.12)' }}
                       >
-                        <c.Icon size={18} className="text-white" />
+                        {c.emoji
+                          ? <span className="text-xl leading-none" aria-hidden="true">{c.emoji}</span>
+                          : <c.Icon size={18} className="text-white" />}
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm font-bold text-[var(--text)]">{c.label}</p>
