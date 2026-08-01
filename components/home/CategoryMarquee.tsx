@@ -36,6 +36,7 @@ const CATS: Category[] = [
 
 export default function CategoryMarquee() {
   const railRef = useRef<HTMLDivElement>(null);
+  const sequenceRef = useRef<HTMLDivElement>(null);
   const pausedRef = useRef(false);
   const hoveredRef = useRef(false);
   const resumeTimerRef = useRef<number | null>(null);
@@ -62,7 +63,6 @@ export default function CategoryMarquee() {
     if (!rail) return;
 
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-    let direction = 1;
     let frame = 0;
     let previousTime = performance.now();
 
@@ -71,11 +71,12 @@ export default function CategoryMarquee() {
       previousTime = time;
 
       if (!reducedMotion.matches && !pausedRef.current) {
-        const maxScroll = rail.scrollWidth - rail.clientWidth;
-        if (maxScroll > 0) {
-          rail.scrollLeft += direction * elapsed * 0.018;
-          if (rail.scrollLeft >= maxScroll - 1) direction = -1;
-          if (rail.scrollLeft <= 1) direction = 1;
+        const loopWidth = sequenceRef.current?.offsetWidth ?? 0;
+        if (loopWidth > 0 && rail.scrollWidth > rail.clientWidth) {
+          rail.scrollLeft += elapsed * 0.022;
+          if (rail.scrollLeft >= loopWidth) {
+            rail.scrollLeft -= loopWidth;
+          }
         }
       }
 
@@ -106,11 +107,10 @@ export default function CategoryMarquee() {
 
         <div
           ref={railRef}
-          className="flex flex-nowrap gap-4 overflow-x-auto overflow-y-hidden scrollbar-hide"
+          className="flex flex-nowrap overflow-x-auto overflow-y-hidden scrollbar-hide"
           style={{
             WebkitOverflowScrolling: 'touch',
             overscrollBehaviorInline: 'contain',
-            paddingInline: 'max(var(--sp-3), calc((100vw - 1280px) / 2 + var(--sp-3)))',
             paddingBlock: 'var(--sp-2)',
             scrollBehavior: 'auto',
             scrollSnapType: 'none',
@@ -126,38 +126,64 @@ export default function CategoryMarquee() {
             pause();
             resumeAfterInteraction();
           }}
-          onMouseEnter={() => {
-            hoveredRef.current = true;
-            pause();
+          onPointerEnter={(event) => {
+            if (event.pointerType === 'mouse') {
+              hoveredRef.current = true;
+              pause();
+            }
           }}
-          onMouseLeave={() => {
-            hoveredRef.current = false;
-            resumeAfterInteraction();
+          onPointerLeave={(event) => {
+            if (event.pointerType === 'mouse') {
+              hoveredRef.current = false;
+              resumeAfterInteraction();
+            }
           }}
           onFocusCapture={pause}
           onBlurCapture={resumeAfterInteraction}
         >
-          {CATS.map(c => {
-            const Icon = c.Icon;
+          {[0, 1, 2, 3].map(sequenceIndex => {
+            const isDuplicate = sequenceIndex > 0;
             return (
-              <Link
-                key={c.id}
-                href={`${c.href}?cat=${encodeURIComponent(c.id)}`}
-                className="group flex shrink-0 flex-col items-center gap-2 rounded-2xl text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
-                style={{ flex: '0 0 auto', inlineSize: 'clamp(5.75rem, 24vw, 7.5rem)', padding: 'var(--sp-2)' }}
-              >
-                <div
-                  className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl transition-transform duration-200 group-hover:-translate-y-0.5 sm:h-20 sm:w-20"
-                  style={{ background: c.gradient, boxShadow: 'var(--shadow-sm)' }}
-                >
-                  {c.emoji
-                    ? <span className="text-3xl leading-none" aria-hidden="true">{c.emoji}</span>
-                    : Icon && <Icon size={28} className="text-white" />}
-                </div>
-                <span className="w-full text-xs font-extrabold leading-tight text-[var(--text)] sm:text-sm">
-                  {c.label}
-                </span>
-              </Link>
+            <div
+              key={`sequence-${sequenceIndex}`}
+              ref={isDuplicate ? undefined : sequenceRef}
+              className="flex shrink-0 flex-nowrap"
+              style={{
+                gap: 'var(--sp-2)',
+                paddingLeft: 'var(--sp-3)',
+                paddingRight: 'var(--sp-2)',
+              }}
+              aria-hidden={isDuplicate || undefined}
+            >
+              {CATS.map(c => {
+                const Icon = c.Icon;
+                return (
+                  <Link
+                    key={`sequence-${sequenceIndex}-${c.id}`}
+                    href={`${c.href}?cat=${encodeURIComponent(c.id)}`}
+                    tabIndex={isDuplicate ? -1 : undefined}
+                    className="group flex shrink-0 flex-col items-center gap-2 rounded-2xl text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+                    style={{
+                      flex: '0 0 auto',
+                      inlineSize: 'clamp(4.75rem, 21vw, 6.5rem)',
+                      padding: 'var(--sp-1)',
+                    }}
+                  >
+                    <div
+                      className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl transition-transform duration-200 group-hover:-translate-y-0.5 sm:h-16 sm:w-16"
+                      style={{ background: c.gradient, boxShadow: 'var(--shadow-sm)' }}
+                    >
+                      {c.emoji
+                        ? <span className="text-3xl leading-none" aria-hidden="true">{c.emoji}</span>
+                        : Icon && <Icon size={25} className="text-white" />}
+                    </div>
+                    <span className="w-full text-[11px] font-extrabold leading-tight text-[var(--text)] sm:text-xs">
+                      {c.label}
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
             );
           })}
         </div>
