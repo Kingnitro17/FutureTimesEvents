@@ -205,20 +205,20 @@ const sections = [
 
 export default function PrivacyPolicyPage() {
   return (
-    <div className="min-h-screen" style={{ background: 'var(--bg)' }}>
+    <div className="min-h-screen page-offset" style={{ background: 'var(--bg-secondary)' }}>
       {/* Header */}
       <div className="border-b" style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border)' }}>
-        <div className="container py-12 md:py-16">
+        <div className="container flex flex-col" style={{ paddingBlock: 'var(--sp-6)', gap: 'var(--sp-3)' }}>
           <Link 
             href="/"
-            className="inline-flex items-center gap-2 text-sm font-medium mb-6 transition-colors hover:opacity-80"
-            style={{ color: 'var(--text-muted)' }}
+            className="inline-flex w-fit items-center gap-2 text-sm font-medium transition-colors hover:opacity-80"
+            style={{ color: 'var(--text-muted)', marginBottom: 'var(--sp-2)' }}
           >
             <ChevronLeft size={16} />
             Back to Home
           </Link>
           
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-black tracking-tight mb-4" style={{ color: 'var(--text)' }}>
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-black tracking-tight" style={{ color: 'var(--text)' }}>
             Privacy Policy
           </h1>
           <p className="text-base md:text-lg" style={{ color: 'var(--text-muted)' }}>
@@ -228,18 +228,21 @@ export default function PrivacyPolicyPage() {
       </div>
 
       {/* Content */}
-      <div className="container py-12 md:py-16">
-        <div className="max-w-4xl mx-auto">
+      <div className="container" style={{ paddingBlock: 'var(--sp-6)' }}>
+        <div className="max-w-4xl" style={{ marginInline: 'auto' }}>
           {/* Quick Navigation */}
-          <div className="mb-12 p-6 rounded-2xl" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-            <h2 className="font-bold text-lg mb-4" style={{ color: 'var(--text)' }}>Quick Navigation</h2>
+          <div
+            className="rounded-[var(--r-3xl)] bg-[var(--bg-card)] border border-[var(--border)] shadow-[var(--shadow-card)]"
+            style={{ padding: 'clamp(1.25rem, 4vw, 2rem)', marginBottom: 'var(--sp-6)', boxSizing: 'border-box' }}
+          >
+            <h2 className="font-bold text-lg" style={{ color: 'var(--text)', marginBottom: 'var(--sp-3)' }}>Quick Navigation</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {sections.map((section) => (
                 <a
                   key={section.id}
                   href={`#${section.id}`}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors hover:opacity-80"
-                  style={{ color: 'var(--text-muted)' }}
+                  className="flex items-center gap-2 rounded-lg text-sm font-medium transition-colors hover:opacity-80"
+                  style={{ color: 'var(--text-muted)', padding: 'var(--sp-2) var(--sp-3)' }}
                 >
                   <section.icon size={14} style={{ color: 'var(--accent)' }} />
                   {section.title}
@@ -249,15 +252,15 @@ export default function PrivacyPolicyPage() {
           </div>
 
           {/* Sections */}
-          <div className="space-y-8">
+          <div className="flex flex-col" style={{ gap: 'var(--sp-5)' }}>
             {sections.map((section) => (
               <section
                 key={section.id}
                 id={section.id}
-                className="scroll-mt-24 p-6 md:p-8 rounded-2xl"
-                style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+                className="scroll-mt-24 rounded-[var(--r-3xl)] bg-[var(--bg-card)] border border-[var(--border)] shadow-[var(--shadow-card)]"
+                style={{ padding: 'clamp(1.25rem, 4vw, 2rem)', boxSizing: 'border-box' }}
               >
-                <div className="flex items-center gap-3 mb-4">
+                <div className="flex items-center gap-3" style={{ marginBottom: 'var(--sp-3)' }}>
                   <div 
                     className="w-10 h-10 rounded-xl flex items-center justify-center"
                     style={{ background: 'rgba(var(--accent-rgb, 114, 34, 227), 0.1)' }}
@@ -269,12 +272,12 @@ export default function PrivacyPolicyPage() {
                   </h2>
                 </div>
                 
-                <div 
-                  className="prose prose-invert max-w-none"
-                  style={{ color: 'var(--text-muted)' }}
+                <div
+                  className="max-w-none flex flex-col"
+                  style={{ color: 'var(--text-muted)', gap: 'var(--sp-3)' }}
                 >
                   {section.content.split('\n\n').map((paragraph, idx) => (
-                    <p key={idx} className="mb-4 last:mb-0 leading-relaxed whitespace-pre-line">
+                    <p key={idx} className="leading-relaxed whitespace-pre-line">
                       {paragraph}
                     </p>
                   ))}
@@ -284,7 +287,7 @@ export default function PrivacyPolicyPage() {
           </div>
 
           {/* Footer Note */}
-          <div className="mt-12 text-center">
+          <div className="text-center" style={{ marginTop: 'var(--sp-6)', paddingInline: 'var(--sp-3)' }}>
             <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
               By using Future Times Events, you acknowledge that you have read and understood this Privacy Policy.
             </p>

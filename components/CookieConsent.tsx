@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Cookie, Shield, ChevronRight, Lock, Check } from 'lucide-react';
+import { X, Cookie, Shield, ChevronRight, Check } from 'lucide-react';
 import Link from 'next/link';
 
 const COOKIE_CONSENT_KEY = 'fte_cookie_consent';
@@ -95,16 +95,25 @@ export default function CookieConsent() {
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 100, opacity: 0 }}
         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-        className="fixed bottom-0 left-0 right-0 z-[9999] p-6 sm:p-10 lg:p-14"
+        className="fixed bottom-0 left-0 right-0 z-[9999]"
+        style={{
+          padding: 'clamp(1rem, 4vw, 2rem)',
+          paddingBottom: 'max(1rem, env(safe-area-inset-bottom))',
+          boxSizing: 'border-box',
+        }}
       >
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-2xl" style={{ marginInline: 'auto' }}>
           {!showDetails ? (
             <div 
-              className="rounded-3xl p-7 md:p-10 shadow-2xl relative overflow-hidden"
+              className="rounded-[var(--r-3xl)] shadow-[var(--shadow-card)] relative overflow-hidden"
               style={{ 
                 background: 'var(--bg-card)', 
                 border: '1px solid var(--border)',
-                backdropFilter: 'blur(20px)'
+                backdropFilter: 'blur(20px)',
+                padding: 'clamp(1.25rem, 4vw, 2rem)',
+                boxSizing: 'border-box',
+                maxHeight: 'min(80vh, 42rem)',
+                overflowY: 'auto',
               }}
             >
               {/* Gradient glow effect */}
@@ -113,26 +122,25 @@ export default function CookieConsent() {
                 style={{ background: 'var(--accent)' }}
               />
               
-              <div className="flex flex-col md:flex-row items-start md:items-center gap-4 relative">
+              <div className="flex flex-col gap-5 relative">
                 {/* Lock Icon */}
-                <div className="flex-shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center" 
-                  style={{ 
-                    background: 'linear-gradient(135deg, #F59E0B 0%, #EF4444 100%)',
-                    boxShadow: '0 8px 24px rgba(245, 158, 11, 0.3)'
-                  }}
-                >
-                  <Lock size={28} className="text-white" />
-                </div>
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center"
+                    style={{
+                      background: 'var(--grad-primary)',
+                      boxShadow: 'var(--shadow-sm)'
+                    }}
+                  >
+                    <Cookie size={25} className="text-white" />
+                  </div>
                 
-                <div className="flex-1 min-w-0">
+                <div className="flex flex-1 min-w-0 flex-col" style={{ gap: 'var(--sp-2)' }}>
                   {/* Gradient Title */}
                   <h3 
-                    className="font-bold text-lg mb-1"
+                    className="font-display font-black tracking-tight"
                     style={{ 
-                      background: 'linear-gradient(90deg, #3B82F6 0%, #10B981 100%)',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                      backgroundClip: 'text'
+                      color: 'var(--text)',
+                      fontSize: 'clamp(1.15rem, 3vw, 1.5rem)',
                     }}
                   >
                     We value your privacy
@@ -151,37 +159,30 @@ export default function CookieConsent() {
                     </Link>.
                   </p>
                 </div>
+                </div>
 
                 <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
                   <button
                     onClick={() => setShowDetails(true)}
-                    className="flex-1 md:flex-none px-6 py-4 rounded-full text-base font-medium transition-all duration-200 border"
+                    className="btn btn-md btn-ghost flex-1 md:flex-none"
                     style={{ 
-                      background: 'transparent',
-                      borderColor: 'var(--border)',
-                      color: 'var(--text-muted)'
+                      color: 'var(--text-muted)',
                     }}
                   >
                     Customize
                   </button>
                   <button
                     onClick={rejectAll}
-                    className="flex-1 md:flex-none px-6 py-4 rounded-full text-base font-medium transition-all duration-200 border"
+                    className="btn btn-md btn-outline flex-1 md:flex-none"
                     style={{ 
-                      background: 'transparent',
-                      borderColor: 'var(--border)',
-                      color: 'var(--text-muted)'
+                      color: 'var(--text-muted)',
                     }}
                   >
                     Essential Only
                   </button>
                   <button
                     onClick={acceptAll}
-                    className="flex-1 md:flex-none px-8 py-4 rounded-full text-base font-bold text-white transition-all duration-200 flex items-center justify-center gap-2"
-                    style={{ 
-                      background: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
-                      boxShadow: '0 4px 20px rgba(59, 130, 246, 0.4)'
-                    }}
+                    className="btn btn-md btn-grad flex-1 md:flex-none text-white"
                   >
                     <Check size={20} strokeWidth={3} />
                     Accept All
@@ -190,7 +191,16 @@ export default function CookieConsent() {
               </div>
             </div>
           ) : (
-              <div className="space-y-4">
+              <div
+                className="rounded-[var(--r-3xl)] bg-[var(--bg-card)] border border-[var(--border)] shadow-[var(--shadow-card)] flex flex-col"
+                style={{
+                  padding: 'clamp(1.25rem, 4vw, 2rem)',
+                  gap: 'var(--sp-4)',
+                  boxSizing: 'border-box',
+                  maxHeight: 'min(80vh, 42rem)',
+                  overflowY: 'auto',
+                }}
+              >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Shield size={24} style={{ color: 'var(--accent)' }} />
@@ -207,10 +217,10 @@ export default function CookieConsent() {
                   </button>
                 </div>
 
-                <div className="space-y-3">
+                <div className="flex flex-col" style={{ gap: 'var(--sp-2)' }}>
                   {/* Necessary - Always on */}
-                  <div className="flex items-center justify-between p-4 rounded-xl" style={{ background: 'var(--bg-secondary)' }}>
-                    <div>
+                  <div className="flex items-center justify-between gap-4 rounded-xl" style={{ background: 'var(--bg-secondary)', padding: 'var(--sp-3)' }}>
+                    <div className="flex min-w-0 flex-col" style={{ gap: 'var(--sp-1)' }}>
                       <h4 className="font-semibold text-sm mb-0.5" style={{ color: 'var(--text)' }}>Necessary</h4>
                       <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Essential for the website to function properly</p>
                     </div>
@@ -220,15 +230,18 @@ export default function CookieConsent() {
                   </div>
 
                   {/* Analytics */}
-                  <div className="flex items-center justify-between p-4 rounded-xl" style={{ background: 'var(--bg-secondary)' }}>
-                    <div>
+                  <div className="flex items-center justify-between gap-4 rounded-xl" style={{ background: 'var(--bg-secondary)', padding: 'var(--sp-3)' }}>
+                    <div className="flex min-w-0 flex-col" style={{ gap: 'var(--sp-1)' }}>
                       <h4 className="font-semibold text-sm mb-0.5" style={{ color: 'var(--text)' }}>Analytics</h4>
                       <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Helps us understand how visitors interact with our website</p>
                     </div>
                     <button
                       onClick={() => setPreferences(p => ({ ...p, analytics: !p.analytics }))}
                       className="w-11 h-6 rounded-full p-0.5 transition-colors"
-                      style={{ background: preferences.analytics ? 'var(--accent)' : 'var(--bg-tertiary)' }}
+                      style={{ background: preferences.analytics ? 'var(--accent)' : 'var(--bg-tertiary)', padding: '2px' }}
+                      role="switch"
+                      aria-checked={preferences.analytics}
+                      aria-label="Analytics cookies"
                     >
                       <div 
                         className="w-5 h-5 rounded-full bg-white shadow-sm transition-transform"
@@ -238,15 +251,18 @@ export default function CookieConsent() {
                   </div>
 
                   {/* Marketing */}
-                  <div className="flex items-center justify-between p-4 rounded-xl" style={{ background: 'var(--bg-secondary)' }}>
-                    <div>
+                  <div className="flex items-center justify-between gap-4 rounded-xl" style={{ background: 'var(--bg-secondary)', padding: 'var(--sp-3)' }}>
+                    <div className="flex min-w-0 flex-col" style={{ gap: 'var(--sp-1)' }}>
                       <h4 className="font-semibold text-sm mb-0.5" style={{ color: 'var(--text)' }}>Marketing</h4>
                       <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Used to deliver personalized advertisements</p>
                     </div>
                     <button
                       onClick={() => setPreferences(p => ({ ...p, marketing: !p.marketing }))}
                       className="w-11 h-6 rounded-full p-0.5 transition-colors"
-                      style={{ background: preferences.marketing ? 'var(--accent)' : 'var(--bg-tertiary)' }}
+                      style={{ background: preferences.marketing ? 'var(--accent)' : 'var(--bg-tertiary)', padding: '2px' }}
+                      role="switch"
+                      aria-checked={preferences.marketing}
+                      aria-label="Marketing cookies"
                     >
                       <div 
                         className="w-5 h-5 rounded-full bg-white shadow-sm transition-transform"
@@ -256,7 +272,7 @@ export default function CookieConsent() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <Link 
                     href="/privacy-policy"
                     className="text-sm font-medium flex items-center gap-1 hover:gap-2 transition-all"
@@ -264,18 +280,16 @@ export default function CookieConsent() {
                   >
                     Privacy Policy <ChevronRight size={14} />
                   </Link>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <button
                       onClick={() => setShowDetails(false)}
-                      className="px-4 py-2.5 rounded-xl text-sm font-medium transition-all hover:opacity-80"
-                      style={{ background: 'var(--bg-secondary)', color: 'var(--text)' }}
+                      className="btn btn-sm btn-ghost"
                     >
                       Back
                     </button>
                     <button
                       onClick={acceptSelected}
-                      className="px-5 py-2.5 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90"
-                      style={{ background: 'var(--accent)' }}
+                      className="btn btn-sm btn-grad text-white"
                     >
                       Save Preferences
                     </button>
