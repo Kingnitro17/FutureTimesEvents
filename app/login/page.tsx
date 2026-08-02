@@ -17,6 +17,8 @@ const fadeUp = (delay = 0) => ({
   transition: { duration: 0.45, delay, ease: 'easeOut' as const },
 });
 
+const SHOW_GOOGLE_LOGIN = false;
+
 function LoginContent() {
   const searchParams = useSearchParams();
   const pathname     = usePathname();
@@ -171,6 +173,7 @@ function LoginContent() {
           )}
 
           {/* ── Google OAuth Button ── */}
+          {SHOW_GOOGLE_LOGIN && <>
           <motion.button
             id="btn-google-signin"
             onClick={handleGoogle}
@@ -205,6 +208,8 @@ function LoginContent() {
               <span className="bg-[var(--bg-card)] text-[var(--text-muted)]" style={{ paddingInline: 'var(--sp-3)' }}>or sign in with email</span>
             </div>
           </div>
+
+          </>}
 
           {/* Email / Password Form */}
           <form onSubmit={handleSubmit} className="flex flex-col" style={{ gap: 'var(--sp-4)' }}>

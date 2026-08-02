@@ -315,9 +315,9 @@ export default function TicketsPage() {
         )}
 
         {loading && (
-          <div className="space-y-8">
+          <div className="flex flex-col" style={{ gap: 'var(--sp-5)' }}>
             {[1, 2].map(i => (
-              <div key={i} className="card rounded-2xl sm:rounded-3xl p-6 sm:p-8 animate-pulse">
+              <div key={i} className="card rounded-2xl sm:rounded-3xl animate-pulse" style={{ padding: 'clamp(1.25rem, 4vw, 2rem)' }}>
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-2xl bg-[var(--bg-tertiary)] shrink-0" />
                   <div className="flex-1 space-y-3">
@@ -343,7 +343,7 @@ export default function TicketsPage() {
             </Link>
           </div>
         ) : !loading && (
-          <div className="space-y-8">
+          <div className="flex flex-col" style={{ gap: 'var(--sp-5)' }}>
             {filtered.map((ticket, index) => {
               const status = STATUS[ticket.status];
               const StatusIcon = status.Icon;
@@ -359,7 +359,7 @@ export default function TicketsPage() {
                   transition={{ duration: 0.35, delay: Math.min(index * 0.04, 0.2) }}
                   className="card rounded-2xl sm:rounded-3xl p-0 overflow-hidden w-full max-w-full min-w-0 box-border"
                 >
-                  <div className="p-6 sm:p-8">
+                  <div style={{ padding: 'clamp(1.25rem, 4vw, 2rem)', boxSizing: 'border-box' }}>
                     <div className="flex items-start gap-3 sm:gap-4 min-w-0">
                       <div
                         className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center shrink-0 text-white"
@@ -405,11 +405,12 @@ export default function TicketsPage() {
                     {isOpen && (
                       <div
                         id={`ticket-${ticket.id}-details`}
-                        className="mt-5 pt-5 border-t border-[var(--border)] grid gap-5 lg:grid-cols-[minmax(0,1fr)_260px]"
+                        className="border-t border-[var(--border)] grid gap-5 lg:grid-cols-[minmax(0,1fr)_260px]"
+                        style={{ marginTop: 'var(--sp-4)', paddingTop: 'var(--sp-4)' }}
                       >
-                        <div className="space-y-4">
+                        <div className="flex flex-col" style={{ gap: 'var(--sp-4)' }}>
                           <dl className="grid gap-3 sm:grid-cols-2">
-                            <div className="rounded-2xl bg-[var(--bg-secondary)] p-4">
+                            <div className="rounded-2xl bg-[var(--bg-secondary)]" style={{ padding: 'var(--sp-3)', boxSizing: 'border-box' }}>
                               <dt className="text-xs uppercase tracking-wider text-[var(--text-muted)]">
                                 Ticket holder
                               </dt>
@@ -420,7 +421,7 @@ export default function TicketsPage() {
                                 {ticket.holderEmail}
                               </dd>
                             </div>
-                            <div className="rounded-2xl bg-[var(--bg-secondary)] p-4">
+                            <div className="rounded-2xl bg-[var(--bg-secondary)]" style={{ padding: 'var(--sp-3)', boxSizing: 'border-box' }}>
                               <dt className="text-xs uppercase tracking-wider text-[var(--text-muted)]">
                                 Admission
                               </dt>
@@ -434,7 +435,7 @@ export default function TicketsPage() {
                           </dl>
 
                           {ticket.status === 'checked_in' && (
-                            <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4">
+                            <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10" style={{ padding: 'var(--sp-3)' }}>
                               <p className="font-semibold text-emerald-600 dark:text-emerald-300">
                                 This ticket has been checked in and is no longer valid for entry.
                               </p>
@@ -485,7 +486,7 @@ export default function TicketsPage() {
                           </div>
                         </div>
 
-                        <div className="rounded-2xl bg-[var(--bg-secondary)] p-4 flex flex-col items-center justify-center min-h-56">
+                        <div className="rounded-2xl bg-[var(--bg-secondary)] flex flex-col items-center justify-center min-h-56" style={{ padding: 'var(--sp-3)', boxSizing: 'border-box' }}>
                           {ticket.status !== 'issued' ? (
                             <div className="text-center">
                               <StatusIcon className="mx-auto text-[var(--text-muted)]" size={36} aria-hidden />
