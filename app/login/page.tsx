@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams, usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/lib/auth-context';
 import { signInWithGoogle } from '@/lib/oauth';
-import { Mail, Lock, Eye, EyeOff, ArrowRight, AlertCircle } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowRight, AlertCircle, ShieldCheck, Sparkles, TicketCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Suspense } from 'react';
 
@@ -95,22 +96,75 @@ function LoginContent() {
   }
 
   return (
-    <div className="min-h-screen pt-[calc(var(--nav-h)+2rem)] pb-24 flex items-center justify-center px-4 sm:px-6" style={{ background: 'var(--bg-secondary)' }}>
-      <motion.div {...fadeUp(0)} className="w-full max-w-md">
-        <div className="card rounded-3xl p-8 sm:p-10">
+    <div
+      className="page-offset min-h-screen lg:grid lg:grid-cols-[minmax(0,1.05fr)_minmax(420px,0.95fr)]"
+      style={{ background: 'var(--bg-secondary)' }}
+    >
+      <aside
+        className="relative hidden min-h-[calc(100vh-var(--nav-h))] overflow-hidden lg:flex lg:flex-col lg:justify-between"
+        style={{ padding: 'clamp(2.5rem, 5vw, 5rem)', background: 'var(--grad-primary)' }}
+        aria-label="Future Times Events"
+      >
+        <div className="absolute -left-24 -top-24 h-80 w-80 rounded-full bg-white/10 blur-3xl" aria-hidden="true" />
+        <div className="absolute -bottom-32 -right-20 h-96 w-96 rounded-full bg-cyan-300/15 blur-3xl" aria-hidden="true" />
+
+        <Link href="/" className="relative z-10 flex w-fit items-center text-white" style={{ gap: 'var(--sp-3)' }}>
+          <span className="grid h-16 w-16 place-items-center overflow-hidden rounded-full bg-black shadow-xl">
+            <Image src="/assets/logo.png" alt="" width={64} height={64} className="object-contain" style={{ padding: '5px' }} />
+          </span>
+          <span>
+            <strong className="block font-display text-2xl font-black leading-tight">Future Times Events</strong>
+            <span className="block text-sm font-medium text-white/75">Unforgettable moments start here</span>
+          </span>
+        </Link>
+
+        <div className="relative z-10 max-w-xl text-white">
+          <span className="inline-flex rounded-full border border-white/20 bg-white/10 text-xs font-bold uppercase tracking-[0.15em]" style={{ padding: 'var(--sp-2) var(--sp-3)' }}>
+            Your next experience awaits
+          </span>
+          <h2 className="font-display font-black leading-[1.02] text-white" style={{ marginTop: 'var(--sp-4)', fontSize: 'clamp(2.8rem, 5vw, 5rem)', fontWeight: 900 }}>
+            Sign in. Step out. Make memories.
+          </h2>
+          <p className="max-w-lg text-lg leading-relaxed text-white/80" style={{ marginTop: 'var(--sp-4)' }}>
+            Discover Zimbabwe&apos;s best events, reserve secure tickets and keep every experience together in one place.
+          </p>
+
+          <div className="flex flex-col" style={{ gap: 'var(--sp-3)', marginTop: 'var(--sp-5)' }}>
+            {[
+              { icon: Sparkles, text: 'Discover experiences selected for you' },
+              { icon: TicketCheck, text: 'Access tickets and bookings securely' },
+              { icon: ShieldCheck, text: 'Fast, protected account access' },
+            ].map(({ icon: Icon, text }) => (
+              <div key={text} className="flex items-center font-semibold text-white" style={{ gap: 'var(--sp-3)' }}>
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-white/20 bg-white/10"><Icon size={21} /></span>
+                <span>{text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <p className="relative z-10 text-sm text-white/65">Future Times Events · Zimbabwe</p>
+      </aside>
+
+      <div className="flex min-h-[calc(100vh-var(--nav-h))] items-center justify-center" style={{ padding: 'clamp(1rem, 4vw, 3rem)' }}>
+      <motion.div {...fadeUp(0)} className="w-full max-w-md" style={{ marginInline: 'auto' }}>
+        <div
+          className="card flex flex-col rounded-[var(--r-3xl)]"
+          style={{ padding: 'clamp(1.25rem, 5vw, 2.5rem)', gap: 'var(--sp-4)', boxSizing: 'border-box' }}
+        >
 
           {/* Header */}
-          <div className="text-center mb-8">
-            <div className="w-20 h-20 rounded-full mx-auto mb-4 bg-[#0a0a0a] flex items-center justify-center overflow-hidden shadow-xl border-2 border-white/5">
-              <img src="/assets/logo.png" alt="Logo" className="w-full h-full object-contain p-2" />
+          <div className="flex flex-col items-center text-center" style={{ gap: 'var(--sp-2)' }}>
+            <div className="w-20 h-20 rounded-full bg-[#0a0a0a] flex items-center justify-center overflow-hidden shadow-xl border-2 border-white/5 lg:hidden">
+              <Image src="/assets/logo.png" alt="Future Times Events" width={80} height={80} className="object-contain" style={{ padding: 'var(--sp-2)' }} />
             </div>
-            <h1 className="type-h2 text-[var(--text)] mb-2">Welcome Back</h1>
+            <h1 className="type-h2 text-[var(--text)]" style={{ fontWeight: 900 }}>Welcome Back</h1>
             <p className="type-sm text-[var(--text-muted)]">Sign in to continue your journey</p>
           </div>
 
           {/* OAuth error banner */}
           {oauthError && (
-            <div className="flex items-center gap-2 p-3 rounded-xl mb-5 text-sm font-medium text-red-500 bg-red-50 border border-red-200 dark:bg-red-900/20 dark:border-red-800/40">
+            <div className="flex items-center gap-2 rounded-xl text-sm font-medium text-red-500 bg-red-50 border border-red-200 dark:bg-red-900/20 dark:border-red-800/40" style={{ padding: 'var(--sp-3)' }}>
               <AlertCircle size={16} className="shrink-0" />
               Google sign-in failed. Try again or use email below.
             </div>
@@ -123,7 +177,7 @@ function LoginContent() {
             disabled={oauthLoading}
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.98 }}
-            className="btn btn-lg btn-ghost w-full mb-4 relative overflow-hidden group"
+            className="btn btn-lg btn-ghost w-full relative overflow-hidden group"
             style={{ borderWidth: '1.5px' }}
           >
             {/* Subtle hover gradient */}
@@ -143,18 +197,18 @@ function LoginContent() {
           </motion.button>
 
           {/* Divider */}
-          <div className="relative my-6">
+          <div className="relative">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-[var(--border)]" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-[var(--bg-card)] text-[var(--text-muted)]">or sign in with email</span>
+              <span className="bg-[var(--bg-card)] text-[var(--text-muted)]" style={{ paddingInline: 'var(--sp-3)' }}>or sign in with email</span>
             </div>
           </div>
 
           {/* Email / Password Form */}
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-1.5">
+          <form onSubmit={handleSubmit} className="flex flex-col" style={{ gap: 'var(--sp-4)' }}>
+            <div className="flex flex-col" style={{ gap: 'var(--sp-1)' }}>
               <label className="text-sm font-medium text-[var(--text)]" htmlFor="login-email">Email</label>
               <div className="relative">
                 <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
@@ -172,7 +226,7 @@ function LoginContent() {
               </div>
             </div>
 
-            <div className="space-y-1.5">
+            <div className="flex flex-col" style={{ gap: 'var(--sp-1)' }}>
               <label className="text-sm font-medium text-[var(--text)]" htmlFor="login-password">Password</label>
               <div className="relative">
                 <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
@@ -198,18 +252,18 @@ function LoginContent() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2.5 cursor-pointer">
+            <div className="flex items-center justify-between" style={{ gap: 'var(--sp-3)', paddingBlock: 'var(--sp-1)' }}>
+              <label className="flex min-h-11 items-center cursor-pointer" style={{ gap: 'var(--sp-2)' }}>
                 <input 
                   type="checkbox" 
-                  className="w-4 h-4 flex-shrink-0 rounded" 
+                  className="w-5 h-5 flex-shrink-0 rounded"
                   style={{ accentColor: 'var(--accent)' }} 
                 />
-                <span className="text-[12px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+                <span className="text-sm font-medium leading-relaxed" style={{ color: 'var(--text-muted)' }}>
                   Remember me
                 </span>
               </label>
-              <Link href="#" className="text-[12px] font-medium hover:underline" style={{ color: 'var(--accent)' }}>
+              <Link href="#" className="text-sm font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
                 Forgot password?
               </Link>
             </div>
@@ -220,7 +274,7 @@ function LoginContent() {
               disabled={isLoading}
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.98 }}
-              className="btn btn-lg btn-grad w-full text-white disabled:opacity-50 mt-1"
+              className="btn btn-lg btn-grad w-full text-white disabled:opacity-50"
             >
               {isLoading ? 'Signing in…' : 'Sign In'}
               {!isLoading && <ArrowRight size={18} />}
@@ -228,12 +282,13 @@ function LoginContent() {
           </form>
 
           {/* Sign up link */}
-          <p className="mt-8 text-center text-sm text-[var(--text-muted)]">
+          <p className="max-w-none text-center text-sm text-[var(--text-muted)]">
             Don&apos;t have an account?{' '}
             <Link href="/signup" className="font-semibold text-[var(--accent)] hover:underline">Sign up</Link>
           </p>
         </div>
       </motion.div>
+      </div>
     </div>
   );
 }
