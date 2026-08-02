@@ -43,7 +43,11 @@ export default function WhosGoing({ eventId }: { eventId: string }) {
   };
 
   return (
-    <section className="card rounded-[var(--r-2xl)] p-5 sm:p-7" aria-labelledby="whos-going-title">
+    <section
+      className="card rounded-[var(--r-2xl)]"
+      style={{ padding: 'clamp(1.25rem, 4vw, 1.75rem)', boxSizing: 'border-box' }}
+      aria-labelledby="whos-going-title"
+    >
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div><p className="type-overline text-[var(--text-muted)]">Community</p><h2 id="whos-going-title" className="type-h3 mt-1 flex items-center gap-2"><Users size={20} className="text-[var(--accent)]" /> Who&apos;s Going</h2></div>
         {!user ? <Link href={`/login?next=${encodeURIComponent(`/events/${eventId}`)}`} className="btn btn-sm btn-ghost">Sign in to join</Link> : data && <button className={data.joined ? 'btn btn-sm btn-ghost' : 'btn btn-sm btn-grad text-white'} disabled={mutating} onClick={() => void toggle()}>{mutating ? 'Saving…' : data.joined ? 'Leave list' : 'I’m Going'}</button>}
@@ -52,7 +56,7 @@ export default function WhosGoing({ eventId }: { eventId: string }) {
       {!data && !error && <div className="mt-5 flex items-center gap-3 text-sm text-[var(--text-muted)]"><RefreshCw size={16} className="animate-spin" /> Loading attendee list…</div>}
       {error && <div className="mt-5 flex items-center gap-3"><p className="text-sm text-[var(--text-muted)] flex-1">We could not load the public attendee list.</p><button className="btn btn-sm btn-ghost" onClick={() => void load()}>Retry</button></div>}
       {data && !error && (
-        <div className="mt-5">
+        <div style={{ marginTop: 'var(--sp-4)' }}>
           <p className="text-sm text-[var(--text-muted)]">{data.count === 0 ? 'Be the first person to join the public attendee list.' : `${data.count} ${data.count === 1 ? 'person has' : 'people have'} opted in publicly.`}</p>
           {data.attendees.length > 0 && <div className="mt-4 flex flex-wrap gap-3">{data.attendees.map(attendee => (
             <div key={attendee.id} className="flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--bg-secondary)] py-1.5 pl-1.5 pr-3 max-w-full">

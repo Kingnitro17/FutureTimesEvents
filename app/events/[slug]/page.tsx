@@ -391,7 +391,10 @@ function BookingPanel({
   onSuccess,
 }: BookingPanelProps) {
   return (
-    <div className="rounded-[var(--r-3xl)] border border-[var(--border)] bg-[var(--bg-card)] p-[var(--sp-4)] shadow-[var(--shadow-card)] sm:p-[var(--sp-5)]">
+    <div
+      className="rounded-[var(--r-3xl)] border border-[var(--border)] bg-[var(--bg-card)] shadow-[var(--shadow-card)]"
+      style={{ padding: 'clamp(1.25rem, 4vw, 2rem)', boxSizing: 'border-box' }}
+    >
       {isCompleted ? (
         <div className="py-6 text-center" role="status">
           <CheckCircle2
@@ -465,13 +468,13 @@ function BookingPanel({
           )}
         </div>
       ) : (
-        <>
+        <div className="flex flex-col" style={{ gap: 'var(--sp-4)' }}>
           <div className="event-details-grid">
-            <div className="rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--bg-secondary)] p-[var(--sp-3)]">
+            <div className="rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--bg-secondary)]" style={{ padding: 'var(--sp-3)' }}>
               <p className="type-overline text-[var(--text-muted)]">Price</p>
               <p className="mt-1 font-black text-[var(--text)]">{priceLabel}</p>
             </div>
-            <div className="rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--bg-secondary)] p-[var(--sp-3)]">
+            <div className="rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--bg-secondary)]" style={{ padding: 'var(--sp-3)' }}>
               <p className="type-overline text-[var(--text-muted)]">
                 Availability
               </p>
@@ -479,7 +482,7 @@ function BookingPanel({
                 {availabilityLabel}
               </p>
             </div>
-            <div className="rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--bg-secondary)] p-[var(--sp-3)]" style={{ gridColumn: '1 / -1' }}>
+            <div className="rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--bg-secondary)]" style={{ gridColumn: '1 / -1', padding: 'var(--sp-3)' }}>
               <p className="type-overline text-[var(--text-muted)]">When</p>
               <p className="mt-1 text-sm font-semibold text-[var(--text)]">
                 {dateTimeRange}
@@ -491,7 +494,7 @@ function BookingPanel({
             ticketTypes={ticketTypes}
             onSuccess={onSuccess}
           />
-        </>
+        </div>
       )}
     </div>
   );
@@ -781,7 +784,7 @@ export default function EventSlugPage() {
   };
 
   return (
-    <div className="page-offset relative min-h-screen overflow-x-clip bg-[var(--bg)] pb-action-bar lg:pb-16">
+    <div className="event-detail-page page-offset relative min-h-screen overflow-x-clip bg-[var(--bg)]">
       {desktopHeroImage && (
         <div
           className="pointer-events-none absolute inset-x-0 top-0 h-[min(76vh,760px)] overflow-hidden"
@@ -1035,7 +1038,7 @@ export default function EventSlugPage() {
                         href={directionsUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="btn btn-sm btn-outline mt-4 w-full sm:w-auto"
+                        className="btn btn-sm btn-grad mt-4 w-full text-white sm:w-auto"
                       >
                         <Navigation size={15} aria-hidden="true" />
                         Get directions
@@ -1357,7 +1360,7 @@ export default function EventSlugPage() {
       </article>
 
       <div
-        className="fixed inset-x-0 bottom-0 z-[60] border-t border-[var(--border)] bg-[var(--bg-card)]/95 px-4 pt-3 shadow-[0_-12px_40px_rgba(0,0,0,0.10)] backdrop-blur-xl lg:hidden"
+        className="event-ticket-action fixed inset-x-0 z-[60] border-t border-[var(--border)] bg-[var(--bg-card)]/95 px-4 pt-3 shadow-[0_-12px_40px_rgba(0,0,0,0.10)] backdrop-blur-xl lg:hidden"
         style={{
           paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))',
           paddingLeft: 'calc(1rem + env(safe-area-inset-left, 0px))',

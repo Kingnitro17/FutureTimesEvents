@@ -817,8 +817,22 @@ img {
 .pb-action-bar {
   padding-bottom: calc(80px + env(safe-area-inset-bottom, 24px));
 }
+
+/* Event ticket action sits above the 72px mobile navigation rather than
+   covering it. The page reserves room for both fixed controls. */
+.event-detail-page {
+  padding-bottom: calc(160px + env(safe-area-inset-bottom, 0px));
+}
+.event-ticket-action {
+  bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+}
 @media (min-width: 768px) {
   .pb-nav, .pb-action-bar { padding-bottom: 0; }
+  .event-detail-page { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+  .event-ticket-action { bottom: 0; }
+}
+@media (min-width: 1024px) {
+  .event-detail-page { padding-bottom: var(--sp-7); }
 }
 /* ═══════════════════════════════════════════════
    EVENT DETAILS PAGE — CARD CONTAINMENT

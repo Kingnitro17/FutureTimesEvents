@@ -16,8 +16,7 @@ export default function MobileBottomNav() {
   const pathname = usePathname();
 
   // Hide bottom nav where it conflicts with ticket or scanner controls.
-  const shouldHide = pathname?.startsWith('/events/')
-    || pathname?.startsWith('/ticket/')
+  const shouldHide = pathname?.startsWith('/ticket/')
     || pathname?.startsWith('/checkin');
 
   if (shouldHide) return null;

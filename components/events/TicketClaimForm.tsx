@@ -340,7 +340,7 @@ export default function TicketClaimForm({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col" style={{ gap: 'var(--sp-4)' }}>
       {step !== 'success' && (
         <ol
           className="flex flex-wrap items-center gap-2 rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)] text-xs text-[var(--text-muted)]"
@@ -383,7 +383,7 @@ export default function TicketClaimForm({
       )}
 
       {step === 'select' && (
-        <div className="space-y-3">
+        <div className="flex flex-col" style={{ gap: 'var(--sp-3)' }}>
           <div
             className="rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)]"
             style={{
@@ -482,7 +482,7 @@ export default function TicketClaimForm({
       )}
 
       {step === 'details' && selectedType && (
-        <div className="space-y-4">
+        <div className="flex flex-col" style={{ gap: 'var(--sp-4)' }}>
           <div className="flex items-center justify-between gap-3">
             <h3 className="font-bold text-[var(--text)]">Reservation details</h3>
             <button
@@ -516,7 +516,10 @@ export default function TicketClaimForm({
               </p>
             </div>
 
-            <div className="mt-4 flex items-center justify-between gap-4 border-t border-[var(--border)] pt-4">
+            <div
+              className="flex items-center justify-between gap-4 border-t border-[var(--border)]"
+              style={{ marginTop: 'var(--sp-4)', paddingTop: 'var(--sp-4)' }}
+            >
               <div>
                 <p className="text-sm font-semibold text-[var(--text)]">Quantity</p>
                 <p className="mt-1 text-xs text-[var(--text-muted)]">
@@ -556,7 +559,7 @@ export default function TicketClaimForm({
             </div>
           </div>
 
-          <div className="space-y-3">
+          <div className="flex flex-col" style={{ gap: 'var(--sp-3)' }}>
             <div>
               <label
                 htmlFor={`${formId}-name`}
@@ -647,7 +650,10 @@ export default function TicketClaimForm({
             </div>
           </div>
 
-          <div className="space-y-3 rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)] p-4">
+          <div
+            className="flex flex-col rounded-[var(--r-xl)] border border-[var(--border)] bg-[var(--bg-secondary)]"
+            style={{ gap: 'var(--sp-3)', padding: 'var(--sp-3)', boxSizing: 'border-box' }}
+          >
             <label className="flex cursor-pointer items-start gap-3">
               <input
                 type="checkbox"
