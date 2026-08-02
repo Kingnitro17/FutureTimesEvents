@@ -1,6 +1,6 @@
 'use client';
 
-import type { RefObject } from 'react';
+import type { MouseEvent, RefObject } from 'react';
 import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -81,6 +81,20 @@ function MenuSection({
   pathname: string;
   onNavigate: () => void;
 }) {
+  const handleNavigate = (event: MouseEvent<HTMLAnchorElement>, href: string) => {
+    const hash = href.startsWith('/#') ? href.slice(2) : '';
+    if (hash && pathname === '/') {
+      event.preventDefault();
+      onNavigate();
+      window.setTimeout(() => {
+        document.getElementById(hash)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        window.history.replaceState(null, '', `/#${hash}`);
+      }, 80);
+      return;
+    }
+    onNavigate();
+  };
+
   return (
     <section className="mobile-drawer-section" aria-labelledby={`mobile-menu-${title.replace(/\W+/g, '-').toLowerCase()}`}>
       <h2 id={`mobile-menu-${title.replace(/\W+/g, '-').toLowerCase()}`} className="mobile-drawer-label">
@@ -93,7 +107,7 @@ function MenuSection({
             <Link
               key={`${title}-${label}`}
               href={href}
-              onClick={onNavigate}
+              onClick={(event) => handleNavigate(event, href)}
               className={`mobile-drawer-item ${active ? 'is-active' : ''}`}
               aria-current={active ? 'page' : undefined}
             >

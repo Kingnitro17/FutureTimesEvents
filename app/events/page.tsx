@@ -11,10 +11,13 @@ import EventFilters from '@/components/events/EventFilters';
 import dynamic from 'next/dynamic';
 import {
   useEventsFiltered, DEFAULT_FILTERS,
-  type EventFilters as Filters,
+  type EventFilters as Filters, type DateFilter, type SortOption,
 } from '@/lib/useEventsFiltered';
 
 const EventsMap = dynamic(() => import('@/components/events/EventsMap'), { ssr: false });
+
+const DATE_FILTERS: DateFilter[] = ['all', 'today', 'this_week', 'this_month', 'upcoming'];
+const SORT_OPTIONS: SortOption[] = ['Date', 'Nearest', 'Price: Low', 'Price: High', 'Popularity'];
 
 // Simplified reverse-geocode for Zimbabwe
 function detectCity(lat: number, lng: number): string {
@@ -59,11 +62,17 @@ function EventsContent() {
   const router        = useRouter();
 
   // Initialise filters from URL params
+  const dateParam = searchParams?.get('date') as DateFilter | null;
+  const sortParam = searchParams?.get('sort') as SortOption | null;
+  const priceParam = Number(searchParams?.get('price'));
   const [filters, setFilters] = useState<Filters>({
     ...DEFAULT_FILTERS,
     category:   searchParams?.get('cat')    || DEFAULT_FILTERS.category,
     search:     searchParams?.get('q')      || DEFAULT_FILTERS.search,
     city:       searchParams?.get('city')   || DEFAULT_FILTERS.city,
+    dateFilter: dateParam && DATE_FILTERS.includes(dateParam) ? dateParam : DEFAULT_FILTERS.dateFilter,
+    sort:       sortParam && SORT_OPTIONS.includes(sortParam) ? sortParam : DEFAULT_FILTERS.sort,
+    priceMax:   Number.isFinite(priceParam) && priceParam >= 0 && priceParam <= 1000 ? priceParam : DEFAULT_FILTERS.priceMax,
   });
 
   const [filtersOpen,  setFiltersOpen]  = useState(false);
@@ -88,11 +97,14 @@ function EventsContent() {
       if (filters.category !== 'all') params.set('cat',  filters.category);
       if (filters.search)             params.set('q',    filters.search);
       if (filters.city)               params.set('city', filters.city);
+      if (filters.dateFilter !== 'all') params.set('date', filters.dateFilter);
+      if (filters.sort !== DEFAULT_FILTERS.sort) params.set('sort', filters.sort);
+      if (filters.priceMax < DEFAULT_FILTERS.priceMax) params.set('price', String(filters.priceMax));
       const qs = params.toString();
       router.replace(`/events${qs ? `?${qs}` : ''}`, { scroll: false });
     }, 400);
     return () => clearTimeout(id);
-  }, [filters.category, filters.search, filters.city, router]);
+  }, [filters.category, filters.search, filters.city, filters.dateFilter, filters.sort, filters.priceMax, router]);
 
   // Geolocation
   useEffect(() => {
@@ -137,9 +149,9 @@ function EventsContent() {
           }}
         />
         <div className="absolute inset-0 opacity-50 animate-stripe pointer-events-none" />
-        <div className="container relative z-10 py-8 sm:py-12 lg:py-20 px-4 sm:px-6 lg:px-8">
+        <div className="container relative z-10" style={{ paddingBlock: 'clamp(var(--sp-5), 6vw, var(--sp-7))' }}>
           <motion.div {...fadeUp(0)}>
-            <div className="space-y-3 sm:space-y-4">
+            <div className="flex flex-col" style={{ gap: 'var(--sp-2)' }}>
               <span className="inline-block px-3 sm:px-4 py-1 sm:py-1.5 rounded-full bg-[var(--accent)]/10 text-[var(--accent)] text-xs sm:text-sm font-semibold tracking-wide uppercase">
                 ✨ Discover
               </span>
@@ -166,13 +178,11 @@ function EventsContent() {
         </div>
       </div>
 
-      <div className="h-6 sm:h-10 lg:h-14" />
-
-      <div className="container pb-12 px-4 sm:px-6 lg:px-8">
+      <div className="container flex flex-col" style={{ paddingBlock: 'var(--sp-5) var(--sp-7)', gap: 'var(--sp-4)' }}>
 
         {/* ── Search Bar ── */}
-        <motion.div {...fadeUp(0.08)} className="mb-4 sm:mb-6">
-          <div className="flex items-center gap-3 px-4 sm:px-5 py-3 sm:py-4 rounded-2xl border-2 border-[var(--border)] bg-[var(--bg-card)] focus-within:border-[var(--accent)] focus-within:shadow-[0_0_0_4px_rgba(114,34,227,0.12)] transition-all">
+        <motion.div {...fadeUp(0.08)}>
+          <div className="flex items-center rounded-2xl border-2 border-[var(--border)] bg-[var(--bg-card)] focus-within:border-[var(--accent)] focus-within:shadow-[0_0_0_4px_rgba(114,34,227,0.12)] transition-all" style={{ gap: 'var(--sp-2)', padding: 'var(--sp-3)' }}>
             <Search size={20} className="text-[var(--accent)] shrink-0 sm:w-[22px] sm:h-[22px]" />
             <input
               id="events-search"
@@ -195,7 +205,7 @@ function EventsContent() {
         </motion.div>
 
         {/* ── Toolbar: Filter toggle + Map toggle + chips ── */}
-        <motion.div {...fadeUp(0.12)} className="flex flex-wrap items-center gap-2 sm:gap-3 mb-6 sm:mb-8">
+        <motion.div {...fadeUp(0.12)} className="flex flex-wrap items-center" style={{ gap: 'var(--sp-2)' }}>
           <button
             id="toggle-filters"
             onClick={() => setFiltersOpen(v => !v)}
@@ -273,7 +283,7 @@ function EventsContent() {
         </motion.div>
 
         {/* ── Main layout: Filters + Results ── */}
-        <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-8 items-start">
+        <div className="flex flex-col lg:flex-row items-start" style={{ gap: 'var(--sp-5)' }}>
 
           {/* Sidebar — desktop always visible; mobile as drawer */}
           <div
@@ -291,7 +301,7 @@ function EventsContent() {
           </div>
 
           {/* Results */}
-          <div className="flex-1 w-full min-w-0 space-y-4 sm:space-y-6">
+          <div className="flex flex-1 w-full min-w-0 flex-col" style={{ gap: 'var(--sp-4)' }}>
 
             {/* Map */}
             {showMap && (

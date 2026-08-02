@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { mapDbEvent } from '@/lib/useEvents';
+import { mapDbEvent, uniqueEvents } from '@/lib/useEvents';
 import { haversineKm } from '@/lib/geography';
 import type { DbEvent, Event } from '@/types';
 
@@ -29,7 +29,10 @@ export const DEFAULT_FILTERS: EventFilters = {
 };
 
 function toISODate(d: Date): string {
-  return d.toISOString().split('T')[0];
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 export function useEventsFiltered(
@@ -99,7 +102,7 @@ export function useEventsFiltered(
       setEvents([]);
       setDistances({});
     } else {
-      let mapped = (data as DbEvent[]).map(mapDbEvent);
+      let mapped = uniqueEvents((data as DbEvent[]).map(mapDbEvent));
 
       // Client-side search (Supabase free-tier doesn't have full-text search)
       if (filters.search.trim()) {
@@ -145,7 +148,14 @@ export function useEventsFiltered(
 
   useEffect(() => {
     const timer = window.setTimeout(() => void fetchEvents(), 0);
-    return () => window.clearTimeout(timer);
+    const channel = supabase
+      .channel('published-events-filtered')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, () => void fetchEvents())
+      .subscribe();
+    return () => {
+      window.clearTimeout(timer);
+      void supabase.removeChannel(channel);
+    };
   }, [fetchEvents]);
 
   return { events, loading, error, distances, refetch: fetchEvents };

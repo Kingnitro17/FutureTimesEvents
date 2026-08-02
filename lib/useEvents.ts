@@ -62,6 +62,19 @@ export function mapDbEvent(row: DbEvent): Event {
   };
 }
 
+/** Keep one card for the same real-world event even if duplicate rows exist. */
+export function uniqueEvents(events: Event[]): Event[] {
+  const seen = new Set<string>();
+  return events.filter((event) => {
+    const key = [event.title, event.dateISO, event.venue]
+      .map(value => value.trim().toLocaleLowerCase())
+      .join('|');
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 export function useEvents() {
   const [events,  setEvents]  = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
@@ -86,14 +99,21 @@ export function useEvents() {
       setError(friendlyError);
       setEvents([]);
     } else {
-      setEvents((data as DbEvent[]).map(mapDbEvent));
+      setEvents(uniqueEvents((data as DbEvent[]).map(mapDbEvent)));
     }
     setLoading(false);
   }, []);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void fetchEvents(), 0);
-    return () => window.clearTimeout(timer);
+    const channel = supabase
+      .channel(`published-events-home-${Math.random().toString(36).slice(2)}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, () => void fetchEvents())
+      .subscribe();
+    return () => {
+      window.clearTimeout(timer);
+      void supabase.removeChannel(channel);
+    };
   }, [fetchEvents]);
 
   return { events, loading, error, refetch: fetchEvents };

@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { ChevronDown, MapPin } from 'lucide-react';
 import type { Event } from '@/types';
 import EventbriteCard from '@/components/home/EventbriteCard';
+import { uniqueEvents } from '@/lib/useEvents';
 
 type TabId = 'all' | 'forYou' | 'today' | 'weekend';
 
@@ -16,11 +17,18 @@ const TABS: Array<{ id: TabId; label: string }> = [
   { id: 'weekend', label: 'This weekend' },
 ];
 
-function pick(events: Event[], start: number, count: number) {
-  if (!events.length) return [];
-  const out: Event[] = [];
-  for (let i = 0; i < count; i++) out.push(events[(start + i) % events.length]);
-  return out;
+function localISODate(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function upcomingWeekend(now: Date): { start: string; end: string } {
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const daysUntilSaturday = (6 - start.getDay() + 7) % 7;
+  // On Sunday, "this weekend" means the next full Saturday/Sunday pair.
+  start.setDate(start.getDate() + (daysUntilSaturday === 0 && start.getDay() === 0 ? 6 : daysUntilSaturday));
+  const end = new Date(start);
+  end.setDate(start.getDate() + 1);
+  return { start: localISODate(start), end: localISODate(end) };
 }
 
 export default function EventsInCitySection({
@@ -35,16 +43,21 @@ export default function EventsInCitySection({
   const [tab, setTab] = useState<TabId>('all');
 
   const shown = useMemo(() => {
+    const unique = uniqueEvents(events);
+    const today = localISODate(new Date());
+    const weekend = upcomingWeekend(new Date());
     switch (tab) {
       case 'forYou':
-        return pick(events, 1, 8);
+        return [...unique]
+          .sort((a, b) => Number(b.featured) - Number(a.featured) || b.attendees - a.attendees)
+          .slice(0, 8);
       case 'today':
-        return pick(events, 0, 6);
+        return unique.filter(event => event.dateISO === today);
       case 'weekend':
-        return pick(events, 2, 8);
+        return unique.filter(event => event.dateISO >= weekend.start && event.dateISO <= weekend.end);
       case 'all':
       default:
-        return events.slice(0, 12);
+        return unique.slice(0, 12);
     }
   }, [events, tab]);
 
@@ -111,9 +124,15 @@ export default function EventsInCitySection({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 min-w-0">
             {shown.map((ev, idx) => (
-              <EventbriteCard key={`${tab}-${ev.id}-${idx}`} event={ev} index={idx} />
+              <EventbriteCard key={ev.id} event={ev} index={idx} />
             ))}
           </div>
+          {shown.length === 0 && (
+            <div className="card rounded-[var(--r-2xl)] text-center" style={{ padding: 'var(--sp-5)' }}>
+              <p className="font-bold text-[var(--text)]">No events match this filter yet.</p>
+              <p className="text-sm text-[var(--text-muted)]" style={{ marginTop: 'var(--sp-1)' }}>Try All or check back when new events are published.</p>
+            </div>
+          )}
         </div>
       </div>
     </section>

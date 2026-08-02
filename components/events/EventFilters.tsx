@@ -74,9 +74,7 @@ export default function EventFilters({
       </AnimatePresence>
 
       {/* ── Drawer / Sidebar ── */}
-      <AnimatePresence mode="wait">
-        {(isOpen) && (
-          <motion.aside
+      <motion.aside
             key="sidebar"
             initial={{ x: '-100%', opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
@@ -92,7 +90,7 @@ export default function EventFilters({
             style={{ background: 'var(--bg-card)' }}
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-5 border-b border-[var(--border)] shrink-0">
+            <div className="flex items-center justify-between border-b border-[var(--border)] shrink-0" style={{ padding: 'var(--sp-3)' }}>
               <div className="flex items-center gap-2">
                 <SlidersHorizontal size={16} className="text-[var(--accent)]" />
                 <span className="font-bold text-[var(--text)]">Filters</span>
@@ -122,7 +120,7 @@ export default function EventFilters({
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto scrollbar-hide p-5 space-y-7">
+            <div className="flex flex-1 flex-col overflow-y-auto scrollbar-hide" style={{ padding: 'var(--sp-3)', gap: 'var(--sp-5)' }}>
 
               {/* ── Category ── */}
               <section aria-label="Category filter">
@@ -249,7 +247,7 @@ export default function EventFilters({
             </div>
 
             {/* Footer — results count */}
-            <div className="shrink-0 p-4 border-t border-[var(--border)]">
+            <div className="shrink-0 border-t border-[var(--border)]" style={{ padding: 'var(--sp-3)' }}>
               <button
                 onClick={onClose}
                 className="btn btn-lg btn-grad w-full text-white lg:hidden"
@@ -260,9 +258,7 @@ export default function EventFilters({
                 {totalCount} result{totalCount !== 1 ? 's' : ''} found
               </p>
             </div>
-          </motion.aside>
-        )}
-      </AnimatePresence>
+      </motion.aside>
     </>
   );
 }
