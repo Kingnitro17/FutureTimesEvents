@@ -2,36 +2,25 @@
 
 import { useEffect, useRef } from 'react';
 import Link from 'next/link';
-import {
-  Music,
-  Sparkles,
-  Palette,
-  Plane,
-  Heart,
-  Gamepad2,
-  Briefcase,
-  UtensilsCrossed,
-} from 'lucide-react';
 
 type Category = {
   id: string;
   label: string;
   href: string;
-  Icon?: React.ComponentType<{ size?: number; className?: string }>;
-  emoji?: string;
+  emoji: string;
   gradient: string;
 };
 
 const CATS: Category[] = [
-  { id: 'music', label: 'Music', href: '/events', Icon: Music, gradient: 'linear-gradient(135deg,#FF55C2,#7222E3)' },
-  { id: 'nightlife', label: 'Nightlife', href: '/events', Icon: Sparkles, gradient: 'linear-gradient(135deg,#7222E3,#4F46E5)' },
-  { id: 'arts', label: 'Performing & Visual Arts', href: '/events', Icon: Palette, gradient: 'linear-gradient(135deg,#2CC4EA,#533885)' },
-  { id: 'holidays', label: 'Holidays', href: '/events', Icon: Plane, gradient: 'linear-gradient(135deg,#46FFAB,#2CC4EA)' },
-  { id: 'dating', label: 'Dating', href: '/events', Icon: Heart, gradient: 'linear-gradient(135deg,#FF6B6B,#FF55C2)' },
-  { id: 'hobbies', label: 'Hobbies', href: '/events', Icon: Gamepad2, gradient: 'linear-gradient(135deg,#FFBC73,#FF6B6B)' },
-  { id: 'business', label: 'Business', href: '/events', Icon: Briefcase, gradient: 'linear-gradient(135deg,#1D5BFF,#2CC4EA)' },
-  { id: 'food', label: 'Food & Drink', href: '/events', Icon: UtensilsCrossed, gradient: 'linear-gradient(135deg,#46FFAB,#1D5BFF)' },
-  { id: 'sports', label: 'Sports', href: '/events', emoji: '⚽', gradient: 'linear-gradient(135deg,#2CC4EA,#533885)' },
+  { id: 'music', label: 'Music', href: '/events', emoji: '\u{1F3B5}', gradient: 'linear-gradient(135deg,#FF55C2,#7222E3)' },
+  { id: 'nightlife', label: 'Nightlife', href: '/events', emoji: '\u2728', gradient: 'linear-gradient(135deg,#7222E3,#4F46E5)' },
+  { id: 'arts', label: 'Performing & Visual Arts', href: '/events', emoji: '\u{1F3A8}', gradient: 'linear-gradient(135deg,#2CC4EA,#533885)' },
+  { id: 'holidays', label: 'Holidays', href: '/events', emoji: '\u2708\uFE0F', gradient: 'linear-gradient(135deg,#46FFAB,#2CC4EA)' },
+  { id: 'dating', label: 'Dating', href: '/events', emoji: '\u2764\uFE0F', gradient: 'linear-gradient(135deg,#FF6B6B,#FF55C2)' },
+  { id: 'hobbies', label: 'Hobbies', href: '/events', emoji: '\u{1F3AE}', gradient: 'linear-gradient(135deg,#FFBC73,#FF6B6B)' },
+  { id: 'business', label: 'Business', href: '/events', emoji: '\u{1F4BC}', gradient: 'linear-gradient(135deg,#1D5BFF,#2CC4EA)' },
+  { id: 'food', label: 'Food & Drink', href: '/events', emoji: '\u{1F37D}\uFE0F', gradient: 'linear-gradient(135deg,#46FFAB,#1D5BFF)' },
+  { id: 'sports', label: 'Sports', href: '/events', emoji: '\u26BD', gradient: 'linear-gradient(135deg,#2CC4EA,#533885)' },
 ];
 
 export default function CategoryMarquee() {
@@ -55,7 +44,7 @@ export default function CategoryMarquee() {
       if (!hoveredRef.current) {
         pausedRef.current = false;
       }
-    }, 5000);
+    }, 2000);
   };
 
   useEffect(() => {
@@ -117,7 +106,7 @@ export default function CategoryMarquee() {
             paddingBlock: 'var(--sp-2)',
             scrollBehavior: 'auto',
             scrollSnapType: 'none',
-            touchAction: 'pan-x',
+            touchAction: 'auto',
           }}
           tabIndex={0}
           role="region"
@@ -152,14 +141,12 @@ export default function CategoryMarquee() {
               ref={isDuplicate ? undefined : sequenceRef}
               className="flex shrink-0 flex-nowrap"
               style={{
-                gap: 'var(--sp-2)',
-                paddingLeft: 'var(--sp-3)',
-                paddingRight: 'var(--sp-2)',
+                gap: 'var(--sp-1)',
+                paddingLeft: 'var(--sp-2)',
               }}
               aria-hidden={isDuplicate || undefined}
             >
               {CATS.map(c => {
-                const Icon = c.Icon;
                 return (
                   <Link
                     key={`sequence-${sequenceIndex}-${c.id}`}
@@ -168,17 +155,15 @@ export default function CategoryMarquee() {
                     className="group flex shrink-0 flex-col items-center gap-2 rounded-2xl text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
                     style={{
                       flex: '0 0 auto',
-                      inlineSize: 'clamp(6.5rem, 27vw, 8.5rem)',
-                      padding: 'var(--sp-2)',
+                      inlineSize: 'clamp(5rem, 22vw, 6rem)',
+                      padding: 'var(--sp-1)',
                     }}
                   >
                     <div
                       className="flex h-[4.5rem] w-[4.5rem] shrink-0 items-center justify-center rounded-2xl transition-transform duration-200 group-hover:-translate-y-0.5 sm:h-[5.5rem] sm:w-[5.5rem]"
                       style={{ background: c.gradient, boxShadow: 'var(--shadow-sm)' }}
                     >
-                      {c.emoji
-                        ? <span className="text-4xl leading-none" aria-hidden="true">{c.emoji}</span>
-                        : Icon && <Icon size={32} className="text-white" />}
+                      <span className="text-4xl leading-none" aria-hidden="true">{c.emoji}</span>
                     </div>
                     <span className="w-full text-sm font-extrabold leading-tight text-[var(--text)] sm:text-base">
                       {c.label}
