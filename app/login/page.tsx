@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -27,7 +27,12 @@ function LoginContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading,    setIsLoading]    = useState(false);
   const [oauthLoading, setOauthLoading] = useState(false);
+  const redirectStarted = useRef(false);
   const oauthError = searchParams?.get('error') === 'oauth';
+  const requestedRedirect = searchParams?.get('next');
+  const redirectTo = requestedRedirect?.startsWith('/') && !requestedRedirect.startsWith('//')
+    ? requestedRedirect
+    : '/profile';
 
   // Detect ?error=oauth redirect from /auth/callback
   useEffect(() => {
@@ -38,14 +43,11 @@ function LoginContent() {
 
   useEffect(() => {
     if (!authLoading && user && pathname === '/login') {
-      const redirectTo = searchParams?.get('next') || '/profile';
-      // Small delay to ensure auth state is fully settled before redirect
-      const timer = setTimeout(() => {
-        router.replace(redirectTo);
-      }, 100);
-      return () => clearTimeout(timer);
+      if (redirectStarted.current) return;
+      redirectStarted.current = true;
+      router.replace(redirectTo);
     }
-  }, [user, authLoading, pathname, router, searchParams]);
+  }, [user, authLoading, pathname, redirectTo, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,8 +63,15 @@ function LoginContent() {
         toast.error(error.message);
       }
       setIsLoading(false);
+      return;
     }
-    // On success, the auth context will update user state and the redirect effect will fire
+
+    // Supabase has written the session cookie when signIn resolves, so move to
+    // the destination immediately instead of waiting for the auth listener.
+    if (!redirectStarted.current) {
+      redirectStarted.current = true;
+      router.replace(redirectTo);
+    }
   };
 
   const handleGoogle = async () => {

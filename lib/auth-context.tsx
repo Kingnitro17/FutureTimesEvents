@@ -204,13 +204,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function signIn(email: string, password: string) {
-    const { error } = await getClient().auth.signInWithPassword({ email, password });
+    const { data, error } = await getClient().auth.signInWithPassword({ email, password });
 
     if (error) {
       setUser(null);
       setProfileError(null);
       setIsLoading(false);
       return { error: error as Error | null };
+    }
+
+    // Use the session returned by this request immediately. Profile loading is
+    // deduplicated and continues in the background without delaying navigation.
+    if (data.session?.user) {
+      void syncAuthState(data.session);
     }
 
     return { error: null };

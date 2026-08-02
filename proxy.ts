@@ -11,9 +11,6 @@ const ADMIN_ROUTES = ['/admin'];
 // Routes that require host, event_manager, admin, or super_admin role
 const HOST_ROUTES = ['/checkin'];
 
-// Routes that are only for unauthenticated users (redirect logged-in users away)
-const GUEST_ONLY_ROUTES = ['/auth/login', '/auth/signup', '/login', '/signup'];
-
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -111,26 +108,17 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // ── Authenticated user hitting guest-only routes ──────────────────────────
-  const isGuestOnly = GUEST_ONLY_ROUTES.some(r => pathname === r || pathname.startsWith(r));
-  if (user && isGuestOnly) {
-    return NextResponse.redirect(new URL('/', request.url));
-  }
-
   // Return the response with refreshed auth cookies
   return supabaseResponse;
 }
 
 export const config = {
   matcher: [
-    /*
-     * Match all paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimisation)
-     * - favicon.ico
-     * - api/health (health check — no auth needed)
-     * - auth/callback (Supabase OAuth callback)
-     */
-    '/((?!_next/static|_next/image|favicon\\.ico|api/health|auth/callback).*)',
+    '/tickets/:path*',
+    '/profile/:path*',
+    '/settings/:path*',
+    '/notifications/:path*',
+    '/admin/:path*',
+    '/checkin/:path*',
   ],
 };
