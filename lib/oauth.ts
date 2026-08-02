@@ -12,19 +12,22 @@ import { supabase } from '@/lib/supabase';
  */
 export async function signInWithGoogle(nextPath?: string): Promise<void> {
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  if (!origin) throw new Error('Google sign-in must be started in a browser.');
+
   const redirectUrl = new URL(`${origin}/auth/callback`);
-  if (nextPath) {
+  if (nextPath?.startsWith('/') && !nextPath.startsWith('//')) {
     redirectUrl.searchParams.set('next', nextPath);
   }
 
-  await supabase.auth.signInWithOAuth({
+  const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
       redirectTo: redirectUrl.toString(),
       queryParams: {
-        access_type: 'offline',
-        prompt: 'consent',
+        prompt: 'select_account',
       },
     },
   });
+
+  if (error) throw error;
 }

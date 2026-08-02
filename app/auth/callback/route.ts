@@ -13,7 +13,10 @@ import { getPublicSupabaseConfig } from '@/lib/supabase/config';
 export async function GET(request: NextRequest) {
   const url    = new URL(request.url);
   const code   = url.searchParams.get('code');
-  const next   = url.searchParams.get('next') ?? '/profile';
+  const requestedNext = url.searchParams.get('next');
+  const next = requestedNext?.startsWith('/') && !requestedNext.startsWith('//')
+    ? requestedNext
+    : '/profile';
   const origin = url.origin;
 
   if (code) {

@@ -76,10 +76,11 @@ function LoginContent() {
   const handleGoogle = async () => {
     setOauthLoading(true);
     try {
-      await signInWithGoogle('/profile');
+      await signInWithGoogle(redirectTo);
       // Page will redirect — no need to setOauthLoading(false)
-    } catch {
-      toast.error('Google sign-in unavailable. Please use email.');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Google sign-in unavailable.';
+      toast.error(message || 'Google sign-in unavailable. Please use email.');
       setOauthLoading(false);
     }
   };
