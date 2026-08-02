@@ -661,6 +661,10 @@ h5, h6 {
    Generous but scaled-down vertical rhythm
 ─────────────────────────────────────────────── */
 @media (max-width: 600px) {
+  /* Keep real-device density aligned with the mobile design viewport. Most
+     component sizing is rem-based, so this gently normalizes vendor browser
+     UI scaling without transforms, zoom, or layout-width hacks. */
+  html { font-size: 15px; }
   .container { padding-inline: var(--sp-3); } /* 16px */
   .section-pad    { padding-block: var(--sp-6); } /* 48px */
   .section-pad-sm { padding-block: var(--sp-6); } /* 48px */

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import { useSearchParams, usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/lib/auth-context';
 import { signInWithGoogle } from '@/lib/oauth';
@@ -17,7 +17,6 @@ const fadeUp = (delay = 0) => ({
 });
 
 function LoginContent() {
-  const router       = useRouter();
   const searchParams = useSearchParams();
   const pathname     = usePathname();
   const { signIn, user, isLoading: authLoading }   = useAuth();
@@ -45,9 +44,9 @@ function LoginContent() {
     if (!authLoading && user && pathname === '/login') {
       if (redirectStarted.current) return;
       redirectStarted.current = true;
-      router.replace(redirectTo);
+      window.location.replace(redirectTo);
     }
-  }, [user, authLoading, pathname, redirectTo, router]);
+  }, [user, authLoading, pathname, redirectTo]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,7 +69,7 @@ function LoginContent() {
     // the destination immediately instead of waiting for the auth listener.
     if (!redirectStarted.current) {
       redirectStarted.current = true;
-      router.replace(redirectTo);
+      window.location.replace(redirectTo);
     }
   };
 
