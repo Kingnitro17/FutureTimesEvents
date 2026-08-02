@@ -36,13 +36,37 @@ const raleway = Raleway({
 });
 
 export const metadata: Metadata = {
-  title: 'Future Times Events – Discover Events That Move You',
-  description: 'Discover world-class events, music festivals, art shows, tech conferences and more. Buy tickets, book VIP tables, and experience the best events near you with Future Times Events.',
-  keywords: 'future times events, events, nightlife, tickets, festivals, concerts, event discovery',
+  metadataBase: new URL('https://futuretimesevents.com'),
+  title: {
+    default: 'Future Times Events | Discover Events in Zimbabwe',
+    template: '%s | Future Times Events',
+  },
+  description: 'Discover concerts, festivals, nightlife, sports and experiences across Zimbabwe. Find events, reserve tickets and plan your next unforgettable moment with Future Times Events.',
+  applicationName: 'Future Times Events',
+  authors: [{ name: 'Future Times Events', url: 'https://futuretimesevents.com' }],
+  creator: 'Future Times Events',
+  publisher: 'Future Times Events',
+  keywords: ['Future Times Events', 'events in Zimbabwe', 'Zimbabwe event tickets', 'Harare events', 'concerts', 'festivals', 'nightlife', 'sports events'],
+  category: 'events',
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1, 'max-video-preview': -1 },
+  },
   openGraph: {
-    title: 'Future Times Events – Discover Events That Move You',
-    description: 'The premier event discovery platform.',
+    title: 'Future Times Events | Discover Events in Zimbabwe',
+    description: 'Discover Zimbabwe’s best concerts, festivals, nightlife, sports and experiences.',
+    url: '/',
+    siteName: 'Future Times Events',
     type: 'website',
+    locale: 'en_ZW',
+    images: [{ url: '/opengraph-image.png', width: 1200, height: 630, alt: 'Future Times Events' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Future Times Events | Discover Events in Zimbabwe',
+    description: 'Discover Zimbabwe’s best concerts, festivals, nightlife, sports and experiences.',
+    images: ['/opengraph-image.png'],
   },
 };
 
@@ -53,8 +77,22 @@ export const viewport = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const organizationJsonLd = {
+    '@context': 'https://schema.org', '@type': 'Organization', name: 'Future Times Events',
+    url: 'https://futuretimesevents.com', logo: 'https://futuretimesevents.com/icon.png',
+    description: 'Event discovery and ticketing platform for experiences across Zimbabwe.',
+  };
+  const websiteJsonLd = {
+    '@context': 'https://schema.org', '@type': 'WebSite', name: 'Future Times Events',
+    alternateName: 'Future Times', url: 'https://futuretimesevents.com',
+  };
+
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }} />
+      </head>
       <body className={`${inter.variable} ${spaceGrotesk.variable} ${raleway.variable} relative`}>
         <AuthProvider>
           <StripeBackground />
