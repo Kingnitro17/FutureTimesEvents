@@ -91,6 +91,7 @@ export default function AboutSection() {
 
   return (
     <section
+      id="about"
       className="relative section-pad-sm overflow-hidden"
       aria-labelledby="about-heading"
     >

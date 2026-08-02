@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/lib/auth-context';
 import { useEvents } from '@/lib/useEvents';
+import MobileMenuDrawer from '@/components/layout/MobileMenuDrawer';
 import {
   Bell, User, Settings, Ticket, Shield,
   Search, Home, Map, Menu, X, LogOut, LogIn,
@@ -374,9 +375,19 @@ export default function Navbar() {
                 {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
               </motion.button>
 
+              <MobileMenuDrawer
+                open={mobileMenuOpen}
+                pathname={pathname ?? ''}
+                user={user}
+                isOrganizer={isOrganizer}
+                panelRef={menuPanelRef}
+                onClose={() => setMobileMenuOpen(false)}
+                onSignOut={() => void handleSignOut()}
+              />
+
               {/* Backdrop overlay */}
               <AnimatePresence>
-                {mobileMenuOpen && (
+                {false && mobileMenuOpen && (
                   <motion.div
                     ref={menuPanelRef}
                     id="mobile-navigation-menu"
@@ -394,7 +405,7 @@ export default function Navbar() {
               </AnimatePresence>
 
               <AnimatePresence>
-                {mobileMenuOpen && (
+                {false && mobileMenuOpen && (
                   <motion.div
                     initial={{ x: '100%', opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}

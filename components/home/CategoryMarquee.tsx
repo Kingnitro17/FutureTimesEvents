@@ -81,6 +81,7 @@ export default function CategoryMarquee() {
 
   return (
     <section
+      id="event-categories"
       className="relative z-10"
       style={{ paddingTop: 'var(--sp-6)', paddingBottom: 'var(--sp-4)' }}
     >

@@ -874,3 +874,72 @@ img {
 .safe-right {
   padding-right: env(safe-area-inset-right, 0px);
 }
+
+/* Premium mobile navigation drawer */
+.mobile-drawer {
+  box-shadow: 24px 0 70px rgba(15, 10, 35, 0.22);
+  border-radius: 0 var(--r-3xl) var(--r-3xl) 0;
+}
+.mobile-drawer-scroll {
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: max(1.25rem, env(safe-area-inset-top)) 1.75rem max(1rem, env(safe-area-inset-bottom));
+}
+.mobile-drawer-header,
+.mobile-drawer-brand,
+.mobile-drawer-profile,
+.mobile-drawer-item,
+.mobile-drawer-logout {
+  display: flex;
+  align-items: center;
+}
+.mobile-drawer-header { justify-content: space-between; gap: var(--sp-3); margin-bottom: var(--sp-4); }
+.mobile-drawer-brand { min-width: 0; gap: var(--sp-3); color: #111225; }
+.mobile-drawer-brand strong { display: block; font-size: 1.1rem; line-height: 1.2; font-weight: 800; white-space: nowrap; }
+.mobile-drawer-brand small { display: block; margin-top: 3px; color: var(--text-muted); font-size: 0.78rem; line-height: 1.2; }
+.mobile-drawer-logo {
+  display: grid; place-items: center; width: 3.5rem; height: 3.5rem; flex: none;
+  overflow: hidden; border-radius: 50%; background: #050505; box-shadow: var(--shadow-sm);
+}
+.mobile-drawer-logo img { width: 100%; height: 100%; object-fit: contain; padding: 5px; }
+.mobile-drawer-close {
+  display: grid; place-items: center; width: 3rem; height: 3rem; flex: none;
+  border-radius: 50%; color: var(--accent); background: #faf9ff; box-shadow: var(--shadow-sm);
+}
+.mobile-drawer-profile {
+  min-height: 6.5rem; gap: var(--sp-3); margin-bottom: var(--sp-5); padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-xl); color: white; background: var(--grad-primary); box-shadow: 0 14px 32px rgba(var(--accent-rgb), 0.24);
+}
+.mobile-drawer-avatar {
+  display: grid; place-items: center; width: 3.75rem; height: 3.75rem; flex: none; overflow: hidden;
+  border: 1px solid rgba(255,255,255,.32); border-radius: 50%; background: rgba(255,255,255,.15);
+}
+.mobile-drawer-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.mobile-drawer-profile strong { font-size: 1rem; font-weight: 800; }
+.mobile-drawer-profile-copy { display: block; margin-top: 7px; font-size: .9rem; color: rgba(255,255,255,.92); }
+.mobile-drawer-badge { padding: 3px 8px; border-radius: 999px; background: rgba(70,210,235,.7); font-size: .62rem; font-weight: 900; letter-spacing: .05em; }
+.mobile-drawer-section { padding-bottom: var(--sp-3); margin-bottom: var(--sp-3); border-bottom: 1px solid var(--border); }
+.mobile-drawer-label { margin-bottom: var(--sp-2); font-family: var(--font-body); font-size: .72rem; font-weight: 800; letter-spacing: .11em; text-transform: uppercase; color: #68697e; }
+.mobile-drawer-list { display: flex; flex-direction: column; gap: 3px; }
+.mobile-drawer-item { min-height: 3.35rem; gap: var(--sp-3); padding: 5px var(--sp-2); border-radius: var(--r-lg); color: #17182b; }
+.mobile-drawer-item.is-active { color: var(--accent); background: rgba(var(--accent-rgb), .09); }
+.mobile-drawer-item:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mobile-drawer-icon {
+  display: grid; place-items: center; width: 2.65rem; height: 2.65rem; flex: none;
+  border-radius: var(--r-md); color: #6e61a5; background: #f3f2f8;
+}
+.mobile-drawer-item.is-active .mobile-drawer-icon { color: var(--accent); background: transparent; }
+.mobile-drawer-item-text { font-size: .98rem; font-weight: 600; }
+.mobile-drawer-logout {
+  justify-content: center; min-height: 3.75rem; width: 100%; gap: var(--sp-2); margin-top: var(--sp-2);
+  border: 1px solid var(--border); border-radius: var(--r-xl); color: #ef3340; font-size: 1rem; font-weight: 700;
+}
+.mobile-drawer-create { color: white; border: 0; background: var(--grad-primary); }
+.mobile-drawer-version { margin-top: var(--sp-3); max-width: none; text-align: center; color: #aaa9bb; font-size: .72rem; }
+
+@media (max-width: 360px) {
+  .mobile-drawer-scroll { padding-inline: var(--sp-3); }
+  .mobile-drawer-brand strong { font-size: 1rem; }
+  .mobile-drawer-profile { padding-inline: var(--sp-3); }
+}

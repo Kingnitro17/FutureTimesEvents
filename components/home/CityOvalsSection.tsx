@@ -138,7 +138,7 @@ export default function CityOvalsSection() {
   ];
 
   return (
-    <section className="relative py-12 sm:py-16">
+    <section id="top-destinations" className="relative py-12 sm:py-16">
       <div className="container">
         {/* Header */}
         <motion.div
