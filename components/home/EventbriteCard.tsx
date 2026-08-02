@@ -107,7 +107,10 @@ export default function EventbriteCard({ event, index = 0, distanceKm }: Props) 
 
         {/* ── CONTENT ── */}
         <div className="px-4 pt-3.5 pb-4 sm:px-5 sm:pt-4 sm:pb-5">
-          <h3 className="text-[15px] sm:text-base font-black text-[var(--text)] tracking-[-0.02em] leading-snug line-clamp-2">
+          <h3
+            className="text-[15px] sm:text-base font-black text-[var(--text)] tracking-[-0.02em] leading-snug line-clamp-2"
+            style={{ fontWeight: 900 }}
+          >
             {event.title}
           </h3>
 

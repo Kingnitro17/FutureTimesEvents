@@ -1360,7 +1360,7 @@ export default function EventSlugPage() {
       </article>
 
       <div
-        className="event-ticket-action fixed inset-x-0 z-[60] border-t border-[var(--border)] bg-[var(--bg-card)]/95 px-4 pt-3 shadow-[0_-12px_40px_rgba(0,0,0,0.10)] backdrop-blur-xl lg:hidden"
+        className="event-ticket-action fixed inset-x-0 z-[60] px-4 pt-3 lg:hidden"
         style={{
           paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))',
           paddingLeft: 'calc(1rem + env(safe-area-inset-left, 0px))',

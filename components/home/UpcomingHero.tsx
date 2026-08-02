@@ -250,6 +250,7 @@ export default function UpcomingHero({
                       className="font-black text-white !text-white leading-[1.08] mb-4 uppercase tracking-wide text-center"
                       style={{
                         fontSize: 'clamp(1.7rem, 7.5vw, 3.8rem)',
+                        fontWeight: 900,
                         textShadow: '0 4px 28px rgba(0,0,0,0.95), 0 1px 4px rgba(0,0,0,0.8)',
                       }}
                     >
