@@ -943,3 +943,16 @@ img {
   .mobile-drawer-brand strong { font-size: 1rem; }
   .mobile-drawer-profile { padding-inline: var(--sp-3); }
 }
+
+/* About section: keep the final feature-card gap and the purpose-strip gap
+   identical, including where margin utilities are neutralized by the reset. */
+.about-feature-grid {
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-3);
+}
+@media (min-width: 640px) {
+  .about-feature-grid {
+    gap: var(--sp-4);
+    margin-bottom: var(--sp-4);
+  }
+}

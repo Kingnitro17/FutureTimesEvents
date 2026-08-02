@@ -134,7 +134,10 @@ export default function AboutSection() {
             </div>
 
             {/* ── 2. MAIN HERO AREA (Heading, Paragraph, Transparent Logo) ── */}
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 items-center mb-8 sm:mb-12">
+            <div
+              className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 items-center"
+              style={{ marginBottom: 'var(--sp-5)' }}
+            >
               {/* Text content */}
               <div className="md:col-span-7 min-w-0">
                 <h2
@@ -175,23 +178,32 @@ export default function AboutSection() {
                   priority={false}
                   aria-hidden="true"
                   className="h-auto shrink-0 object-contain bg-transparent border-0 shadow-none outline-none pointer-events-none select-none"
-                  style={{ width: 'clamp(6.25rem, 28vw, 10rem)' }}
+                  style={{ width: 'clamp(7.5rem, 31vw, 10.5rem)' }}
                 />
                 <div className="flex min-w-0 flex-col text-left" style={{ gap: 'var(--sp-1)' }}>
                   <span
                     className="font-display font-black leading-[0.95] tracking-[-0.045em]"
                     style={{
                       color: '#0a0a0a',
-                      fontSize: 'clamp(1.35rem, 5vw, 2rem)',
+                      fontSize: 'clamp(1.55rem, 6vw, 2.25rem)',
                     }}
                   >
-                    Future Times
+                    Future
                   </span>
                   <span
-                    className="font-display font-bold leading-none tracking-[-0.025em]"
+                    className="font-display font-black leading-[0.95] tracking-[-0.045em]"
                     style={{
                       color: '#0a0a0a',
-                      fontSize: 'clamp(1.05rem, 3.7vw, 1.45rem)',
+                      fontSize: 'clamp(1.55rem, 6vw, 2.25rem)',
+                    }}
+                  >
+                    Times
+                  </span>
+                  <span
+                    className="font-display font-extrabold leading-none tracking-[-0.025em]"
+                    style={{
+                      color: '#0a0a0a',
+                      fontSize: 'clamp(1.2rem, 4.5vw, 1.7rem)',
                     }}
                   >
                     Events
@@ -201,7 +213,7 @@ export default function AboutSection() {
             </div>
 
             {/* ── 3. FEATURE CARDS (Identity, Vision, Values) ── */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6 mb-8 sm:mb-12">
+            <div className="about-feature-grid grid grid-cols-1 md:grid-cols-3">
               {featureCards.map((card) => {
                 const IconComponent = card.icon;
                 return (
@@ -273,14 +285,18 @@ export default function AboutSection() {
                       }}
                     >
                       <StepIcon
-                        size={22}
-                        className="text-[var(--accent)] mb-2 shrink-0"
-                        strokeWidth={2}
+                        size={26}
+                        className="text-[var(--accent)] shrink-0"
+                        strokeWidth={2.8}
+                        style={{ marginBottom: 'var(--sp-2)' }}
                       />
-                      <span className="text-xs sm:text-sm font-bold text-[var(--text)] leading-tight">
+                      <span className="text-sm sm:text-base font-extrabold text-[var(--text)] leading-tight">
                         {step.title}
                       </span>
-                      <span className="text-[11px] sm:text-xs text-[var(--text-muted)] mt-1 leading-tight">
+                      <span
+                        className="text-xs sm:text-sm font-semibold text-[var(--text-muted)] leading-tight"
+                        style={{ marginTop: 'var(--sp-1)' }}
+                      >
                         {step.subtitle}
                       </span>
                     </div>
