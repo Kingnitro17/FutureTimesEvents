@@ -138,8 +138,6 @@ export default function MobileMenuDrawer({
   onClose: () => void;
   onSignOut: () => void;
 }) {
-  const membership = user?.isVip ? 'VIP' : 'SILVER';
-
   return (
     <AnimatePresence>
       {open && (
@@ -188,9 +186,9 @@ export default function MobileMenuDrawer({
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-2">
                       <strong className="truncate">{user.name}</strong>
-                      <span className="mobile-drawer-badge">{membership}</span>
+                      {user.isVip && <span className="mobile-drawer-badge">VIP</span>}
                     </span>
-                    <span className="mobile-drawer-profile-copy">View profile</span>
+                    <span className="mobile-drawer-profile-copy truncate">{user.email}</span>
                   </span>
                   <ChevronRight size={20} aria-hidden="true" />
                 </Link>

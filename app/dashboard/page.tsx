@@ -315,8 +315,7 @@ export default function DashboardPage() {
                       <div>
                         <p className="font-black text-[var(--text)] text-lg">{user.name}</p>
                         <p className="text-sm text-[var(--text-muted)]">{user.email}</p>
-                        <span className="inline-block mt-1 text-xs font-bold px-2 py-0.5 rounded-full capitalize"
-                          style={{ background: 'var(--accent)', color: '#fff' }}>{user.role}</span>
+                        {user.location && <p className="text-xs text-[var(--text-muted)] mt-1">{user.location}</p>}
                       </div>
                     </div>
                   </div>

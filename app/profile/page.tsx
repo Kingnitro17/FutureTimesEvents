@@ -1,5 +1,5 @@
 'use client';
-import { useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { MapPin, Calendar, User, Camera, Upload, RefreshCw } from 'lucide-react';
@@ -20,7 +20,35 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState<'saved' | 'badges'>('saved');
   const [avatar, setAvatar]       = useState<string>(user?.avatar || '');
   const [isUploading, setIsUploading] = useState(false);
+  const [savedEventIds, setSavedEventIds] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!user?.id) {
+      setSavedEventIds([]);
+      return;
+    }
+
+    let active = true;
+    void supabase
+      .from('saved_events')
+      .select('event_id')
+      .eq('user_id', user.id)
+      .then(({ data, error }: {
+        data: Array<{ event_id: string }> | null;
+        error: { message: string } | null;
+      }) => {
+        if (!active) return;
+        if (error) {
+          if (process.env.NODE_ENV === 'development') console.error('[Profile] Saved events load failed:', error);
+          setSavedEventIds([]);
+          return;
+        }
+        setSavedEventIds((data ?? []).map(row => row.event_id));
+      });
+
+    return () => { active = false; };
+  }, [user?.id]);
 
   // ── Loading / unauthenticated ──────────────────────────────────────
   if (isLoading) {
@@ -45,10 +73,6 @@ export default function ProfilePage() {
 
   // ── Loyalty helpers ────────────────────────────────────────────────
   const loyaltyPoints = user.loyaltyPoints ?? 0;
-  const loyaltyLevel  = loyaltyPoints >= 3000 ? 'Platinum' : loyaltyPoints >= 1500 ? 'Gold' : 'Silver';
-  const loyaltyColor  = loyaltyLevel === 'Platinum' ? '#DD1FFF' : loyaltyLevel === 'Gold' ? '#FFBC73' : '#2CC4EA';
-  const nextLevel     = loyaltyLevel === 'Silver' ? 1500 : loyaltyLevel === 'Gold' ? 3000 : 5000;
-  void nextLevel;
   const earnedBadges  = (user.badges ?? []).filter(b => b.earned).length;
   const displayedAvatar = avatar || user.avatar || '';
 
@@ -102,8 +126,7 @@ export default function ProfilePage() {
     { id: 'badges', label: '🏅 Badges' },
   ];
 
-  // Use 3 random events from live data as "saved" placeholder until saved table exists
-  const savedEvents = events.slice(0, 4);
+  const savedEvents = events.filter(event => savedEventIds.includes(event.id));
 
   return (
     <div className="min-h-screen page-offset pb-nav" style={{ background: 'var(--bg-secondary)' }}>
@@ -148,10 +171,8 @@ export default function ProfilePage() {
                 <div className="flex flex-wrap items-center gap-2 mb-1">
                   <h1 className="type-h2 text-[var(--text)]">{user.name}</h1>
                   {user.isVip && <span className="badge badge-grad">👑 VIP</span>}
-                  <span className="badge" style={{ background: `linear-gradient(135deg,${loyaltyColor},#533885)`, color: '#fff' }}>
-                    {loyaltyLevel}
-                  </span>
                 </div>
+                <p className="type-sm text-[var(--text-muted)] mb-2">{user.email}</p>
                 {user.bio && (
                   <p className="type-sm text-[var(--text-muted)] mb-2 line-clamp-2">{user.bio}</p>
                 )}
