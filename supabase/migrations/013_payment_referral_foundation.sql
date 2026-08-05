@@ -50,7 +50,7 @@ CREATE TABLE public.referrals (
 CREATE UNIQUE INDEX referrals_one_user_attribution ON public.referrals(referred_user_id) WHERE referred_user_id IS NOT NULL;
 CREATE UNIQUE INDEX referrals_one_business_attribution ON public.referrals(referred_business_key) WHERE referred_business_key IS NOT NULL;
 
-CREATE TABLE public.orders (
+CREATE TABLE public.ticket_orders (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   merchant_reference TEXT NOT NULL UNIQUE DEFAULT ('FTE-' || upper(substr(replace(gen_random_uuid()::TEXT,'-',''),1,20))),
   user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE RESTRICT,
@@ -76,7 +76,7 @@ CREATE TABLE public.orders (
 
 CREATE TABLE public.order_items (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  order_id UUID NOT NULL REFERENCES public.orders(id) ON DELETE RESTRICT,
+  order_id UUID NOT NULL REFERENCES public.ticket_orders(id) ON DELETE RESTRICT,
   ticket_type_id UUID NOT NULL REFERENCES public.ticket_types(id) ON DELETE RESTRICT,
   quantity INTEGER NOT NULL CHECK (quantity BETWEEN 1 AND 10),
   unit_price NUMERIC(12,2) NOT NULL CHECK (unit_price >= 0),
@@ -91,7 +91,7 @@ CREATE TABLE public.ticket_reservations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   event_id UUID NOT NULL REFERENCES public.events(id) ON DELETE RESTRICT,
   ticket_type_id UUID NOT NULL REFERENCES public.ticket_types(id) ON DELETE RESTRICT,
-  order_id UUID NOT NULL REFERENCES public.orders(id) ON DELETE RESTRICT,
+  order_id UUID NOT NULL REFERENCES public.ticket_orders(id) ON DELETE RESTRICT,
   quantity INTEGER NOT NULL CHECK (quantity > 0),
   status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','converted','released','expired')),
   expires_at TIMESTAMPTZ NOT NULL,
@@ -103,7 +103,7 @@ CREATE TABLE public.ticket_reservations (
 
 CREATE TABLE public.payment_attempts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  order_id UUID NOT NULL REFERENCES public.orders(id) ON DELETE RESTRICT,
+  order_id UUID NOT NULL REFERENCES public.ticket_orders(id) ON DELETE RESTRICT,
   provider TEXT NOT NULL,
   payment_method TEXT NOT NULL,
   merchant_reference TEXT NOT NULL UNIQUE,
@@ -180,8 +180,8 @@ CREATE TABLE public.payout_requests (
   UNIQUE (promoter_user_id, idempotency_key)
 );
 
-CREATE INDEX orders_user_created ON public.orders(user_id, created_at DESC);
-CREATE INDEX orders_event_status ON public.orders(event_id, status);
+CREATE INDEX ticket_orders_user_created ON public.ticket_orders(user_id, created_at DESC);
+CREATE INDEX ticket_orders_event_status ON public.ticket_orders(event_id, status);
 CREATE INDEX reservations_expiry ON public.ticket_reservations(status, expires_at);
 CREATE INDEX payment_attempts_order ON public.payment_attempts(order_id);
 CREATE INDEX payment_events_reference ON public.payment_events(merchant_reference);
@@ -189,14 +189,14 @@ CREATE INDEX ledger_owner_status ON public.financial_ledger(owner_user_id, statu
 CREATE INDEX payouts_status_created ON public.payout_requests(status, created_at);
 
 ALTER TABLE public.tickets
-  ADD COLUMN IF NOT EXISTS order_id UUID REFERENCES public.orders(id) ON DELETE RESTRICT,
+  ADD COLUMN IF NOT EXISTS order_id UUID REFERENCES public.ticket_orders(id) ON DELETE RESTRICT,
   ADD COLUMN IF NOT EXISTS fulfillment_index INTEGER;
 CREATE UNIQUE INDEX tickets_order_fulfillment_unique ON public.tickets(order_id, fulfillment_index) WHERE order_id IS NOT NULL;
 
 ALTER TABLE public.payment_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.referral_codes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.referrals ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.ticket_orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.order_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ticket_reservations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.payment_attempts ENABLE ROW LEVEL SECURITY;
@@ -207,12 +207,12 @@ ALTER TABLE public.payout_requests ENABLE ROW LEVEL SECURITY;
 CREATE POLICY payment_settings_admin_read ON public.payment_settings FOR SELECT USING (public.get_my_role() IN ('admin','super_admin'));
 CREATE POLICY referral_codes_own_read ON public.referral_codes FOR SELECT USING (promoter_user_id = auth.uid());
 CREATE POLICY referrals_own_read ON public.referrals FOR SELECT USING (referrer_user_id = auth.uid());
-CREATE POLICY orders_own_read ON public.orders FOR SELECT USING (user_id = auth.uid());
-CREATE POLICY orders_admin_read ON public.orders FOR SELECT USING (public.get_my_role() IN ('admin','super_admin'));
-CREATE POLICY order_items_own_read ON public.order_items FOR SELECT USING (EXISTS (SELECT 1 FROM public.orders o WHERE o.id = order_id AND o.user_id = auth.uid()));
+CREATE POLICY ticket_orders_own_read ON public.ticket_orders FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY ticket_orders_admin_read ON public.ticket_orders FOR SELECT USING (public.get_my_role() IN ('admin','super_admin'));
+CREATE POLICY order_items_own_read ON public.order_items FOR SELECT USING (EXISTS (SELECT 1 FROM public.ticket_orders o WHERE o.id = order_id AND o.user_id = auth.uid()));
 CREATE POLICY order_items_admin_read ON public.order_items FOR SELECT USING (public.get_my_role() IN ('admin','super_admin'));
 CREATE POLICY reservations_admin_read ON public.ticket_reservations FOR SELECT USING (public.get_my_role() IN ('admin','super_admin'));
-CREATE POLICY payment_attempts_own_read ON public.payment_attempts FOR SELECT USING (EXISTS (SELECT 1 FROM public.orders o WHERE o.id = order_id AND o.user_id = auth.uid()));
+CREATE POLICY payment_attempts_own_read ON public.payment_attempts FOR SELECT USING (EXISTS (SELECT 1 FROM public.ticket_orders o WHERE o.id = order_id AND o.user_id = auth.uid()));
 CREATE POLICY payment_attempts_admin_read ON public.payment_attempts FOR SELECT USING (public.get_my_role() IN ('admin','super_admin'));
 CREATE POLICY payment_events_admin_read ON public.payment_events FOR SELECT USING (public.get_my_role() IN ('admin','super_admin'));
 CREATE POLICY ledger_own_read ON public.financial_ledger FOR SELECT USING (owner_user_id = auth.uid());
@@ -221,7 +221,7 @@ CREATE POLICY payouts_own_read ON public.payout_requests FOR SELECT USING (promo
 CREATE POLICY payouts_admin_read ON public.payout_requests FOR SELECT USING (public.get_my_role() IN ('admin','super_admin'));
 
 -- No INSERT/UPDATE/DELETE policies are granted to browser roles for financial tables.
-REVOKE INSERT, UPDATE, DELETE ON public.orders, public.order_items, public.ticket_reservations,
+REVOKE INSERT, UPDATE, DELETE ON public.ticket_orders, public.order_items, public.ticket_reservations,
   public.payment_attempts, public.payment_events, public.financial_ledger, public.payout_requests
   FROM anon, authenticated;
 
@@ -238,7 +238,7 @@ CREATE OR REPLACE FUNCTION public.create_ticket_order_atomic(
 ) RETURNS JSONB LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp AS $$
 DECLARE
   v_event public.events%ROWTYPE; v_settings public.payment_settings%ROWTYPE;
-  v_order public.orders%ROWTYPE; v_item JSONB; v_type public.ticket_types%ROWTYPE;
+  v_order public.ticket_orders%ROWTYPE; v_item JSONB; v_type public.ticket_types%ROWTYPE;
   v_qty INTEGER; v_reserved INTEGER; v_subtotal NUMERIC(12,2) := 0;
   v_service_fee NUMERIC(12,2); v_total NUMERIC(12,2); v_referral UUID; v_expires TIMESTAMPTZ;
 BEGIN
@@ -250,7 +250,7 @@ BEGIN
   IF NOT FOUND THEN RETURN jsonb_build_object('result','event_not_found'); END IF;
   IF v_event.status <> 'published' THEN RETURN jsonb_build_object('result','event_not_available'); END IF;
   SELECT * INTO v_settings FROM public.payment_settings WHERE id = TRUE;
-  SELECT * INTO v_order FROM public.orders WHERE user_id=p_user_id AND idempotency_key=p_idempotency_key;
+  SELECT * INTO v_order FROM public.ticket_orders WHERE user_id=p_user_id AND idempotency_key=p_idempotency_key;
   IF FOUND THEN RETURN jsonb_build_object('result','existing','order_id',v_order.id,'merchant_reference',v_order.merchant_reference,'total',v_order.total,'currency',v_order.currency,'expires_at',v_order.reservation_expires_at); END IF;
   IF p_referral_code IS NOT NULL THEN
     SELECT r.id INTO v_referral FROM public.referrals r JOIN public.referral_codes c ON c.id=r.referral_code_id
@@ -273,7 +273,7 @@ BEGIN
   END LOOP;
   v_service_fee := CASE WHEN v_settings.fee_model IN ('customer_pays','mixed') THEN round(v_subtotal*v_settings.service_fee_percent/100,2) ELSE 0 END;
   v_total := v_subtotal + v_service_fee;
-  INSERT INTO public.orders(user_id,event_id,referral_id,subtotal,service_fee,total,fee_model,platform_commission,idempotency_key,reservation_expires_at,status)
+  INSERT INTO public.ticket_orders(user_id,event_id,referral_id,subtotal,service_fee,total,fee_model,platform_commission,idempotency_key,reservation_expires_at,status)
   VALUES(p_user_id,p_event_id,v_referral,v_subtotal,v_service_fee,v_total,v_settings.fee_model,round(v_subtotal*v_settings.platform_commission_percent/100,2),p_idempotency_key,v_expires,CASE WHEN v_total=0 THEN 'awaiting_payment' ELSE 'awaiting_payment' END) RETURNING * INTO v_order;
   FOR v_item IN SELECT value FROM jsonb_array_elements(p_items) LOOP
     v_qty := (v_item->>'quantity')::INTEGER;
@@ -294,7 +294,7 @@ DECLARE v_count INTEGER;
 BEGIN
   WITH expired AS (SELECT id,order_id FROM public.ticket_reservations WHERE status='active' AND expires_at<=now() ORDER BY expires_at FOR UPDATE SKIP LOCKED LIMIT greatest(1,least(p_limit,2000))),
   updated AS (UPDATE public.ticket_reservations r SET status='expired',released_at=now() FROM expired e WHERE r.id=e.id RETURNING r.order_id)
-  UPDATE public.orders o SET status='expired',updated_at=now() WHERE o.id IN (SELECT order_id FROM updated) AND o.status IN ('awaiting_payment','payment_processing');
+  UPDATE public.ticket_orders o SET status='expired',updated_at=now() WHERE o.id IN (SELECT order_id FROM updated) AND o.status IN ('awaiting_payment','payment_processing');
   GET DIAGNOSTICS v_count = ROW_COUNT; RETURN v_count;
 END; $$;
 
@@ -302,13 +302,13 @@ CREATE OR REPLACE FUNCTION public.confirm_order_payment_and_issue_tickets(
   p_order_id UUID, p_payment_attempt_id UUID, p_qr_token_hashes TEXT[]
 ) RETURNS JSONB LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp AS $$
 DECLARE
-  v_order public.orders%ROWTYPE; v_attempt public.payment_attempts%ROWTYPE;
+  v_order public.ticket_orders%ROWTYPE; v_attempt public.payment_attempts%ROWTYPE;
   v_profile public.profiles%ROWTYPE; v_item public.order_items%ROWTYPE;
   v_reservation public.ticket_reservations%ROWTYPE; v_total_quantity INTEGER;
   v_index INTEGER := 0; v_local INTEGER; v_sequence BIGINT; v_ticket_number TEXT;
   v_claim UUID; v_tickets JSONB;
 BEGIN
-  SELECT * INTO v_order FROM public.orders WHERE id=p_order_id FOR UPDATE;
+  SELECT * INTO v_order FROM public.ticket_orders WHERE id=p_order_id FOR UPDATE;
   IF NOT FOUND THEN RETURN jsonb_build_object('result','order_not_found'); END IF;
   IF v_order.status='fulfilled' THEN
     SELECT COALESCE(jsonb_agg(jsonb_build_object('ticket_id',id,'ticket_number',ticket_number) ORDER BY fulfillment_index),'[]'::jsonb)
@@ -318,7 +318,7 @@ BEGIN
   SELECT * INTO v_attempt FROM public.payment_attempts WHERE id=p_payment_attempt_id AND order_id=v_order.id FOR UPDATE;
   IF NOT FOUND OR v_attempt.status<>'paid' OR v_order.status<>'paid' THEN RETURN jsonb_build_object('result','payment_not_verified'); END IF;
   IF v_attempt.amount_requested<>v_order.total OR v_attempt.currency<>v_order.currency THEN
-    UPDATE public.orders SET status='reconciliation_required',updated_at=now() WHERE id=v_order.id;
+    UPDATE public.ticket_orders SET status='reconciliation_required',updated_at=now() WHERE id=v_order.id;
     RETURN jsonb_build_object('result','amount_mismatch');
   END IF;
   SELECT COALESCE(sum(quantity),0)::INTEGER INTO v_total_quantity FROM public.order_items WHERE order_id=v_order.id;
@@ -328,12 +328,12 @@ BEGIN
   FOR v_item IN SELECT * FROM public.order_items WHERE order_id=v_order.id ORDER BY id LOOP
     SELECT * INTO v_reservation FROM public.ticket_reservations WHERE order_id=v_order.id AND ticket_type_id=v_item.ticket_type_id FOR UPDATE;
     IF NOT FOUND OR v_reservation.status<>'active' OR v_reservation.expires_at<=now() THEN
-      UPDATE public.orders SET status='reconciliation_required',updated_at=now() WHERE id=v_order.id;
+      UPDATE public.ticket_orders SET status='reconciliation_required',updated_at=now() WHERE id=v_order.id;
       RETURN jsonb_build_object('result','reservation_expired');
     END IF;
     UPDATE public.ticket_types SET quantity_available=quantity_available-v_item.quantity,updated_at=now()
       WHERE id=v_item.ticket_type_id AND quantity_available>=v_item.quantity;
-    IF NOT FOUND THEN UPDATE public.orders SET status='reconciliation_required',updated_at=now() WHERE id=v_order.id; RETURN jsonb_build_object('result','inventory_conflict'); END IF;
+    IF NOT FOUND THEN UPDATE public.ticket_orders SET status='reconciliation_required',updated_at=now() WHERE id=v_order.id; RETURN jsonb_build_object('result','inventory_conflict'); END IF;
     INSERT INTO public.ticket_claims(event_id,ticket_type_id,user_id,quantity,attendee_name,attendee_email,status,idempotency_key,source)
       VALUES(v_order.event_id,v_item.ticket_type_id,v_order.user_id,v_item.quantity,COALESCE(NULLIF(v_profile.display_name,''),'Future Times Guest'),v_profile.email,'confirmed',v_order.id::TEXT||':'||v_item.id::TEXT,'paid_order') RETURNING id INTO v_claim;
     FOR v_local IN 1..v_item.quantity LOOP
@@ -343,7 +343,7 @@ BEGIN
     END LOOP;
     UPDATE public.ticket_reservations SET status='converted',converted_at=now() WHERE id=v_reservation.id;
   END LOOP;
-  UPDATE public.orders SET status='fulfilled',fulfilled_at=now(),updated_at=now() WHERE id=v_order.id;
+  UPDATE public.ticket_orders SET status='fulfilled',fulfilled_at=now(),updated_at=now() WHERE id=v_order.id;
   INSERT INTO public.audit_logs(actor_id,action,entity_type,entity_id,after_state) VALUES(NULL,'paid_order_fulfilled','order',v_order.id,jsonb_build_object('ticket_count',v_total_quantity,'payment_attempt_id',v_attempt.id));
   SELECT jsonb_agg(jsonb_build_object('ticket_id',id,'ticket_number',ticket_number) ORDER BY fulfillment_index) INTO v_tickets FROM public.tickets WHERE order_id=v_order.id;
   RETURN jsonb_build_object('result','success','tickets',v_tickets);
