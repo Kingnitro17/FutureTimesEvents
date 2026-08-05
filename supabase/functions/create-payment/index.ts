@@ -1,0 +1,18 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { cors,json,maskPhone,normalizeZwPhone,safeError } from "../_shared/http.ts";
+import { getPaymentProvider } from "../_shared/paynow.ts";
+
+Deno.serve(async(req)=>{if(req.method==="OPTIONS")return new Response(null,{headers:cors}); if(req.method!=="POST")return json({error:"Method not allowed"},405);
+ try{const auth=req.headers.get("authorization")??""; const url=Deno.env.get("SUPABASE_URL")!, anon=Deno.env.get("SUPABASE_ANON_KEY")!, service=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const userClient=createClient(url,anon,{global:{headers:{Authorization:auth}}}); const {data:{user}}=await userClient.auth.getUser(); if(!user)return json({error:"Authentication required"},401);
+  const body=await req.json(); if(typeof body?.orderId!=="string"||typeof body?.phone!=="string")return json({error:"Invalid payment request"},422);
+  const idem=req.headers.get("x-idempotency-key"); if(!idem||!/^[0-9a-f-]{36}$/i.test(idem))return json({error:"Idempotency key required"},422);
+  const admin=createClient(url,service,{auth:{persistSession:false}}); const {data:order}=await admin.from("orders").select("id,user_id,merchant_reference,total,currency,status,reservation_expires_at,events(title)").eq("id",body.orderId).eq("user_id",user.id).maybeSingle();
+  if(!order)return json({error:"Order not found"},404); if(!["awaiting_payment","payment_processing"].includes(order.status)||new Date(order.reservation_expires_at)<=new Date())return json({error:"Order is no longer payable"},409); if(Number(order.total)<=0)return json({error:"Free orders do not use a payment provider"},409);
+  const {data:existing}=await admin.from("payment_attempts").select("id,status,poll_url,masked_customer_phone,provider_reference").eq("order_id",order.id).in("status",["created","sent","awaiting_customer","processing"]).maybeSingle(); if(existing)return json({paymentAttemptId:existing.id,status:existing.status,maskedPhone:existing.masked_customer_phone},200);
+  const phone=normalizeZwPhone(body.phone); const merchant=`${order.merchant_reference}-${idem.replaceAll("-","").slice(0,8)}`; const base=Deno.env.get("APP_BASE_URL")!.replace(/\/$/,"");
+  const result=await getPaymentProvider().initiateMobilePayment({merchantReference:merchant,amount:Number(order.total).toFixed(2),customerPhone:phone,description:`Future Times ticket order ${order.merchant_reference}`,resultUrl:`${url}/functions/v1/paynow-result`,returnUrl:`${base}/checkout/${order.id}`});
+  const {data:attempt,error}=await admin.from("payment_attempts").insert({order_id:order.id,provider:"paynow",payment_method:"ecocash",merchant_reference:merchant,provider_reference:result.providerReference,poll_url:result.pollUrl,masked_customer_phone:maskPhone(phone),amount_requested:order.total,currency:order.currency,status:result.status==="pending"?"awaiting_customer":"failed",provider_status:result.rawStatus,idempotency_key:idem}).select("id,status,masked_customer_phone").single(); if(error)throw error;
+  await admin.from("orders").update({status:"payment_processing",updated_at:new Date().toISOString()}).eq("id",order.id).eq("status","awaiting_payment"); return json({paymentAttemptId:attempt.id,status:attempt.status,maskedPhone:attempt.masked_customer_phone,instructions:result.instructions??"Approve the EcoCash prompt on your phone."},201);
+ }catch(error){console.error(JSON.stringify({function:"create-payment",result:"error",message:error instanceof Error?error.message:"unknown"}));return safeError(error instanceof Error&&error.message.includes("credentials")?503:500)}});
+

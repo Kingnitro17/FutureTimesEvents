@@ -2,6 +2,7 @@
 
 import { useId, useRef, useState } from 'react';
 import Link from 'next/link';
+import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import {
   AlertCircle,
   CheckCircle2,
@@ -202,6 +203,24 @@ export default function TicketClaimForm({
     try {
       if (!idempotencyKeyRef.current) {
         idempotencyKeyRef.current = createIdempotencyKey();
+      }
+
+      if (selectedType.price > 0) {
+        const supabase = getSupabaseBrowserClient();
+        const { data, error } = await supabase.functions.invoke('create-order', {
+          body: {
+            eventId: event.id,
+            items: [{ ticketTypeId: selectedType.id, quantity }],
+            idempotencyKey: idempotencyKeyRef.current,
+            referralCode: new URLSearchParams(window.location.search).get('ref'),
+          },
+        });
+        if (error || !data?.order_id) {
+          setServerError(data?.error ?? 'Sign in to reserve and pay for this ticket.');
+          return;
+        }
+        window.location.assign(`/checkout/${encodeURIComponent(data.order_id)}`);
+        return;
       }
 
       const response = await fetch('/api/tickets/claim', {

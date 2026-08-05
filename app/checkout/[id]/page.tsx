@@ -1,17 +1,28 @@
-import { redirect } from 'next/navigation';
+'use client';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { CheckCircle2, Clock3, Loader2, RefreshCw, ShieldCheck, Smartphone } from 'lucide-react';
+import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 
-/**
- * Legacy checkout URLs now use the production event claim flow.
- *
- * The previous page generated localStorage-only demo tickets and decorative
- * QR values. Keeping a single server-backed claim path prevents fake tickets
- * from entering the production UI.
- */
-export default async function LegacyCheckoutRedirect({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
-  redirect(`/events/${encodeURIComponent(id)}`);
-}
+type Order={id:string;merchant_reference:string;status:string;currency:string;subtotal:number;service_fee:number;discount:number;total:number;reservation_expires_at:string;event_id:string};
+type Attempt={id:string;status:string;masked_customer_phone:string|null;provider_status:string|null};
+const money=(n:number,c:string)=>new Intl.NumberFormat('en-US',{style:'currency',currency:c}).format(n);
+
+export default function CheckoutPage(){const params=useParams<{id:string}>(); const id=params?.id ?? ''; const [order,setOrder]=useState<Order|null>(null); const [attempt,setAttempt]=useState<Attempt|null>(null); const [phone,setPhone]=useState(''); const [busy,setBusy]=useState(false); const [error,setError]=useState<string|null>(null); const [remaining,setRemaining]=useState(''); const idem=useRef<string>(crypto.randomUUID());
+ const load=useCallback(async()=>{const supabase=getSupabaseBrowserClient(); const {data,error:loadError}=await supabase.from('orders').select('id,merchant_reference,status,currency,subtotal,service_fee,discount,total,reservation_expires_at,event_id').eq('id',id).maybeSingle(); if(loadError||!data){setError('This checkout could not be loaded. Sign in with the purchasing account.');return;} setOrder(data as Order); const {data:a}=await supabase.from('payment_attempts').select('id,status,masked_customer_phone,provider_status').eq('order_id',id).order('initiated_at',{ascending:false}).limit(1).maybeSingle(); setAttempt(a as Attempt|null);},[id]);
+ useEffect(()=>{const timer=setTimeout(()=>void load(),0);return()=>clearTimeout(timer)},[load]); useEffect(()=>{if(!order)return; const tick=()=>{const seconds=Math.max(0,Math.floor((new Date(order.reservation_expires_at).getTime()-Date.now())/1000));setRemaining(`${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}`)};const initial=setTimeout(tick,0);const timer=setInterval(tick,1000);return()=>{clearTimeout(initial);clearInterval(timer)}},[order]);
+ useEffect(()=>{if(!attempt||['paid','failed','cancelled','expired','reversed'].includes(attempt.status))return;const timer=setInterval(()=>void load(),5000);return()=>clearInterval(timer)},[attempt,load]);
+ const pay=async()=>{setBusy(true);setError(null);try{const supabase=getSupabaseBrowserClient();const {data,error:invokeError}=await supabase.functions.invoke('create-payment',{headers:{'x-idempotency-key':idem.current},body:{orderId:id,phone}});if(invokeError||data?.error){setError(data?.error??'EcoCash payment could not be started.');return;}setAttempt({id:data.paymentAttemptId,status:data.status,masked_customer_phone:data.maskedPhone,provider_status:null});}finally{setBusy(false)}};
+ if(!order&&!error)return <main className="min-h-screen grid place-items-center"><Loader2 className="animate-spin text-[var(--accent)]"/></main>;
+ const complete=order?.status==='fulfilled';
+ return <main className="min-h-screen page-offset bg-[var(--bg-secondary)]"><div className="container mx-auto max-w-2xl py-8 sm:py-12">
+  <div className="card rounded-[var(--r-3xl)] p-5 sm:p-8 space-y-6">
+   <div className="flex items-start justify-between gap-4"><div><p className="type-overline text-[var(--accent)]">Secure checkout</p><h1 className="mt-2 text-3xl font-black">Pay with EcoCash</h1><p className="mt-2 text-sm text-[var(--text-muted)]">Order {order?.merchant_reference}</p></div><ShieldCheck className="text-emerald-500" size={32}/></div>
+   {order&&<><dl className="rounded-2xl bg-[var(--bg-secondary)] p-4 space-y-3"><div className="flex justify-between"><dt>Tickets</dt><dd>{money(Number(order.subtotal),order.currency)}</dd></div><div className="flex justify-between"><dt>Service fee</dt><dd>{money(Number(order.service_fee),order.currency)}</dd></div><div className="flex justify-between border-t border-[var(--border)] pt-3 text-lg font-black"><dt>Total</dt><dd className="text-[var(--accent)]">{money(Number(order.total),order.currency)}</dd></div></dl><div className="flex items-center gap-2 text-sm"><Clock3 size={16}/><span>Reservation expires in <strong>{remaining}</strong></span></div></>}
+   {complete?<div className="text-center space-y-4" role="status"><CheckCircle2 className="mx-auto text-emerald-500" size={54}/><h2 className="text-2xl font-black">Payment confirmed</h2><p className="text-[var(--text-muted)]">Your tickets are ready in your secure wallet.</p><Link href="/tickets" className="btn btn-lg btn-primary w-full">View tickets</Link></div>:
+   attempt?<div className="space-y-4" aria-live="polite"><div className="rounded-2xl border border-[var(--border)] p-5 text-center"><Smartphone className="mx-auto text-[var(--accent)]"/><h2 className="mt-3 text-xl font-black">Approve the phone prompt</h2><p className="mt-2 text-sm text-[var(--text-muted)]">EcoCash request sent to {attempt.masked_customer_phone}. Never enter your PIN on this website.</p><p className="mt-3 font-semibold capitalize">{attempt.status.replaceAll('_',' ')}</p></div><button className="btn btn-lg btn-outline w-full" onClick={()=>void load()}><RefreshCw size={17}/>Refresh status</button></div>:
+   <div className="space-y-4"><label className="block"><span className="mb-2 block text-sm font-semibold">EcoCash mobile number</span><input className="input" type="tel" autoComplete="tel" placeholder="077 123 4567" value={phone} onChange={e=>setPhone(e.target.value)}/></label><p className="text-xs text-[var(--text-muted)]">We will send an approval prompt to your phone. Future Times will never ask for your EcoCash PIN.</p><button className="btn btn-lg btn-primary w-full" disabled={busy||phone.length<9||order?.status!=='awaiting_payment'} onClick={pay}>{busy?<Loader2 className="animate-spin" size={18}/>:<Smartphone size={18}/>}Send EcoCash prompt</button></div>}
+   {error&&<div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>}
+   <Link href={order?`/events`: '/tickets'} className="block text-center text-sm text-[var(--text-muted)] hover:text-[var(--accent)]">Return to events</Link>
+  </div></div></main>}
